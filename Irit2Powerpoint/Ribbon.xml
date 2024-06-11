@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="Ribbon_Load">
+  <ribbon>
+    <tabs>
+      <tab id="I2P" label="Irit2Powerpoint">
+        <group id="Content"
+               label="Content">
+          <button id="InsertButton"
+                  label="Insert"
+                  screentip="Insert Window"
+                  supertip="Insert an OpenGL Window into the slide"
+                  onAction="OnButtonClick"/>
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
+
