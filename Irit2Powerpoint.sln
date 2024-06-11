@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.34902.97
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Irit2Powerpoint", "Irit2Powerpoint\Irit2Powerpoint.csproj", "{211CCB2A-0E80-4CCE-9774-8B942173467E}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6F52A2AF-2155-4307-BAF5-A66B02BC852F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
