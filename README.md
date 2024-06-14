@@ -1,18 +1,19 @@
 ## Irit2Powerpoint
 
-3D plugin for powerpoint.
+3D renderer functionality for powerpoint.
 
-Adds 3D renderer functionality to powerpoint.
-So far only accepts itd files but it can be easily extended to support
-more elaborate formats.
+Leverages the Win32 API to create windows and openTK to create openGL contexts over them.
 
-# 20-6
-	Test if we can start an opengl context in powerpoint.
+## Features:
+- One OpenGL window per slide(can be extended)
+- Full event handling for OpenGL window
+- Supports ITD (Irit Text Data) format
+- Saves state within the slide, no need for extra files other than the PPT
+
+## TODO:
 # 27-6
-	Load irit models and display them
-# 5-7
-	Save state into the disk somehow and test that it can be reloaded
+	Load ITD files and display them
 # 12-7
 	Add quality of life features (Better controls for transformations, more smaller features etc..)
 # 18-7
-	Meet Boaz 
+	Meet project advisor
