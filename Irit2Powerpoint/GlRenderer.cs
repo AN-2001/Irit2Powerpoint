@@ -8,7 +8,6 @@ namespace Irit2Powerpoint
     {
         private GraphicsContext Context;
         private OpenTK.Platform.IWindowInfo Info;
-        private float k = 0;
         public GlRenderer(IntPtr hWnd)
         {
 
@@ -23,7 +22,7 @@ namespace Irit2Powerpoint
 
         public void Render()
         {
-            GL.ClearColor(new Color4(1.0f, k, 0.0f, 0.0f));
+            GL.ClearColor(new Color4(1.0f, 0.0f, 0.0f, 0.0f));
             GL.Clear(ClearBufferMask.ColorBufferBit);
             Context.SwapBuffers();
         }
