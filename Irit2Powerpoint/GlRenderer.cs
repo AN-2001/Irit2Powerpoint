@@ -16,13 +16,13 @@ namespace Irit2Powerpoint
             Context.MakeCurrent(Info);
             Context.LoadAll();
 
-            GL.ClearColor(new Color4(1.0f, 0.0f, 0.0f, 0.0f));
+            GL.ClearColor(new Color4(0.0f, 0.0f, 0.0f, 0.0f));
             Render();
         }
 
         public void Render()
         {
-            GL.ClearColor(new Color4(1.0f, 0.0f, 0.0f, 0.0f));
+            GL.ClearColor(new Color4(0.0f, 0.0f, 0.0f, 0.0f));
             GL.Clear(ClearBufferMask.ColorBufferBit);
             Context.SwapBuffers();
         }
