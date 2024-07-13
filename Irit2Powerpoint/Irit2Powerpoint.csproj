@@ -209,10 +209,11 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>Irit2Powerpoint_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile>
+    </ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>755D258AAF36D4924218D5856644D438B9AD219A</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>16DE37C0766A770FF260F1470B7F6471FDED0BCC</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>

@@ -58,7 +58,6 @@ namespace Irit2Powerpoint
             File.Visible = Microsoft.Office.Core.MsoTriState.msoFalse;
             File.Tags.Add("I2PDUMMY_FILE", "true");
         }
-
         private bool GetDummyFromSlide(PowerPoint.Slide Slide,
                                        out PowerPoint.Shape Dummy,
                                        out PowerPoint.Shape File)
