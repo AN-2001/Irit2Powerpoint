@@ -1,87 +1,101 @@
 ﻿using System;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Graphics;
+using System.Diagnostics;
 
 
 namespace Irit2Powerpoint
 {
     class GlRenderer
     {
+        private string vertexShaderSource = @"
+        #version 330 core
+        layout (location = 0) in vec3 Pos;
+        layout (location = 1) in vec3 Normal;
+        uniform mat4 Mat;
+
+        out vec3 Norm;
+        
+        void main()
+        {
+            gl_Position = vec4(Pos * 0.25, 1.f) * Mat;
+            Norm = Normal;
+        }"; 
+        
+        private string fragmentShaderSource = @"
+        #version 330 core
+        in vec3 Norm;
+        out vec4 FragColor;
+
+        void main()
+        {
+            FragColor = vec4(abs(Norm), 1.0f);
+        }";
+
+        private int MainProgram;
+
         private GraphicsContext Context;
         private OpenTK.Platform.IWindowInfo Info;
-
-        private uint VAO;
-        private uint VBO;
-
+        private GlResourceManager ResourceManager;
+        private GlResource ActiveResource;
+        private bool Loaded;
+        private float t;
 
         public GlRenderer(IntPtr hWnd)
         {
 
             Info = OpenTK.Platform.Utilities.CreateWindowsWindowInfo(hWnd);
-            Context = new GraphicsContext(GraphicsMode.Default, Info, 4, 0, GraphicsContextFlags.Default);
+            Context = new GraphicsContext(GraphicsMode.Default,
+                            Info, 4, 0, GraphicsContextFlags.Default);
             Context.MakeCurrent(Info);
             Context.LoadAll();
-            ///////////////////////////////////////////////// // this here for testing purposes ////////////////////////////////////////////////////////////
 
-            string vertexShaderSource = @"
-            #version 330 core
-            layout (location = 0) in vec3 aPos;
-            void main()
-            {
-                gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-            }"; 
-            
-            string fragmentShaderSource = @"
-            #version 330 core
-            out vec4 FragColor;
+            GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.CullFace);
+            GL.CullFace(CullFaceMode.Front);
+            ResourceManager = new GlResourceManager();
+            InitShader();
 
-            void main()
-            {
-                FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
-            }";
+            GL.ClearColor(new Color4(0.2f, 0.3f, 0.3f, 1.0f));
+            Loaded = false;
+            t = 0.0f;
+        }
 
-            float[] vertices ={
-                -0.5f , -0.5f , 0.0f,
-                0.5f , -0.5f, 0.0f,
-                0.0f, 0.5f , 0.0f
-            };
+        private void InitShader()
+        {
+            int vertexShader, fragmentShader;
 
-            int vertexShader = GL.CreateShader(ShaderType.VertexShader);
+            vertexShader = GL.CreateShader(ShaderType.VertexShader);
             GL.ShaderSource(vertexShader, vertexShaderSource);
             GL.CompileShader(vertexShader);
             CheckShaderCompileStatus(vertexShader);
 
-            int fragmentShader  = GL.CreateShader(ShaderType.FragmentShader);
-            GL.ShaderSource( fragmentShader , fragmentShaderSource);
+            fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
+            GL.ShaderSource(fragmentShader , fragmentShaderSource);
             GL.CompileShader(fragmentShader);
             CheckShaderCompileStatus(fragmentShader);
 
-            int shaderProgram = GL.CreateProgram();
-            GL.AttachShader(shaderProgram, vertexShader);
-            GL.AttachShader(shaderProgram, fragmentShader);
-            GL.LinkProgram(shaderProgram);
-            CheckProgramLinkStatus(shaderProgram);
+            MainProgram = GL.CreateProgram();
+            GL.AttachShader(MainProgram, vertexShader);
+            GL.AttachShader(MainProgram, fragmentShader);
+            GL.LinkProgram(MainProgram);
+            CheckProgramLinkStatus(MainProgram);
                 
             GL.DeleteShader(vertexShader);
             GL.DeleteShader(fragmentShader);
 
-            GL.GenBuffers(1, out VBO);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
+        }
 
-            GL.GenVertexArrays(1, out VAO);
-            GL.BindVertexArray(VAO);
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
-            GL.EnableVertexAttribArray(0);
-
-            GL.BindVertexArray(0);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-
-            GL.ClearColor(new Color4(0.2f, 0.3f, 0.3f, 1.0f));
-            GL.UseProgram(shaderProgram);
-            Render();
-            //  GL.DeleteVertexArray(VAO);
-            //  GL.DeleteBuffer(VBO);
+        public void UpdateViewport(int Width, int Height)
+        {
+            System.Drawing.Point
+                P = new System.Drawing.Point(0, 0),
+                Size = new System.Drawing.Point(Width, Height);
+            System.Drawing.Size
+                S = new System.Drawing.Size(Size);
+            System.Drawing.Rectangle
+                R = new System.Drawing.Rectangle(P, S);
+            GL.Viewport(R);
         }
 
         private void CheckShaderCompileStatus(int shader)
@@ -105,12 +119,60 @@ namespace Irit2Powerpoint
         }
 
         public void Render()
-        {  
-            GL.ClearColor(new Color4(0.2f, 0.3f, 0.3f, 1.0f));
-            GL.BindVertexArray(VAO);
-            GL.Clear(ClearBufferMask.ColorBufferBit);
-            GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+        {
+            GL.UseProgram(MainProgram);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            OpenTK.Matrix4 T = OpenTK.Matrix4.CreateRotationY(t);
+            T = T * OpenTK.Matrix4.CreateRotationX(2 * t);
+            T = T * OpenTK.Matrix4.CreateRotationZ(4 * t);
+            int Location = GL.GetUniformLocation(MainProgram, "Mat");
+            GL.UniformMatrix4(Location, false, ref T);
+            if (Loaded)
+            {
+                GL.BindVertexArray(ActiveResource.VAO);
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, ActiveResource.EBO);
+                GL.DrawElements(BeginMode.Triangles, ActiveResource.NumElements, DrawElementsType.UnsignedInt, 0);
+            }
+
             Context.SwapBuffers();
+
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
+            GL.BindVertexArray(0);
+            t += 0.01f;
         }
+
+        public void SetActiveModel(string Filepath)
+        {
+            this.ActiveResource = ResourceManager.GetResource(Filepath);
+            Loaded = true;
+        }
+
+        public void Destroy()
+        {
+            ResourceManager.Destroy();
+        }
+
+        public static string GetErrorString(ErrorCode errorCode)
+        {
+            switch (errorCode)
+            {
+                case ErrorCode.InvalidEnum:
+                    return "Invalid Enum";
+                case ErrorCode.InvalidValue:
+                    return "Invalid Value";
+                case ErrorCode.InvalidOperation:
+                    return "Invalid Operation";
+                case ErrorCode.OutOfMemory:
+                    return "Out of Memory";
+                case ErrorCode.TableTooLarge:
+                    return "Table Too Large";
+                case ErrorCode.NoError:
+                    return "No Error";
+                default:
+                    return $"Unknown Error ({errorCode})";
+            }
+
+        }
+
     }
 }

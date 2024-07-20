@@ -4,6 +4,7 @@ using Office = Microsoft.Office.Core;
 using System.Windows.Forms;
 using Microsoft.Office.Core;
 using System.Drawing;
+using System.Diagnostics;
 
 namespace Irit2Powerpoint
 {
@@ -13,30 +14,36 @@ namespace Irit2Powerpoint
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
+            /* Bind the event handlers. */
             this.Application.SlideShowBegin += NewSlideShow;
             this.Application.SlideShowNextSlide += NextSlide;
             this.Application.SlideShowEnd += EndSlideShow;
             this.Application.SlideSelectionChanged += SlideChanged;
+
+            /* Reuse the same GLWindow accross different slides. */
             GlWindow = new WindowWrapper();
         }
+
         public void SlideChanged(PowerPoint.SlideRange SldRange)
         {
             int i;
-            PowerPoint.Shape Dummy, File;
+            PowerPoint.Shape Dummy;
 
+            /* Make sure everything is visible as we hide them after a slideshow. */
             for (i = 1; i <= Application.ActivePresentation.Slides.Count; i++) { 
                 if (GetDummyFromSlide(Application.ActivePresentation.Slides[i],
-                                        out Dummy, out File))
+                                out Dummy))
                     Dummy.Visible = MsoTriState.msoTrue;
-             }
+            }
         }
+
         public void InitDummyRect(string Path)
         {
-            PowerPoint.Shape Dummy, File;
+            PowerPoint.Shape Dummy;
             PowerPoint.Slide
                 Slide = Application.ActiveWindow.View.Slide;
-
-            if (GetDummyFromSlide(Slide, out Dummy, out File)) {
+           
+            if (GetDummyFromSlide(Slide, out Dummy)) { 
                 MessageBox.Show("I2P: Window already exists.");
                 return;
             }
@@ -44,28 +51,17 @@ namespace Irit2Powerpoint
             Dummy = Slide.Shapes.AddShape(Office.MsoAutoShapeType.msoShapeRectangle ,0, 0, 400, 300);
             Dummy.TextFrame.TextRange.Text = "IRIT2POWERPOINT DUMMY";
             Dummy.Tags.Add("I2PDUMMY", "true");
+            Dummy.Tags.Add("I2PPATH", Path);
             Dummy.Fill.ForeColor.RGB = Color.FromArgb(100, 100, 100).ToArgb();
-            try
-            {
-                File = Slide.Shapes.AddOLEObject(Left: 0, Top: 0, Width: 100, Height: 100,
-                                     FileName: Path, Link: Microsoft.Office.Core.MsoTriState.msoFalse,
-                                    DisplayAsIcon: Microsoft.Office.Core.MsoTriState.msoTrue);
-            } catch (Exception e)
-            {
-                MessageBox.Show("I2P: Couldn't embed the file " + e.Message);
-            }
-
-            File.Visible = Microsoft.Office.Core.MsoTriState.msoFalse;
-            File.Tags.Add("I2PDUMMY_FILE", "true");
         }
-        private bool GetDummyFromSlide(PowerPoint.Slide Slide,
-                                       out PowerPoint.Shape Dummy,
-                                       out PowerPoint.Shape File)
-        {
-            int i, j,
-                NumExtracted = 0;
 
-            Dummy = File = null;
+        /* Extracts the Irit2Powerpoint dummy from a slide. */
+        private bool GetDummyFromSlide(PowerPoint.Slide Slide,
+                                       out PowerPoint.Shape Dummy)
+        {
+            int i, j;
+
+            Dummy = null;
 
             /* It's n*m but n, m are relatively low (obvsly less than a 100) */
             for (i = 1; i <= Slide.Shapes.Count; i++)
@@ -74,20 +70,10 @@ namespace Irit2Powerpoint
                     if (Slide.Shapes[i].Tags.Name(j) == "I2PDUMMY")
                     {
                         Dummy = Slide.Shapes[i];
-                        NumExtracted++;
-                    }
-
-                    if (Slide.Shapes[i].Tags.Name(j) == "I2PDUMMY_FILE")
-                    {
-                        File = Slide.Shapes[i];
-                        NumExtracted++;
-                    }
-                    if (NumExtracted == 2)
                         return true;
+                    }
                 }
 
-            if (NumExtracted == 1)
-                MessageBox.Show("I2P: Detected corrupted slide, aborting. ");
             return false;
         }
 
@@ -97,9 +83,11 @@ namespace Irit2Powerpoint
 
         void EndSlideShow(PowerPoint.Presentation Pres)
         {
+            /* Once a slide show ends hide the GL window. */
             GlWindow.SetVisibility(false);
         }
 
+        /* Helpers to use to position the window. */
         int PointToPixelX(float Point, IntPtr HWnd)
         {
             using (Graphics g = Graphics.FromHwnd(HWnd))
@@ -108,6 +96,7 @@ namespace Irit2Powerpoint
             }
         }
 
+        /* Helpers to use to position the window. */
         int PointToPixelY(float Point, IntPtr HWnd)
         {
             using (Graphics g = Graphics.FromHwnd(HWnd))
@@ -116,15 +105,20 @@ namespace Irit2Powerpoint
             }
         }
 
+        /* Called when we go to a new slide in a slideshow. */
         void NextSlide(PowerPoint.SlideShowWindow Wn)
         {
-            PowerPoint.Shape Dummy, File;
+            PowerPoint.Shape Dummy;
             int x, y, w, h;
+            string Path;
 
-            if (GetDummyFromSlide(Wn.View.Slide, out Dummy, out File))
+            /* Check for the dummy and if it exists determine the size/position of the  */
+            /* GLWindow from it. */
+            if (GetDummyFromSlide(Wn.View.Slide, out Dummy))
             {
                 Dummy.Visible = MsoTriState.msoFalse;
 
+                /* Calculate the window's shape and send it to the renderer. */
                 x = PointToPixelX(Dummy.Left * (Wn.View.Zoom / 100f), (IntPtr)Wn.HWND);
                 y = PointToPixelY(Dummy.Top * (Wn.View.Zoom / 100f), (IntPtr)Wn.HWND);
                 w = PointToPixelX(Dummy.Width * (Wn.View.Zoom / 100f), (IntPtr)Wn.HWND);
@@ -133,21 +127,22 @@ namespace Irit2Powerpoint
                 GlWindow.SetPosition(x, y);
                 GlWindow.SetSize(w, h);
                 GlWindow.SetVisibility(true);
-            }
-            else
-                GlWindow.SetVisibility(false) ;
 
+                Path = Dummy.Tags["I2PPATH"];
+                GlWindow.SetActiveModel(Path);
+            } else
+                GlWindow.SetVisibility(false);
         }
 
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
+            GlWindow.Destroy();
         }
 
         protected override Microsoft.Office.Core.IRibbonExtensibility CreateRibbonExtensibilityObject()
         {
             return new Ribbon();
         }
-
 
         #region VSTO generated code
 

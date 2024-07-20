@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using System.Timers;
 
 namespace Irit2Powerpoint
 {
@@ -42,7 +43,6 @@ namespace Irit2Powerpoint
         }
         #endregion
 
-
         /* Called when the window detects mouse movement. */
         public void OnMouseMove(int x, int y)
         {
@@ -62,6 +62,12 @@ namespace Irit2Powerpoint
             /* Handle a key press. */
         }
 
+        /* Clean up function. */
+        public void Destroy()
+        {
+            Renderer.Destroy();
+        }
+
         #region InnerFunctions
         public void SetPosition(int x, int y)
         {
@@ -76,6 +82,12 @@ namespace Irit2Powerpoint
             this.h = h;
 
             SetWindowPos(hWnd, IntPtr.Zero, 0, 0, w, h, SWP_NOMOVE | SWP_NOACTIVATE);
+            Renderer.UpdateViewport(w, h);
+        }
+
+        public void SetActiveModel(string Filepath)
+        {
+            Renderer.SetActiveModel(Filepath);
         }
 
         public void SetVisibility(bool Visib)
@@ -163,5 +175,4 @@ namespace Irit2Powerpoint
 
         #endregion
     }
-
 }
