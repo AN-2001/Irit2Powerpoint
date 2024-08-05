@@ -117,8 +117,6 @@ ITDPARSER_API MeshStruct *ITDParserParse(const char *Path)
     Ret -> PolylineIndices = Ret -> PolylineMeshSizes = NULL;
     Ret -> TotalPolylineIndices = 0;
     Ret -> TotalPolylineMeshes = 0;
-
-    IPObjectStruct *PObj = IritPrsrAllocObject("hello", 0, NULL);
     return Ret;
 }
 
