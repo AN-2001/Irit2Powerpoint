@@ -3,6 +3,107 @@
 #include "inc_irit/iritprsr.h"
 #include "ITDParser.h"
 #include <stdlib.h>
+#include <memory.h>
+
+#define ITD_PARSER_SUCCESS (1)
+#define ITD_PARSER_FAILURE (0)
+
+static MeshStruct *ITDParserAllocStruct(int NumVertices,
+				        int NumPolygonIndices,
+				        int NumPolygonMeshes,
+				        int NumPolylineIndices,
+				        int NumPolylineMeshes);
+static void CreateCube(VertexStruct *Vertices);
+static void CreateCubeTopology(int *Topology, int *Sizes);
+
+ITDPARSER_API MeshStruct *ITDParserParse(const char *Path)
+{
+    MeshStruct
+	*Mesh = ITDParserAllocStruct(24, 36, 1, 0, 0);
+    if (!Mesh)
+	return NULL;
+    CreateCube(Mesh -> Vertices);
+    CreateCubeTopology(Mesh -> PolygonIndices, Mesh -> PolygonMeshSizes);
+    return Mesh;
+}
+
+ITDPARSER_API void ITDParserFree(MeshStruct *Mesh)
+{
+    free(Mesh -> PolygonIndices);
+    free(Mesh -> PolygonMeshSizes);
+
+    free(Mesh -> PolylineIndices);
+    free(Mesh -> PolylineMeshSizes);
+
+    free(Mesh -> Vertices);
+    free(Mesh);
+}
+
+static MeshStruct *ITDParserAllocStruct(int NumVertices,
+				        int NumPolygonIndices,
+				        int NumPolygonMeshes,
+				        int NumPolylineIndices,
+				        int NumPolylineMeshes)
+{
+    MeshStruct
+	*Ret = malloc(sizeof(*Ret));
+    if (!Ret)
+	return NULL;
+    memset(Ret, 0, sizeof(*Ret));
+
+    Ret -> Vertices = malloc(sizeof(*Ret -> Vertices) * NumVertices);
+    Ret -> TotalVertices = NumVertices;
+    if (!Ret -> Vertices) {
+	ITDParserFree(Ret);
+	return NULL;
+    }
+    memset(Ret -> Vertices, 0, sizeof(*Ret -> Vertices) * Ret -> TotalVertices);
+
+    Ret -> PolygonIndices = malloc(sizeof(*Ret -> PolygonIndices) *
+						     NumPolygonIndices);
+    Ret -> TotalPolygonIndices = NumPolygonIndices;
+    if (!Ret  -> PolygonIndices) {
+	ITDParserFree(Ret);
+	return NULL;
+    }
+    memset(Ret -> PolygonIndices, 0,
+	     sizeof(*Ret -> PolygonIndices) *
+		 Ret -> TotalPolygonIndices);
+
+    Ret -> PolylineIndices = malloc(sizeof(*Ret -> PolylineIndices) *
+						     NumPolylineIndices);
+    Ret -> TotalPolylineIndices = NumPolylineIndices;
+    if (!Ret  -> PolylineIndices) {
+	ITDParserFree(Ret);
+	return NULL;
+    }
+    memset(Ret -> PolylineIndices, 0,
+	     sizeof(*Ret -> PolylineIndices) *
+			 Ret -> TotalPolylineIndices);
+
+    Ret -> PolygonMeshSizes = malloc(sizeof(*Ret -> PolygonMeshSizes) *
+						NumPolygonMeshes);
+    Ret -> TotalPolygonMeshes = NumPolygonMeshes;
+    if (!Ret  -> PolygonMeshSizes) {
+	ITDParserFree(Ret);
+	return NULL;
+    }
+    memset(Ret -> PolygonMeshSizes, 0,
+	     sizeof(*Ret -> PolygonMeshSizes) *
+		     Ret -> TotalPolygonMeshes);
+
+    Ret -> PolylineMeshSizes = malloc(sizeof(*Ret -> PolylineMeshSizes) *
+					     NumPolylineMeshes);
+    Ret -> TotalPolylineMeshes = NumPolylineMeshes;
+    if (!Ret  -> PolylineMeshSizes) {
+	ITDParserFree(Ret);
+	return NULL;
+    }
+    memset(Ret -> PolylineMeshSizes, 0,
+	 sizeof(*Ret -> PolylineMeshSizes) *
+	     Ret -> TotalPolylineMeshes);
+    return Ret;
+}
 
 static void CreateCube(VertexStruct *Vertices)
 {
@@ -63,10 +164,10 @@ static void CreateCube(VertexStruct *Vertices)
 				     
 }
 
-static void CreateCubeTopology(int *Topology)
+static void CreateCubeTopology(int *Topology, int *Sizes)
 {
     /*     
-       4----0
+       4----0 Add 1 to go to back side.
        |    |
        6----2
     */
@@ -92,44 +193,5 @@ static void CreateCubeTopology(int *Topology)
     };
 
     memcpy(Topology, Arr, sizeof(Arr));
-}
-
-
-ITDPARSER_API MeshStruct *ITDParserParse(const char *Path)
-{
-    MeshStruct
-	*Ret = malloc(sizeof(*Ret));
-    if (!Ret)
-	return NULL;
-    memset(Ret, 0, sizeof(*Ret));
-    Ret -> Vertices = malloc(sizeof(*Ret -> Vertices) * 24);
-    Ret -> TotalVertices = 24;
-    CreateCube(Ret -> Vertices);
-
-    Ret -> PolygonIndices = malloc(sizeof(*Ret -> PolygonIndices) * 36);
-    Ret -> PolygonMeshSizes = malloc(sizeof(*Ret -> PolygonMeshSizes));
-    Ret -> PolygonMeshSizes[0] = 36;
-    CreateCubeTopology(Ret -> PolygonIndices);
-
-    Ret -> TotalPolygonIndices = 36;
-    Ret -> TotalPolygonMeshes = 1;
-
-    Ret -> PolylineIndices = Ret -> PolylineMeshSizes = NULL;
-    Ret -> TotalPolylineIndices = 0;
-    Ret -> TotalPolylineMeshes = 0;
-
-    IPObjectStruct *PObj = IritPrsrAllocObject("hello", 0, NULL);
-    return Ret;
-}
-
-ITDPARSER_API void ITDParserFree(MeshStruct *Mesh)
-{
-    free(Mesh -> PolygonIndices);
-    free(Mesh -> PolygonMeshSizes);
-
-    free(Mesh -> PolylineIndices);
-    free(Mesh -> PolylineMeshSizes);
-
-    free(Mesh -> Vertices);
-    free(Mesh);
+    Sizes[0] = sizeof(Arr) / sizeof(*Arr);
 }
