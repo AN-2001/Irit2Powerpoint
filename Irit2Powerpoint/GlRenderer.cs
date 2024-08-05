@@ -12,13 +12,12 @@ namespace Irit2Powerpoint
         #version 330 core
         layout (location = 0) in vec3 Pos;
         layout (location = 1) in vec3 Normal;
-        uniform mat4 Mat;
 
         out vec3 Norm;
         
         void main()
         {
-            gl_Position = vec4(Pos * 0.25, 1.f) * Mat;
+            gl_Position = vec4(Pos * 0.25, 1.f);
             Norm = Normal;
         }"; 
         
@@ -39,7 +38,6 @@ namespace Irit2Powerpoint
         private GlResourceManager ResourceManager;
         private GlResource ActiveResource;
         private bool Loaded;
-        private float t;
 
         public GlRenderer(IntPtr hWnd)
         {
@@ -56,9 +54,8 @@ namespace Irit2Powerpoint
             ResourceManager = new GlResourceManager();
             InitShader();
 
-            GL.ClearColor(new Color4(0.2f, 0.3f, 0.3f, 1.0f));
+            GL.ClearColor(new Color4(0.0f, 0.0f, 0.0f, 0.0f));
             Loaded = false;
-            t = 0.0f;
         }
 
         private void InitShader()
@@ -122,11 +119,6 @@ namespace Irit2Powerpoint
         {
             GL.UseProgram(MainProgram);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            OpenTK.Matrix4 T = OpenTK.Matrix4.CreateRotationY(t);
-            T = T * OpenTK.Matrix4.CreateRotationX(2 * t);
-            T = T * OpenTK.Matrix4.CreateRotationZ(4 * t);
-            int Location = GL.GetUniformLocation(MainProgram, "Mat");
-            GL.UniformMatrix4(Location, false, ref T);
             if (Loaded)
             {
                 GL.BindVertexArray(ActiveResource.VAO);
@@ -135,10 +127,8 @@ namespace Irit2Powerpoint
             }
 
             Context.SwapBuffers();
-
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
             GL.BindVertexArray(0);
-            t += 0.01f;
         }
 
         public void SetActiveModel(string Filepath)
