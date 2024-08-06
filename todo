@@ -1,0 +1,4 @@
+* Parse lists of polygons(Implement multiple meshes)
+* Trianglialize freeforms
+* Add polyline support
+* Parse color

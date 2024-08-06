@@ -17,7 +17,7 @@ namespace Irit2Powerpoint
         
         void main()
         {
-            gl_Position = vec4(Pos * 0.25, 1.f);
+            gl_Position = vec4(Pos, 1.f);
             Norm = Normal;
         }"; 
         
@@ -28,7 +28,7 @@ namespace Irit2Powerpoint
 
         void main()
         {
-            FragColor = vec4(abs(Norm), 1.0f);
+            FragColor = vec4(Norm, 1.0f);
         }";
 
         private int MainProgram;

@@ -74,6 +74,7 @@ namespace Irit2Powerpoint
             this.x = x;
             this.y = y;
             SetWindowPos(hWnd, IntPtr.Zero, x, y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE);
+            InvalidateRect(this.hWnd, IntPtr.Zero, true);
         }
 
         public void SetSize(int w, int h)
@@ -83,6 +84,7 @@ namespace Irit2Powerpoint
 
             SetWindowPos(hWnd, IntPtr.Zero, 0, 0, w, h, SWP_NOMOVE | SWP_NOACTIVATE);
             Renderer.UpdateViewport(w, h);
+            InvalidateRect(this.hWnd, IntPtr.Zero, true);
         }
 
         public void SetActiveModel(string Filepath)
@@ -93,7 +95,7 @@ namespace Irit2Powerpoint
         public void SetVisibility(bool Visib)
         {
             ShowWindow(this.hWnd, Visib ? SW_SHOW : SW_HIDE);
-            Renderer.Render();
+            InvalidateRect(this.hWnd, IntPtr.Zero, true);
         }
         private IntPtr WindowProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam)
         {
