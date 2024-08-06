@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef ITDPARSER_EXPORTS
 #define ITDPARSER_API __declspec(dllexport)
 #else
@@ -11,13 +13,9 @@ typedef ITDPARSER_API struct VertexStruct {
 
 typedef ITDPARSER_API struct MeshStruct {
     VertexStruct *Vertices;
-    int *PolygonIndices,
-        *PolylineIndices,
-        *PolygonMeshSizes, 
+    int *PolygonMeshSizes, 
         *PolylineMeshSizes, 
         TotalVertices,
-        TotalPolygonIndices,
-        TotalPolylineIndices,
         TotalPolygonMeshes,
         TotalPolylineMeshes;
 } MeshStruct;

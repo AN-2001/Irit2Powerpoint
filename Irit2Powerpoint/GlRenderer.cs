@@ -17,7 +17,7 @@ namespace Irit2Powerpoint
         
         void main()
         {
-            gl_Position = vec4(Pos * 0.25, 1.f);
+            gl_Position = vec4(Pos * 0.25f, 1.f);
             Norm = Normal;
         }"; 
         
@@ -28,7 +28,7 @@ namespace Irit2Powerpoint
 
         void main()
         {
-            FragColor = vec4(abs(Norm), 1.0f);
+            FragColor = vec4(vec3(1.0f), 1.0f);
         }";
 
         private int MainProgram;
@@ -122,12 +122,13 @@ namespace Irit2Powerpoint
             if (Loaded)
             {
                 GL.BindVertexArray(ActiveResource.VAO);
-                GL.BindBuffer(BufferTarget.ElementArrayBuffer, ActiveResource.EBO);
-                GL.DrawElements(BeginMode.Triangles, ActiveResource.NumElements, DrawElementsType.UnsignedInt, 0);
+                foreach (GlMeshRecord Record in ActiveResource.PolygonRecords)
+                    GL.DrawArrays(PrimitiveType.Triangles, Record.Offset, Record.NumElements);
+                foreach (GlMeshRecord Record in ActiveResource.PolylineRecords)
+                    GL.DrawArrays(PrimitiveType.Lines, Record.Offset, Record.NumElements);
             }
 
             Context.SwapBuffers();
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
             GL.BindVertexArray(0);
         }
 

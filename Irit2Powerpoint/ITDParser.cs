@@ -23,8 +23,7 @@ namespace Irit2Powerpoint
         public struct ITDMesh
         {
             public VertexStruct[] Vertecies; /* All the vertecies that this ITD file uses. */
-            public int[] PolygonIndiecs, PolylineIndices, /* Stores indices into the vertices array. */
-                         PolygonMeshSizes, /* The number of polygon meshes is the length of this array. */
+            public int[] PolygonMeshSizes, /* The number of polygon meshes is the length of this array. */
                          PolylineMeshSizes; /* The number of polyline meshes is the length of this array. */
         }
 
@@ -32,10 +31,8 @@ namespace Irit2Powerpoint
         private struct MeshStruct
         {
             public IntPtr Vertices;
-            public IntPtr PolygonIndices, PolylineIndices,
-                          PolygonMeshSizes, PolylineMeshSizes;
-            public int TotalVertices, TotalPolygonIndices, TotalPolylineIndices,
-                       TotalPolygonMeshes, TotalPolylineMeshes;
+            public IntPtr PolygonMeshSizes, PolylineMeshSizes;
+            public int TotalVertices, TotalPolygonMeshes, TotalPolylineMeshes;
         }
 
         [DllImport("ITDParser.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -70,18 +67,12 @@ namespace Irit2Powerpoint
             ITDMesh Ret;
             int i;
 
-            Ret.PolygonIndiecs = new int[Mesh.TotalPolygonIndices];
-            Ret.PolylineIndices = new int[Mesh.TotalPolylineIndices];
             Ret.PolygonMeshSizes = new int[Mesh.TotalPolygonMeshes];
             Ret.PolylineMeshSizes = new int[Mesh.TotalPolylineMeshes];
             Ret.Vertecies = new VertexStruct[Mesh.TotalVertices];
 
-            if (Mesh.TotalPolygonIndices > 0)
-                Marshal.Copy(Mesh.PolygonIndices, Ret.PolygonIndiecs, 0, Mesh.TotalPolygonIndices);
             if (Mesh.TotalPolygonMeshes > 0)
                 Marshal.Copy(Mesh.PolygonMeshSizes, Ret.PolygonMeshSizes, 0, Mesh.TotalPolygonMeshes);
-            if (Mesh.TotalPolylineIndices > 0)
-                Marshal.Copy(Mesh.PolylineIndices, Ret.PolylineIndices, 0, Mesh.TotalPolylineIndices);
             if (Mesh.TotalPolylineMeshes > 0)
                 Marshal.Copy(Mesh.PolylineMeshSizes, Ret.PolylineMeshSizes, 0, Mesh.TotalPolylineMeshes);
             /* Structs have to copied like this sadly... */

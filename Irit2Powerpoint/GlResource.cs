@@ -10,35 +10,41 @@ using System.Windows.Forms;
 
 namespace Irit2Powerpoint
 {
+    class GlMeshRecord
+    {
+        public int Offset;
+        public int NumElements;
+        public GlMeshRecord(int Offset, int NumElements)
+        {
+            this.Offset = Offset;
+            this.NumElements = NumElements;
+        }
+    }
 
     class GlResource
     {
-        public int VAO, VBO, EBO, NumElements, NumVertices;
+        public int VAO, VBO;
+
+        /* Mesh records, stores offsets + vertex count. */
+        public List<GlMeshRecord> PolygonRecords, PolylineRecords;
 
         public GlResource(string Filepath)
         {
             ITDParser.ITDMesh
                 Mesh = ITDParser.Parse(Filepath);
+            int 
+                NumVertices = Mesh.Vertecies.Length;
 
-            this.NumElements = Mesh.PolygonMeshSizes[0];
-            this.NumVertices = Mesh.Vertecies.Length;
-
+            GenRecords(Mesh);
             GL.GenVertexArrays(1, out this.VAO);
             GL.GenBuffers(1, out this.VBO);
-            GL.GenBuffers(1, out this.EBO);
 
             GL.BindVertexArray(this.VAO);
             GL.BindBuffer(BufferTarget.ArrayBuffer, this.VBO);
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, this.EBO);
 
             GL.BufferData(BufferTarget.ArrayBuffer,
-                    this.NumVertices * ITDParser.VERTEX_STRUCT_SIZE,
+                    NumVertices * ITDParser.VERTEX_STRUCT_SIZE,
                     Mesh.Vertecies,
-                    BufferUsageHint.StaticDraw);
-
-            GL.BufferData(BufferTarget.ElementArrayBuffer,
-                    this.NumElements * sizeof(int),
-                    Mesh.PolygonIndiecs,
                     BufferUsageHint.StaticDraw);
 
             GL.VertexAttribPointer(0,
@@ -59,14 +65,33 @@ namespace Irit2Powerpoint
             GL.EnableVertexArrayAttrib(this.VAO, 1);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
             GL.BindVertexArray(0);
+        }
+
+        private void GenRecords(ITDParser.ITDMesh Mesh)
+        {
+            int 
+                Offset = 0;
+
+            this.PolygonRecords = new List<GlMeshRecord>();
+            foreach(int Size in Mesh.PolygonMeshSizes)
+            {
+                this.PolygonRecords.Add(new GlMeshRecord(Offset, Size));
+                Offset = Offset + Size;
+            }
+
+            this.PolylineRecords = new List<GlMeshRecord>();
+            foreach(int Size in Mesh.PolylineMeshSizes)
+            {
+                this.PolylineRecords.Add(new GlMeshRecord(Offset, Size));
+                Offset = Offset + Size;
+            }
+
         }
 
         public void Destroy()
         {
             GL.DeleteVertexArray(VAO);
-            GL.DeleteBuffer(EBO);
             GL.DeleteBuffer(VBO);
         }
     }
