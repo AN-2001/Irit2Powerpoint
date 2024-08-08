@@ -17,7 +17,7 @@ namespace Irit2Powerpoint
         
         void main()
         {
-            gl_Position = vec4(Pos, 1.f);
+            gl_Position = vec4(Pos * 0.25f, 1.f);
             Norm = Normal;
         }"; 
         

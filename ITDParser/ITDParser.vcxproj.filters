@@ -18,12 +18,18 @@
     <ClInclude Include="ITDParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="objectProcessor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ITDParser.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="dllmain.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="objectProcessor.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

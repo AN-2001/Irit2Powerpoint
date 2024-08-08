@@ -4,6 +4,14 @@
 #include "ITDParser.h"
 #include <stdlib.h>
 #include <memory.h>
+#include <stdio.h>
+#include "inc_irit/allocate.h"
+#include "inc_irit/attribut.h"
+#include "inc_irit/geom_lib.h"
+#include "inc_irit/user_lib.h"
+#include "inc_irit/ip_cnvrt.h"
+#include "objectProcessor.h"
+
 
 #define ITD_PRSR_SUCCESS (1)
 #define ITD_PRSR_FAILURE (0)
@@ -15,80 +23,38 @@ static MeshStruct *ITDParserAllocStruct(int NumVertices,
 				        int NumPolygonMeshes,
 				        int NumPolylineIndices,
 				        int NumPolylineMeshes);
-static IPObjectStruct *LoadObjectFromFile(const char *FileName);
 static int CountGeom(IPObjectStruct *PObj, int *Vertex, int *Polygon);
 static int PopulateGeom(MeshStruct *Mesh, IPObjectStruct *PObj);
-
-IPObjectStruct *ConvertPolysTriangles(IPObjectStruct *PObj)
-{
-    IPObjectStruct *PTris;
-    int MinWeight = IritMiscAttrIDGetObjectIntAttrib(PObj,
-					     IRIT_ATTR_CREATE_ID(MinWeight));
-
-    if (!IP_ATTR_IS_BAD_INT(MinWeight) && MinWeight) {
-	/* Do min weighted triangulation. */
-	IPPolygonStruct
-	    *Tris = IritGeomTriangulatePolygonList(PObj -> U.Pl);
-
-	if (Tris == NULL)
-	    return NULL;
-
-	PTris = IritPrsrGenPOLYObject(Tris);
-    }
-    else
-	PTris = IritGeomConvertPolysToTriangles(PObj);
-
-    if (PTris == NULL)
-	return NULL;
-    return PTris;
-}
 
 ITDPARSER_API MeshStruct *ITDParserParse(const char *Path)
 {
     MeshStruct *Mesh;
-    IPObjectStruct *AsTris, *PObj;
+    IPObjectStruct *PObj;
     int 
 	NumVertices = 0,
 	NumTris = 0;
 
-    IritPrsrSetPolyListCirc(TRUE);
-    IritBoolSetHandleCoplanarPoly(TRUE);
-    PObj = LoadObjectFromFile(Path);
+    PObj = LoadFromFile(Path);
     if (!PObj)
 	return NULL;
-    AsTris = ConvertPolysTriangles(PObj);
-    IrtHmgnMatType Mat;
-    IrtPtType C;
 
-    IRIT_PT_ADD(C, AsTris -> BBox[0], AsTris -> BBox[1]);
-    IRIT_PT_SCALE(C, 0.5f);
-
-    C[0] -= 0.5f;
-    C[1] -= 0.5f;
-    C[2] -= 0.5f;
-
-    IritMiscMatGenMatUnifScaleCenter(1.0, C, Mat);
-    AsTris = IritGeomTransformObjectList(AsTris, Mat);
-    AsTris = IritGeomTransformObj2UnitSize(AsTris);
-    IritPrsrFreeObject(PObj);
-
-    if (!CountGeom(AsTris, &NumVertices, &NumTris)) {
+    if (!CountGeom(PObj, &NumVertices, &NumTris)) {
 	IritPrsrFreeObject(PObj);
 	return NULL;
     }
 
     Mesh = ITDParserAllocStruct(NumVertices, NumTris * 3, 1, 0, 0);
     if (!Mesh) {
-	IritPrsrFreeObject(AsTris);
+	IritPrsrFreeObject(PObj);
 	return NULL;
     }
 
-    if (!PopulateGeom(Mesh, AsTris)) {
-	IritPrsrFreeObject(AsTris);
+    if (!PopulateGeom(Mesh, PObj)) {
+	IritPrsrFreeObject(PObj);
 	ITDParserFree(Mesh);
 	return NULL;
     }
-    IritPrsrFreeObject(AsTris);
+    IritPrsrFreeObjectList(PObj);
     return Mesh;
 }
 
@@ -103,6 +69,8 @@ ITDPARSER_API void ITDParserFree(MeshStruct *Mesh)
     free(Mesh -> Vertices);
     free(Mesh);
 }
+
+
 static MeshStruct *ITDParserAllocStruct(int NumVertices,
 				        int NumPolygonIndices,
 				        int NumPolygonMeshes,
@@ -303,19 +271,18 @@ static IPObjectStruct *LoadObjectFromFile(const char *FileName)
 static int CountGeom(IPObjectStruct *PObj, int *Vertex, int *Polygon)
 {
     IPPolygonStruct *PolyIter;
-    IPVertexStruct *VertIter, *Tmp;
+    IPVertexStruct *VertIter;
     if (!PObj || !Vertex || !Polygon)
 	return ITD_PRSR_FAILURE;
     *Vertex = *Polygon = 0;
-    if (!IP_IS_POLYGON_OBJ(PObj))
-	return ITD_PRSR_FAILURE;
+    
     PolyIter = PObj -> U.Pl;
     while (PolyIter) {
-	Tmp = VertIter = PolyIter -> PVertex;
+	VertIter = PolyIter -> PVertex;
 	do {
 	    (*Vertex)++;
 	    VertIter = VertIter -> Pnext;
-	} while (VertIter && VertIter != Tmp);
+	} while (VertIter && VertIter != PolyIter -> PVertex);
 	(*Polygon)++;
 	PolyIter = PolyIter -> Pnext;
     }
@@ -324,12 +291,13 @@ static int CountGeom(IPObjectStruct *PObj, int *Vertex, int *Polygon)
 static int PopulateGeom(MeshStruct *Mesh, IPObjectStruct *PObj)
 {
     IPPolygonStruct *PolyIter;
-    IPVertexStruct *VertIter, *Tmp;
+    IPVertexStruct *VertIter;
     int vk, lk;
+
     PolyIter = PObj -> U.Pl;
     vk = lk = 0;
     while (PolyIter) {
-	Tmp = VertIter = PolyIter -> PVertex;
+	VertIter = PolyIter -> PVertex;
 	do {
 	    Mesh -> Vertices[vk++] = (VertexStruct){.x = VertIter -> Coord[0],
 	                                            .y = VertIter -> Coord[1],
@@ -338,7 +306,7 @@ static int PopulateGeom(MeshStruct *Mesh, IPObjectStruct *PObj)
 	                                            .ny = PolyIter -> Plane[1],
 	                                            .nz = PolyIter -> Plane[2]};
 	  VertIter = VertIter -> Pnext;
-	} while (VertIter && VertIter != Tmp);
+	} while (VertIter && VertIter != PolyIter -> PVertex);
 	Mesh -> PolygonIndices[lk + 0] = lk + 0;
 	Mesh -> PolygonIndices[lk + 1] = lk + 1;
 	Mesh -> PolygonIndices[lk + 2] = lk + 2;

@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef ITDPARSER_EXPORTS
 #define ITDPARSER_API __declspec(dllexport)
 #else
