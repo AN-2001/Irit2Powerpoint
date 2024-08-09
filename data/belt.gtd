@@ -1,0 +1,288 @@
+[OBJECT
+    [IsActiveScene 1]
+    [OGL_SETUP 1]
+    [OGL_WIN_PROPS_WIN_0 "ObjSpc 0;Persp 0;PerspAngle 45;BgClr 30,50,115;TopRightBgClr 100,135,220;BotLeftBgClr 150,160,234;BotRightBgClr 155,170,230;GradientBgClr 0;AmbntIntnsty 140,45,100;DepthCue 0;DepthCueDnsty 1;DepthCueClr 0,0,0;ClipPlnNear -10;ClipPlnFar 10;AntiAlias 1;TwoLights 0;"]
+    [GRID_SHADOW_PROPS "0001CDCDCDCDCDCD0000000000001440000000000000E03F010000CDCDCDCDCD00000000000024400000000000002440000000000000000000000000000024C000000000000024C0000000000000000000000000000024400000000000000000000000000000244000000000000024C0000000000000000000000000000024C0000000000000000000000000000024400000000000002440000000000000000000000000000024C000000000000024C0000000000000000000000000000000000000000000000000745F360001745F360001745F360001141414000114141400011414140001CDCD9A9999999999C93F0000000000001440640625EEFB25F13F00000000000000400A000000808040000101CDCD0500000000CDCDCDCDCDCDCD"]
+    [OGL_CAMERA_PROPS_WIN_0 "0100000028F1420600000040B42D03C0000000006A73B93F000000008EF61E4000000040B42D03C0000000006A73B93F00000000000000000000000000000000000000000000F03F000000000000000000000000008046400000000078E8190000000000000024C00000000000002440000000000000F03F0000000000000000000000000000E03F"]
+    [WINDOWS_MANAGER_SETUP "layout2|name=Opengl;caption=;state=316;dir=5;layer=0;row=0;pos=0;prop=100000;bestw=20;besth=20;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Explorer;caption=Explorer;state=29362172;dir=2;layer=0;row=0;pos=0;prop=100000;bestw=235;besth=807;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Input;caption=Input;state=29362172;dir=3;layer=0;row=0;pos=1;prop=109453;bestw=1239;besth=100;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=3014;floaty=854;floatw=1255;floath=139|name=Output;caption=Output;state=29362172;dir=3;layer=0;row=0;pos=0;prop=90547;bestw=1239;besth=100;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Menu;caption=Menu;state=316;dir=1;layer=0;row=0;pos=0;prop=100000;bestw=1239;besth=150;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Windows;caption=Windows;state=2108156;dir=4;layer=10;row=0;pos=0;prop=100000;bestw=43;besth=152;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Views;caption=Views;state=2108156;dir=4;layer=10;row=0;pos=154;prop=100000;bestw=43;besth=342;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Panels;caption=Panels;state=2108156;dir=4;layer=10;row=0;pos=498;prop=100000;bestw=43;besth=304;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=RecentlyUsedIcons;caption=RecentlyUsedIcons;state=2108156;dir=4;layer=10;row=0;pos=804;prop=100000;bestw=43;besth=152;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|dock_size(5,0,0)=20|dock_size(2,0,0)=304|dock_size(3,0,0)=179|dock_size(1,0,0)=150|dock_size(4,10,0)=45|"]
+    [OGL_MANAGER_SETUP "layout2|name=Opengl1;caption=;state=316;dir=5;layer=0;row=0;pos=0;prop=100000;bestw=685;besth=329;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|dock_size(5,0,0)=313|"]
+    [SCENE_NAME "Scene"]
+    [HierItemExpanded 1]
+    GUIRIT_SCENE
+
+    [OBJECT [HierItemExpanded 1] GEOMETRY
+	[OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 1;RbPln 1;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [HierItemExpanded 1] 
+	    [HierarchyTreeIndex 0] [transp 0] 
+	    [rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
+	    [IrtMdlrPrms "FIRT_MDLR_BELT_CURVE;G\"BeltCrv_@000049\";LV7,0.22945 -1.46901 0.5,-1.63786 -0.305458 -0.21,-3.6643 -1.82407 0.19,-2.48772 0.57591 0.29,-0.0891931 2.33925 0.22,1.37614 1.5064 0.6,1.74678 -0.846251 0.18;R0.3599999999999999;R0.2;X2,1,0,0,0, 1;"] BELTCRV_@000049
+	    [OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 0;RbPln 0;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [SaveParamVals 1] 
+		[HierarchyTreeIndex 0] [transp 0] 
+		[rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] BELTCRV_@000049_1
+		[[SaveParamVals 1] CURVE BSPLINE 31 3 P3
+		    [KV 0. 0. 0. 1. 1.
+			 2. 2. 3. 3. 4.
+			 4. 5. 5. 6. 6.
+			 7. 7. 8. 8. 9.
+			 9. 10. 10. 11. 11.
+			 12. 12. 13. 13. 14.
+			 14. 15. 15. 15.]
+		    [1. -0.52292129691817 -1.88558824183901 0.]
+		    [1. -0.98853136220745 -1.04466182395079 0.]
+		    [1. -1.45414142749673 -0.20373540606257 0.]
+		    [0.53479531116006 -0.86362174163322 0.04628208116322 0.]
+		    [1. -1.80842463290103 -0.18295205727338 0.]
+		    [1. -2.51300386860393 -1.16393547744536 0.]
+		    [1. -3.21758310430683 -2.14491889761734 0.]
+		    [0.74231282131161 -2.60343911458137 -1.89152501199444 0.]
+		    [1. -3.93788318393273 -2.30119916644157 0.]
+		    [0.74231282131161 -3.24284323793991 -1.52489427928789 0.]
+		    [1. -4.16685886184394 -1.60060951046745 0.]
+		    [1. -3.62425603110247 -0.38030492050994 0.]
+		    [1. -3.08165320036101 0.83999966944756 0.]
+		    [0.96350715435126 -2.89850270176815 0.96833126245091 0.]
+		    [1. -2.86031297598492 1.10852099711394 0.]
+		    [1. -1.64098682727804 1.96151194342319 0.]
+		    [1. -0.42166067857116 2.81450288973244 0.]
+		    [0.90047828710458 -0.17300834243142 2.67898921389654 0.]
+		    [1. 0.07634040535801 2.89512647782928 0.]
+		    [1. 0.86323344849253 2.66079894470439 0.]
+		    [1. 1.65012649162705 2.4264714115795 0.]
+		    [0.79536100687141 1.87013468682783 1.76384766484444 0.]
+		    [1. 2.33592798641312 1.48622523514289 0.]
+		    [1. 2.31129436438525 0.31431296495538 0.]
+		    [1. 2.28666074235738 -0.85759930523212 0.]
+		    [0.88608099258182 2.02090633529767 -1.01015360503523 0.]
+		    [1. 2.04534060022545 -1.29620829574374 0.]
+		    [1. 1.37513800029225 -1.74090847596411 0.]
+		    [1. 0.70493540035904 -2.18560865618448 0.]
+		    [0.67820600577212 -0.04851674715489 -1.83171374552358 0.]
+		    [1. -0.52292129691817 -1.88558824183901 0.]
+		]
+	    ]
+	    [OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 0;RbPln 0;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [SaveParamVals 1] 
+		[HierarchyTreeIndex 1] [transp 0] 
+		[rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] BELTCRV_@000049_2
+		[[SaveParamVals 1] CURVE BSPLINE 31 3 P3
+		    [KV 0. 0. 0. 1. 1.
+			 2. 2. 3. 3. 4.
+			 4. 5. 5. 6. 6.
+			 7. 7. 8. 8. 9.
+			 9. 10. 10. 11. 11.
+			 12. 12. 13. 13. 14.
+			 14. 15. 15. 15.]
+		    [1. -0.20797517262684 -1.71120665223198 0.]
+		    [1. -0.67358523791612 -0.87028023434376 0.]
+		    [1. -1.1391953032054 -0.02935381645554 0.]
+		    [0.53479531116006 -0.84253927299882 0.40566423085388 0.]
+		    [1. -2.10082114644565 0.02705813025797 0.]
+		    [1. -2.80540038214855 -0.95392528991401 0.]
+		    [1. -3.50997961785145 -1.93490871008599 0.]
+		    [0.74231282131161 -2.67977073705096 -1.53971045372381 0.]
+		    [1. -3.75881055444949 -1.98889643931618 0.]
+		    [0.74231282131161 -2.90065579784754 -1.413056200607 0.]
+		    [1. -3.83791124318245 -1.74687455816148 0.]
+		    [1. -3.29530841244099 -0.52656996820398 0.]
+		    [1. -2.75270558169953 0.69373462175353 0.]
+		    [0.96350715435126 -2.62071192307836 0.73935029539267 0.]
+		    [1. -2.65395378928558 0.81353644486622 0.]
+		    [1. -1.4346276405787 1.66652739117547 0.]
+		    [1. -0.21530149187182 2.51951833748472 0.]
+		    [0.90047828710458 -0.11547544362474 2.3236162189252 0.]
+		    [1. -0.02640452900213 2.55009969848697 0.]
+		    [1. 0.76048851413239 2.31577216536208 0.]
+		    [1. 1.54738155726691 2.08144463223719 0.]
+		    [0.79536100687141 1.5792822152659 1.55170422330943 0.]
+		    [1. 1.9760074915082 1.49379077196431 0.]
+		    [1. 1.95137386948033 0.3218785017768 0.]
+		    [1. 1.92674024745246 -0.85003376841071 0.]
+		    [0.88608099258182 1.7054944825806 -0.83661581904731 0.]
+		    [1. 1.84630020007515 -0.99623676524791 0.]
+		    [1. 1.17609760014195 -1.44093694546828 0.]
+		    [1. 0.50589500020875 -1.88563712568865 0.]
+		    [0.67820600577212 0.03693348710622 -1.48200206790225 0.]
+		    [1. -0.20797517262684 -1.71120665223198 0.]
+		]
+	    ]
+	    [OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 1;RbPln 1;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [HierItemExpanded 1] 
+		[HierarchyTreeIndex 2] [transp 0] 
+		[rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] BELTCRV_@000049_3
+		[OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 0;RbPln 0;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [SaveParamVals 1] 
+		    [HierarchyTreeIndex 0] [transp 0] 
+		    [rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
+		    [GeomType 2] BELTCRV_@000049_3_1
+		    [[SaveParamVals 1] [GeomType 2] CURVE BEZIER 3 P3
+			[1. -0.20797517262684 -1.71120665223198 0.]
+			[0.91700814126864 -0.28226410015886 -0.61233687843172 0.]
+			[1. -1.1391953032054 -0.02935381645554 0.]
+		    ]
+		]
+		[OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 0;RbPln 0;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [SaveParamVals 1] 
+		    [HierarchyTreeIndex 1] [transp 0] 
+		    [rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
+		    [GeomType 2] BELTCRV_@000049_3_2
+		    [[SaveParamVals 1] [GeomType 2] CURVE BEZIER 3 P3
+			[1. -2.10082114644565 0.02705813025797 0.]
+			[0.94662255447942 -2.97186952504095 -0.67589021265483 0.]
+			[1. -3.50997961785145 -1.93490871008599 0.]
+		    ]
+		]
+		[OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 0;RbPln 0;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [SaveParamVals 1] 
+		    [HierarchyTreeIndex 2] [transp 0] 
+		    [rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
+		    [GeomType 2] BELTCRV_@000049_3_3
+		    [[SaveParamVals 1] [GeomType 2] CURVE BEZIER 3 P3
+			[1. -3.83791124318245 -1.74687455816148 0.]
+			[0.95612979519121 -2.79326242530078 -0.66242113462458 0.]
+			[1. -2.75270558169953 0.69373462175353 0.]
+		    ]
+		]
+		[OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 0;RbPln 0;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [SaveParamVals 1] 
+		    [HierarchyTreeIndex 3] [transp 0] 
+		    [rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
+		    [GeomType 2] BELTCRV_@000049_3_4
+		    [[SaveParamVals 1] [GeomType 2] CURVE BEZIER 3 P3
+			[1. -2.65395378928558 0.81353644486622 0.]
+			[0.9645130495741 -1.15849746107877 1.28544241497619 0.]
+			[1. -0.21530149187182 2.51951833748472 0.]
+		    ]
+		]
+		[OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 0;RbPln 0;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [SaveParamVals 1] 
+		    [HierarchyTreeIndex 4] [transp 0] 
+		    [rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
+		    [GeomType 2] BELTCRV_@000049_3_5
+		    [[SaveParamVals 1] [GeomType 2] CURVE BEZIER 3 P3
+			[1. -0.02640452900213 2.55009969848697 0.]
+			[0.88797244970978 0.56752640141518 1.69445240830718 0.]
+			[1. 1.54738155726691 2.08144463223719 0.]
+		    ]
+		]
+		[OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 0;RbPln 0;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [SaveParamVals 1] 
+		    [HierarchyTreeIndex 5] [transp 0] 
+		    [rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
+		    [GeomType 2] BELTCRV_@000049_3_6
+		    [[SaveParamVals 1] [GeomType 2] CURVE BEZIER 3 P3
+			[1. 1.9760074915082 1.49379077196431 0.]
+			[0.94342232090871 1.4523710407109 0.31183571493489 0.]
+			[1. 1.92674024745246 -0.85003376841071 0.]
+		    ]
+		]
+		[OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 0;RbPln 0;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [SaveParamVals 1] 
+		    [HierarchyTreeIndex 6] [transp 0] 
+		    [rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
+		    [GeomType 2] BELTCRV_@000049_3_7
+		    [[SaveParamVals 1] [GeomType 2] CURVE BEZIER 3 P3
+			[1. 1.84630020007515 -0.99623676524791 0.]
+			[0.88353976944523 0.83085094169151 -0.95923159247847 0.]
+			[1. 0.50589500020875 -1.88563712568865 0.]
+		    ]
+		]
+	    ]
+	    [OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 1;RbPln 1;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [HierItemExpanded 1] 
+		[HierarchyTreeIndex 3] [transp 0] 
+		[rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] BELTCRV_@000049_4
+		[OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 0;RbPln 0;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [SaveParamVals 1] 
+		    [HierarchyTreeIndex 0] [transp 0] 
+		    [rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
+		    [GeomType 2] BELTCRV_@000049_4_1
+		    [[SaveParamVals 1] [GeomType 2] CURVE BEZIER 3 P3
+			[1. -0.52292129691817 -1.88558824183901 0.]
+			[0.91700814126864 -1.2419103538922 -1.1436805790821 0.]
+			[1. -1.45414142749673 -0.20373540606257 0.]
+		    ]
+		]
+		[OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 0;RbPln 0;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [SaveParamVals 1] 
+		    [HierarchyTreeIndex 1] [transp 0] 
+		    [rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
+		    [GeomType 2] BELTCRV_@000049_4_2
+		    [[SaveParamVals 1] [GeomType 2] CURVE BEZIER 3 P3
+			[1. -1.80842463290103 -0.18295205727338 0.]
+			[0.94662255447942 -2.06265189256057 -1.32892455697465 0.]
+			[1. -3.21758310430683 -2.14491889761734 0.]
+		    ]
+		]
+		[OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 0;RbPln 0;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [SaveParamVals 1] 
+		    [HierarchyTreeIndex 2] [transp 0] 
+		    [rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
+		    [GeomType 2] BELTCRV_@000049_4_3
+		    [[SaveParamVals 1] [GeomType 2] CURVE BEZIER 3 P3
+			[1. -4.16685886184394 -1.60060951046745 0.]
+			[0.95612979519121 -3.82273930891681 -0.20466896698551 0.]
+			[1. -3.08165320036101 0.83999966944756 0.]
+		    ]
+		]
+		[OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 0;RbPln 0;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [SaveParamVals 1] 
+		    [HierarchyTreeIndex 3] [transp 0] 
+		    [rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
+		    [GeomType 2] BELTCRV_@000049_4_4
+		    [[SaveParamVals 1] [GeomType 2] CURVE BEZIER 3 P3
+			[1. -2.86031297598492 1.10852099711394 0.]
+			[0.9645130495741 -1.80797282862795 2.21384886761234 0.]
+			[1. -0.42166067857116 2.81450288973243 0.]
+		    ]
+		]
+		[OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 0;RbPln 0;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [SaveParamVals 1] 
+		    [HierarchyTreeIndex 4] [transp 0] 
+		    [rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
+		    [GeomType 2] BELTCRV_@000049_4_5
+		    [[SaveParamVals 1] [GeomType 2] CURVE BEZIER 3 P3
+			[1. 0.07634040535801 2.89512647782928 0.]
+			[0.88797244970978 0.87429396738444 2.72460563145345 0.]
+			[1. 1.65012649162705 2.4264714115795 0.]
+		    ]
+		]
+		[OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 0;RbPln 0;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
+		    [SaveParamVals 1] [HierarchyTreeIndex 5] 
+		    [transp 0] [rgb "255,255,0"] 
+		    [GeomType 2] BELTCRV_@000049_4_6
+		    [[SaveParamVals 1] [GeomType 2] CURVE BEZIER 3 P3
+			[1. 2.33592798641312 1.48622523514289 0.]
+			[0.94342232090871 2.56912531774642 0.28836151515191 0.]
+			[1. 2.28666074235738 -0.85759930523212 0.]
+		    ]
+		]
+		[OBJECT [ogl_obj_props "Shading 3;Visible 1;BFaceClr 180,50,150;FFaceClr 200,0,0;IsoSClr 255,255,0;PtsClr 55,255,64;WireClr 255,255,64;CtMshClr 225,255,180;SilhClr 140,255,220;DiscntClr 255,235,200;BndryClr 255,135,215;BBClr 90,190,220;VNrmlClr 150,190,255;PNrmlsClr 235,215,255;ShadowClr 0,0,0;ContoursClr 255,255,0;IsophotesClr 255,255,0;KnotLinesClr 55,255,255;ObjTransp 0;BBTransp 0;RelNLen 0.2;RelPtSize 0.05;RelLnWidth 1;RelNumIsosU 10;RelNumIsosV 10;RelNumIsosW 10;RelPlnFnns 0.001;RelPlnZOff 0.005;RelPgnFnns 0.005;CntrsXDir 0;CntrsYDir 0;CntrsZDir 1;CntrsNum 10;IsophXDir 0;IsophYDir 0;IsophZDir 1;IsophNum 10;UseObjClr 1;DrwBFace 1;DrwFFace 1;DrwWrfrm 0;DrwPts 0;DrwSolid 1;DrwBBox 0;DrwBBWrfrm 1;DrwBBSolid 0;DrwShdw 0;DrwRflctn 0;ClipPoles 0;SrfsOnly 1;DrwOrient 0;DrwVNrml 0;DrwPNrml 0;RvrsNrml 0;DrwIEdge 0;DrwKnotLns 0;DrwSSktch 0;DrwCtMsh 0;DrwPgns 1;DrwSIsos 1;DrwBndry 0;DrwSilh 0;DrwDiscnt 0;DrwCont 0;DrwIsoph 0;TwoPlsFlt 0;PgnOAprx 1;PlnOAprx 1;IgnrTrns 0;IgnrSlct 0;IgnrHglt 0;RbPgns 0;RbPln 0;SpclPwr 72;SpclInt 1;SbtrctBlnd 0;"] [SaveParamVals 1] 
+		    [HierarchyTreeIndex 6] [transp 0] 
+		    [rgb "255,255,0"] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
+		    [GeomType 2] BELTCRV_@000049_4_7
+		    [[SaveParamVals 1] [GeomType 2] CURVE BEZIER 3 P3
+			[1. 2.04534060022545 -1.29620829574374 0.]
+			[0.88353976944523 1.42326717251657 -1.85205537758426 0.]
+			[1. 0.70493540035904 -2.18560865618448 0.]
+		    ]
+		]
+	    ]
+	]
+    ]
+
+    [OBJECT [HierItemExpanded 1] [invisible 0] CAMERAS
+	[OBJECT [ProjectionType 0] [invisible 0] 
+	    [scale 1] [FOV 45] 
+	    [ClipPlane "-10 50"] [UpDir "0 0 1"] 
+	    [LookAt "0 0 0"] [camera] CAMERA1ORTHO_@000028
+	    [POINT 1. 1. 1.]
+	]
+	[OBJECT [ProjectionType 1] [invisible 0] 
+	    [scale 1] [FOV 45] 
+	    [ClipPlane "0.5 20"] [UpDir "0 0 1"] 
+	    [LookAt "0 0 0"] [camera] CAMERA2PERSP_@000033
+	    [POINT 8. 8. 4.]
+	]
+    ]
+
+    [OBJECT [HierItemExpanded 1] [invisible 0] LIGHT_SOURCES
+	[OBJECT [invisible 0] [type "POINT_INFTY"] 
+	    [AmbtRGB "25, 25, 25"] [rgb "255,255,255"] 
+	    [specular 1] [diffuse 1] 
+	    [ambient 1] [active 1] 
+	    [light_source] LIGHT1_@000038
+	    [POINT 1. 1. 3.]
+	]
+	[OBJECT [invisible 0] [type "POINT_INFTY"] 
+	    [AmbtRGB "25, 25, 25"] [rgb "255,255,255"] 
+	    [specular 1] [diffuse 1] 
+	    [ambient 1] [active 1] 
+	    [light_source] LIGHT2_@000043
+	    [POINT -1. -1. -3.]
+	]
+    ]
+]
