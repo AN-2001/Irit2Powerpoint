@@ -217,7 +217,7 @@
     </ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>25C832E3E78D494B7CE74000C8B905ED7E64D9D2</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>16DE37C0766A770FF260F1470B7F6471FDED0BCC</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
