@@ -47,6 +47,13 @@ namespace Irit2Powerpoint
         public void OnMouseMove(int x, int y)
         {
             /* Handle the mouse moving */
+            Renderer.OnMouseMove(x, y);
+        }
+
+        public void OnMouseWheel(int Wheel)
+        {
+            Renderer.OnMouseWheel(Wheel);
+
         }
 
         /* Called when the window detects a mouse press. */
@@ -102,6 +109,7 @@ namespace Irit2Powerpoint
             MouseButton MouseButton;
             MouseState MouseState;
             KeyState KeyState;
+            short WheelData;
             char Key;
 
             switch (uMsg)
@@ -146,6 +154,11 @@ namespace Irit2Powerpoint
                 KEY_EVENT:
                     Key = (char)wParam;
                     OnKey(Key, KeyState);
+                    InvalidateRect(this.hWnd, IntPtr.Zero, true);
+                    break;
+                case WM_MOUSEWHEEL:
+                    WheelData = (short)((long)wParam >> 16);
+                    OnMouseWheel(WheelData); 
                     InvalidateRect(this.hWnd, IntPtr.Zero, true);
                     break;
                 case WM_PAINT:

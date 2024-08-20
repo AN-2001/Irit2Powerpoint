@@ -72,5 +72,8 @@ namespace Irit2Powerpoint
         {
             return ((int)Num >> 16) & 0xffff;
         }
+
+        [DllImport("user32.dll")]
+        public static extern int GET_WHEEL_DELTA_WPARAM(IntPtr WParam);
     }
 }
