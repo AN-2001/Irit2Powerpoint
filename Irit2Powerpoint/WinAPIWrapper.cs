@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using System.Timers;
+using System.Diagnostics;
+
 
 namespace Irit2Powerpoint
 {
@@ -43,16 +44,63 @@ namespace Irit2Powerpoint
         }
         #endregion
 
+        int LastMouseX, LastMouseY;
+        int dx, dy;
+        bool IsMoving, IsRotating;
+
         /* Called when the window detects mouse movement. */
         public void OnMouseMove(int x, int y)
         {
+            OpenTK.Matrix4 Trans, Tmp;
+            float Zoom;
+
             /* Handle the mouse moving */
+            dx = x - LastMouseX;
+            dy = y - LastMouseY;
+            LastMouseX = x;
+            LastMouseY = y;
+
+            if (IsMoving)
+            {
+                Trans = Renderer.TransCtx.GetActiveWorld();
+                Zoom = Renderer.TransCtx.GetZoom();
+                Renderer.TransCtx.SetActiveWorld(Trans * OpenTK.Matrix4.CreateTranslation(dx * Zoom, -dy * Zoom, 0));
+            }
+
+            if (IsRotating)
+            {
+                Trans = Renderer.TransCtx.GetActiveWorld();
+                Zoom = Renderer.TransCtx.GetZoom();
+                Zoom = Math.Min(Zoom, 0.01f);
+                Tmp = OpenTK.Matrix4.CreateRotationY(dx * Zoom) * OpenTK.Matrix4.CreateRotationX(dy * Zoom);
+                Renderer.TransCtx.SetActiveWorld(Trans * Tmp);
+            }
         }
 
         /* Called when the window detects a mouse press. */
         public void OnMousePress(MouseButton Button, MouseState State)
         {
+
             /* Handle a mouse press */
+            if (State == MouseState.MOUSE_UP) {
+                Renderer.TransCtx.SaveActiveWorld();
+                IsMoving = false;
+                IsRotating = false;
+                return;
+            }
+
+
+            if (Button == MouseButton.MOUSE_BUTTON_RIGHT)
+                IsMoving = true;
+            if (Button == MouseButton.MOUSE_BUTTON_LEFT)
+                IsRotating = true;
+        }
+
+        /* Called when the mouse wheel moves. */
+        public void OnMouseWheel(int Direction)
+        {
+            /* Handle a mosue wheel move. */
+            Renderer.TransCtx.SetZoom(Direction);
         }
 
         /* Called when the window detects a key press. */
@@ -60,6 +108,8 @@ namespace Irit2Powerpoint
         public void OnKey(char Key, KeyState State)
         {
             /* Handle a key press. */
+            if (Key == 'R' && State == KeyState.KEY_DOWN)
+                Renderer.TransCtx.Reset();
         }
 
         /* Clean up function. */
@@ -103,6 +153,7 @@ namespace Irit2Powerpoint
             MouseState MouseState;
             KeyState KeyState;
             char Key;
+            int mouseWheel;
 
             switch (uMsg)
             {
@@ -151,6 +202,11 @@ namespace Irit2Powerpoint
                 case WM_PAINT:
                     this.Renderer.Render();
                     ValidateRect(this.hWnd, IntPtr.Zero);
+                    break;
+                case WM_MOUSEWHEEL:
+                    mouseWheel = (short)( ((long)wParam >> 16) & 0xFFFF);
+                    OnMouseWheel(mouseWheel);
+                    InvalidateRect(this.hWnd, IntPtr.Zero, true);
                     break;
             }
             return DefWindowProc(hWnd, uMsg, wParam, lParam);
