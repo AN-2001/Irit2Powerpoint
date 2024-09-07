@@ -21,7 +21,10 @@ namespace Irit2Powerpoint
         {
             if (ResourceMap.ContainsKey(Filepath))
                 return ResourceMap[Filepath];
+
+            /* TODO: Think of a way to multi-threaded this so we don't block. */
             ResourceMap[Filepath] = new GlResource(Filepath);
+
             return ResourceMap[Filepath];
         }
 

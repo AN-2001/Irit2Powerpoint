@@ -32,6 +32,17 @@ namespace Irit2Powerpoint
         {
             ITDParser.ITDMesh
                 Mesh = ITDParser.Parse(Filepath);
+
+            InitFromMesh(Mesh);
+        }
+
+        public GlResource(ITDParser.ITDMesh Mesh)
+        {
+            InitFromMesh(Mesh);
+        }
+
+        private void InitFromMesh(ITDParser.ITDMesh Mesh)
+        {
             int 
                 NumVertices = Mesh.Vertecies.Length;
 
