@@ -138,14 +138,14 @@ static int PopulateGeom(MeshStruct *Mesh, IPObjectStruct *PObj)
     /* First populate polygons, then polylines. */    
     for (Iter = PObj, pc = 0; Iter; Iter = Iter -> Pnext) {
 	if (IP_IS_POLYGON_OBJ(Iter)) {
-	    n = PopulateGeomAux(Mesh, Iter, &vc, &pc); 
+	    n = PopulateGeomAux(Mesh, Iter, &vc); 
 	    Mesh -> PolygonMeshSizes[pc++] = n;
 	}
     }
 
     for (Iter = PObj, pc = 0; Iter; Iter = Iter -> Pnext) {
 	if (IP_IS_POLYLINE_OBJ(Iter)) {
-	    n = PopulateGeomAux(Mesh, Iter, &vc, &pc); 
+	    n = PopulateGeomAux(Mesh, Iter, &vc); 
 	    Mesh -> PolylineMeshSizes[pc++] = n;
 	}
     }
@@ -153,23 +153,99 @@ static int PopulateGeom(MeshStruct *Mesh, IPObjectStruct *PObj)
     return ITD_PRSR_SUCCESS;
 }
 
+static void GetColor(IPObjectStruct *PObj, double *r, double *g, double *b)
+{
+    int Colour, i, ri, gi, bi;
+    static int ColourTable[][4] =  {
+	{0, 0, 0, 0},
+	{1, 0, 0, 255},
+	{2, 0, 255, 0},
+	{3, 0, 255, 255},
+	{4, 255, 0, 0},
+	{5, 255, 0, 255},
+	{6, 50, 0, 0},
+	{7, 127, 127, 127},
+	{8, 63, 63, 63},
+	{9, 0, 0, 255},
+	{10, 0, 255, 0},
+	{11, 0, 255, 255},
+	{12, 255, 0, 0},
+	{13, 255, 0, 255},
+	{14, 255, 255, 0},
+	{15, 255, 255, 255},
+	{20, 50, 0, 0},
+	{56, 63, 63, 63},
+	{57, 0, 0, 255},
+	{58, 0, 255, 0},
+	{59, 0, 255, 255},
+	{60, 255, 0, 0},
+	{61, 255, 0, 255},
+	{62, 255, 255, 0},
+	{63, 255, 255, 255},
+	{-1, 0, 0, 0},
+    };
+
+
+    if (IritMiscAttrGetObjectRGBColor(PObj, &ri, &gi, &bi)) {
+	*r = ri / 255.0;
+	*g = bi / 255.0;
+	*b = gi / 255.0;
+	return;
+    }
+
+    if ((Colour = IritMiscAttrGetObjectColor(PObj)) != IP_ATTR_NO_COLOR) {
+	for (i = 0; ColourTable[i][0] != -1; i++) {
+	    if (Colour == ColourTable[i][0]) {
+		*r = ColourTable[i][1] / 255.0;
+		*g = ColourTable[i][2] / 255.0;
+		*b = ColourTable[i][3] / 255.0;
+		return;
+	    }
+	}
+    }
+
+    *r = 1.0;
+    *g = 0;
+    *b = 0;
+}
+
+static void GetUV(IPVertexStruct *Vert, double *u, double *v)
+{
+    float *UV;
+
+    if ((UV = IritMiscAttrGetUVAttrib(Vert -> Attr, "uvals") != NULL)) {
+	*u = UV[0];
+	*v = UV[1];
+	return;
+    }
+    *u = 0;
+    *v = 0;
+}
+
 static int PopulateGeomAux(MeshStruct *Mesh, IPObjectStruct *PObj, int *vc)
 {
     IPPolygonStruct *PolyIter;
     IPVertexStruct *VertIter;
+    double r, g, b, u, v;
     int NumVertices;
 
     PolyIter = PObj -> U.Pl;
+
+    GetColor(PObj, &r, &g, &b);
     NumVertices = 0;
     while (PolyIter) {
 	VertIter = PolyIter -> PVertex;
+	GetUV(VertIter, &u, &v);
 	do {
+	    /* Flip y and z. */
 	    Mesh -> Vertices[(*vc)++] = (VertexStruct){.x = VertIter -> Coord[0],
-						       .y = VertIter -> Coord[1],
-						       .z = VertIter -> Coord[2],
-						       .nx = PolyIter -> Plane[0],
-						       .ny = PolyIter -> Plane[1],
-						       .nz = PolyIter -> Plane[2]};
+						       .y = VertIter -> Coord[2],
+						       .z = VertIter -> Coord[1],
+						       .nx = VertIter -> Normal[0],
+						       .ny = VertIter -> Normal[2],
+						       .nz = VertIter -> Normal[1],
+						       .r = r, .g = g, .b = b,
+						       .u = u, .v = v};
 	    NumVertices++;
 	    VertIter = VertIter -> Pnext;
 	} while (VertIter && VertIter != PolyIter -> PVertex);

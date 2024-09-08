@@ -15,14 +15,10 @@ IPObjectStruct *LoadFromFile(const char *FileName)
 {
     IPObjectStruct *Loaded, *Tris;
 
-    /* Make sure all polygons are circular. */
-    IritPrsrSetPolyListCirc(TRUE);
 
-    IritPrsrSetFlattenObjects(FALSE);
     Loaded = LoadFromFileAux(FileName);
     Loaded = IritPrsrResolveInstances(Loaded);
 
-    IritPrsrFlattenInvisibleObjects(FALSE);
     Loaded = IritPrsrFlattenForrest(Loaded, TRUE);
     Tris = TriangulateObject(Loaded);
     IritPrsrFreeObjectList(Loaded);

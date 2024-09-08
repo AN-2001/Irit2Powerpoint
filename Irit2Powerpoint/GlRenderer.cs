@@ -2,6 +2,7 @@
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Graphics;
 using System.Diagnostics;
+using System.Threading;
 
 
 namespace Irit2Powerpoint
@@ -15,6 +16,8 @@ namespace Irit2Powerpoint
         #version 330 core
         layout (location = 0) in vec3 Pos;
         layout (location = 1) in vec3 Normal;
+        layout (location = 2) in vec3 Colour;
+        layout (location = 3) in vec2 uv;
 
         layout (std140) uniform Transforms
         {
@@ -22,6 +25,12 @@ namespace Irit2Powerpoint
             mat4 InvTranspose;
             mat4 View;
             mat4 Projection;
+        };
+    
+        layout (std140) uniform Lights
+        {
+            vec3 Position[3];
+            vec3 Colour[3];
         };
 
         vec4 LightPos = vec4(10.f, 10.f, 10.f, 1.f);
@@ -37,7 +46,7 @@ namespace Irit2Powerpoint
             vec3 ViewLight = (ModelView * LightPos).xyz;
 
             gl_Position = Projection * vec4(ViewPos, 1.f); 
-            Norm = ViewNorm;
+            Norm = Colour;
             vec3 ToLight = normalize(ViewLight - ViewPos);
             float DiffuseCoeff = max(dot(ToLight, ViewNorm), 0);
             
@@ -59,6 +68,8 @@ namespace Irit2Powerpoint
         #version 330 core
         layout (location = 0) in vec3 Pos;
         layout (location = 1) in vec3 Normal;
+        layout (location = 2) in vec3 Colour;
+        layout (location = 3) in vec2 uv;
 
         layout (std140) uniform Transforms
         {
@@ -67,6 +78,8 @@ namespace Irit2Powerpoint
             mat4 View;
             mat4 Projection;
         };
+        
+        out vec3 Col;
 
         void main()
         {
@@ -75,21 +88,25 @@ namespace Irit2Powerpoint
 
             gl_Position = Projection * vec4(ViewPos, 1.f); 
             gl_Position.z -= 0.0001f;
+            Col = Colour;
         }"; 
 
         public static readonly string CRV_FRAG = @"
         #version 330 core
         out vec4 FragColor;
+        in vec3 Col;
 
         void main()
         {
-            FragColor = vec4(vec3(1.0f, 1.0f, 0.0f), 1.0f);
+            FragColor = vec4(Col, 1.0f);
         }";
 
         public static readonly string GRID_VERT = @"
         #version 330 core
         layout (location = 0) in vec3 Pos;
         layout (location = 1) in vec3 Normal;
+        layout (location = 2) in vec3 Colour;
+        layout (location = 3) in vec2 uv;
 
         layout (std140) uniform Transforms
         {
@@ -175,7 +192,12 @@ namespace Irit2Powerpoint
             gl_FragDepth = computeDepth(fragPos3D);
         }";
     }
-    
+   
+    struct Constants
+    {
+        public static readonly string GRID_KEY = "_GRID_";
+    }
+
     struct TransformBlock
     {
         public OpenTK.Matrix4 World;
@@ -184,6 +206,19 @@ namespace Irit2Powerpoint
         public OpenTK.Matrix4 Projection;
         public static readonly int
             Size = OpenTK.BlittableValueType<TransformBlock>.Stride;
+    }
+
+    struct LightBlock
+    {
+        public OpenTK.Vector3 Position0;
+        public OpenTK.Vector3 Position1;
+        public OpenTK.Vector3 Position2;
+        public OpenTK.Vector3 Colour0;
+        public OpenTK.Vector3 Colour1;
+        public OpenTK.Vector3 Colour2;
+        public static readonly int
+            Size = OpenTK.BlittableValueType<LightBlock>.Stride;
+
     }
 
     class TransformContext
@@ -305,15 +340,21 @@ namespace Irit2Powerpoint
                                           new OpenTK.Vector3(0, 30 / Len, -10 / Len)));
             UpdateProjection();
         }
+
+        public void Destroy()
+        {
+            GL.DeleteBuffer(ubo);
+        }
     }
 
     class GlRenderer
     {
         private GraphicsContext Context;
         private OpenTK.Platform.IWindowInfo Info;
-        private GlResourceManager ResourceManager;
-        private GlResource ActiveResource, GridResource;
+        private GlResource ActiveResource;
         private bool Loaded;
+        private string LastPath;
+        private DateTime Time;
         public TransformContext TransCtx;
 
         public GlRenderer(IntPtr hWnd)
@@ -331,7 +372,6 @@ namespace Irit2Powerpoint
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-            ResourceManager = new GlResourceManager();
             CreateGridResource();
             ShaderSources.PolyProg = InitShader(ShaderSources.POLY_VERT,
                                                 ShaderSources.POLY_FRAG);
@@ -341,6 +381,8 @@ namespace Irit2Powerpoint
                                                 ShaderSources.GRID_FRAG);
             GL.ClearColor(new Color4(0.0f, 0.0f, 0.0f, 0.0f));
             Loaded = false;
+            LastPath = null;
+            Time = DateTime.Now;
         }
 
         private void CreateGridResource()
@@ -372,9 +414,14 @@ namespace Irit2Powerpoint
                 Grid.Vertecies[i].nx = 0;
                 Grid.Vertecies[i].ny = 0;
                 Grid.Vertecies[i].nz = 0;
+                Grid.Vertecies[i].r = 0;
+                Grid.Vertecies[i].g = 0;
+                Grid.Vertecies[i].b = 0;
+                Grid.Vertecies[i].u = 0;
+                Grid.Vertecies[i].v = 0;
             }
 
-            GridResource = new GlResource(Grid);
+            I2P.GetResourceManager().SetResource("_GRID_", Grid);
         }
 
         private int InitShader(string VertSrc, string FragSrc)
@@ -439,7 +486,21 @@ namespace Irit2Powerpoint
 
         public void Render()
         {
+            /* Keep trying to load, try once a second so we don't exhaust the CPU. */
+            if (!Loaded && LastPath != null)
+            {
+                TimeSpan
+                    Span = DateTime.Now - Time;
+                if (Span.TotalSeconds >= 1)
+                {
+                    SetActiveModel(LastPath);
+                    Time = DateTime.Now;
+                }
+            }
+
             TransCtx.PerformSync();
+
+            /* Draw loading screen here. */
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             if (Loaded)
@@ -455,6 +516,7 @@ namespace Irit2Powerpoint
                     GL.DrawArrays(PrimitiveType.LineStrip, Record.Offset, Record.NumElements);
             }
 
+            GlResource GridResource = I2P.GetResourceManager().GetResource(Constants.GRID_KEY);
 
             GL.BindVertexArray(GridResource.VAO);
                 GL.UseProgram(ShaderSources.GridProg);
@@ -468,15 +530,27 @@ namespace Irit2Powerpoint
 
         public void SetActiveModel(string Filepath)
         {
-            this.ActiveResource = ResourceManager.GetResource(Filepath);
-            TransCtx.Reset();
-            Loaded = true;
+            try
+            {
+                this.ActiveResource = I2P.GetResourceManager().GetResource(Filepath);
+                Loaded = true;
+                LastPath = null;
+                TransCtx.Reset();
+            }
+            catch (StillLoadingException)  
+            {
+                Loaded = false;
+                LastPath = Filepath;
+            }
+
         }
 
         public void Destroy()
         {
-            ResourceManager.Destroy();
-            GridResource.Destroy();
+            GL.DeleteProgram(ShaderSources.PolyProg);
+            GL.DeleteProgram(ShaderSources.CrvProg);
+            GL.DeleteProgram(ShaderSources.GridProg);
+            TransCtx.Destroy();
         }
 
         public static string GetErrorString(ErrorCode errorCode)

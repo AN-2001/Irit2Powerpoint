@@ -15,6 +15,8 @@ namespace Irit2Powerpoint
         {
             public double x, y, z;
             public double nx, ny, nz;
+            public double r, g, b;
+            public double u, v;
         }
 
         public static int VERTEX_STRUCT_SIZE = Marshal.SizeOf(typeof(VertexStruct));
@@ -50,7 +52,7 @@ namespace Irit2Powerpoint
             IntPtr /* Call C API to parse ITD file. */
                 Ret = ITDParserParse(PathAsBuilder);
             if (Ret == IntPtr.Zero)
-                throw new Exception($"Error parsing ITD file at {Path}");
+                throw new ParseException($"Error parsing ITD file at {Path}");
 
             /* Turn pointer into C# struct. */
             Struct = Marshal.PtrToStructure<MeshStruct>(Ret);

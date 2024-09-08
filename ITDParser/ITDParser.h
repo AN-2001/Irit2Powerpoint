@@ -9,6 +9,8 @@
 typedef ITDPARSER_API struct VertexStruct {
     double x, y, z;
     double nx, ny, nz;
+    double r, g, b;
+    double u, v;
 } VertexStruct;
 
 typedef ITDPARSER_API struct MeshStruct {

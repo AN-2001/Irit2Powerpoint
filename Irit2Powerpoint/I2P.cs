@@ -4,24 +4,63 @@ using Office = Microsoft.Office.Core;
 using System.Windows.Forms;
 using Microsoft.Office.Core;
 using System.Drawing;
+using System.Linq;
+using System.Windows.Forms;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Irit2Powerpoint
 {
-    public partial class ThisAddIn
+    public partial class I2P
     {
         private WindowWrapper GlWindow;
+        private GlResourceManager ResourceManager;
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
             /* Bind the event handlers. */
             this.Application.SlideShowBegin += NewSlideShow;
-            this.Application.SlideShowNextSlide += NextSlide;
+            this.Application.SlideShowNextSlide += SlideShowOnSlide;
+            this.Application.SlideShowOnNext += SlideShowOnSlide;
+            this.Application.SlideShowOnPrevious += SlideShowOnSlide;
             this.Application.SlideShowEnd += EndSlideShow;
             this.Application.SlideSelectionChanged += SlideChanged;
+            this.Application.AfterPresentationOpen += OnPresentation;
+
+            ResourceManager = new GlResourceManager();
 
             /* Reuse the same GLWindow accross different slides. */
             GlWindow = new WindowWrapper();
+        }
+
+        public void OnPresentation(PowerPoint.Presentation Presentation)
+        {
+            List<string> PathsInUse = GetPathsInUse();
+            foreach(string Str in PathsInUse)
+                ResourceManager.QueueLoadFromDisk(Str);
+        }
+
+        public static GlResourceManager GetResourceManager()
+        {
+            return Globals.I2P.ResourceManager;
+        }
+
+
+        private List<string> GetPathsInUse()
+        {
+            List<String> Paths = new List<string>();
+            int i;
+            PowerPoint.Shape Dummy;
+
+            for (i = 1; i <= Application.ActivePresentation.Slides.Count; i++)
+            {
+                if (GetDummyFromSlide(Application.ActivePresentation.Slides[i],
+                                out Dummy))
+                {
+                    Paths.Add(Dummy.Tags["I2PPATH"]);
+                }
+            }
+            return Paths;
         }
 
         public void SlideChanged(PowerPoint.SlideRange SldRange)
@@ -35,6 +74,7 @@ namespace Irit2Powerpoint
                                 out Dummy))
                     Dummy.Visible = MsoTriState.msoTrue;
             }
+            ResourceManager.ConsistencyCleanup(GetPathsInUse().ToArray());
         }
 
         public void InitDummyRect(string Path)
@@ -43,8 +83,9 @@ namespace Irit2Powerpoint
             PowerPoint.Slide
                 Slide = Application.ActiveWindow.View.Slide;
            
-            if (GetDummyFromSlide(Slide, out Dummy)) { 
-                MessageBox.Show("I2P: Window already exists.");
+            if (GetDummyFromSlide(Slide, out Dummy)) {
+                Dummy.Tags.Add("I2PPATH", Path);
+                ResourceManager.QueueLoadFromDisk(Path);
                 return;
             }
 
@@ -53,6 +94,7 @@ namespace Irit2Powerpoint
             Dummy.Tags.Add("I2PDUMMY", "true");
             Dummy.Tags.Add("I2PPATH", Path);
             Dummy.Fill.ForeColor.RGB = Color.FromArgb(100, 100, 100).ToArgb();
+            ResourceManager.QueueLoadFromDisk(Path);
         }
 
         /* Extracts the Irit2Powerpoint dummy from a slide. */
@@ -79,12 +121,14 @@ namespace Irit2Powerpoint
 
         void NewSlideShow(PowerPoint.SlideShowWindow Wn)
         {
+            ResourceManager.ConsistencyCleanup(GetPathsInUse().ToArray());
         }
 
         void EndSlideShow(PowerPoint.Presentation Pres)
         {
             /* Once a slide show ends hide the GL window. */
             GlWindow.SetVisibility(false);
+            ResourceManager.ConsistencyCleanup(GetPathsInUse().ToArray());
         }
 
         /* Helpers to use to position the window. */
@@ -106,11 +150,13 @@ namespace Irit2Powerpoint
         }
 
         /* Called when we go to a new slide in a slideshow. */
-        void NextSlide(PowerPoint.SlideShowWindow Wn)
+        void SlideShowOnSlide(PowerPoint.SlideShowWindow Wn)
         {
             PowerPoint.Shape Dummy;
             int x, y, w, h;
             string Path;
+
+            // MessageBox.Show("NEW SLIDE!");
 
             /* Check for the dummy and if it exists determine the size/position of the  */
             /* GLWindow from it. */
@@ -129,14 +175,17 @@ namespace Irit2Powerpoint
                 GlWindow.SetVisibility(true);
 
                 Path = Dummy.Tags["I2PPATH"];
-                GlWindow.SetActiveModel(Path);
+                GlWindow.GetRenderer().SetActiveModel(Path);
             } else
                 GlWindow.SetVisibility(false);
+
+            ResourceManager.ConsistencyCleanup(GetPathsInUse().ToArray());
         }
 
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
             GlWindow.Destroy();
+            ResourceManager.Destroy();
         }
 
         protected override Microsoft.Office.Core.IRibbonExtensibility CreateRibbonExtensibilityObject()

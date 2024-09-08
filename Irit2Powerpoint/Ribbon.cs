@@ -54,7 +54,7 @@ namespace Irit2Powerpoint
 
         public void OnButtonClick(Office.IRibbonControl Control)
         {
-            ThisAddIn AddIn = Globals.ThisAddIn;
+            I2P AddIn = Globals.I2P;
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
                 openFileDialog.Filter = "obj file (*.obj)|*.pptx|All files (*.*)|*.*";

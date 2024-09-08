@@ -1,4 +1,15 @@
-- Add proper error handling
-- Stop stupid error when there's already a dummy in a slide
-- Add color support
-- Add proper lights
+- Add color support [ DONE ]
+- Add UV support [ DONE ]
+- Add multi-threading for loading models [ DONE ]
+- decouple resource manager from the renderer [ DONE ]
+- Handle memory properly in the renderer [ DONE ]
+- load all models on start up [ DONE ]
+- Stop stupid error when there's already a dummy in a slide [ DONE ]
+- Add proper error handling [ DONE ]
+- Add light support, only support 3 lights, maybe render light objects [ DONE ]
+- Implement loading screen [ ]
+- Add arc-ball controls [ ]
+- Implement proper model normalization on laod, perhaps do it in C [ ]
+- Make rotation respond to mouse depth [ ]
+- Extend C API, make it possible to pass more arguments, add those as GUI elements [ ]
+- Store the settings specified in the UI in the GlResource [ ]

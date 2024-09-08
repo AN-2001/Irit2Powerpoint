@@ -10,7 +10,7 @@ using System.Windows.Forms;
 
 namespace Irit2Powerpoint
 {
-    class GlMeshRecord
+    public class GlMeshRecord
     {
         public int Offset;
         public int NumElements;
@@ -21,27 +21,14 @@ namespace Irit2Powerpoint
         }
     }
 
-    class GlResource
+    public class GlResource
     {
         public int VAO, VBO;
 
         /* Mesh records, stores offsets + vertex count. */
         public List<GlMeshRecord> PolygonRecords, PolylineRecords;
 
-        public GlResource(string Filepath)
-        {
-            ITDParser.ITDMesh
-                Mesh = ITDParser.Parse(Filepath);
-
-            InitFromMesh(Mesh);
-        }
-
         public GlResource(ITDParser.ITDMesh Mesh)
-        {
-            InitFromMesh(Mesh);
-        }
-
-        private void InitFromMesh(ITDParser.ITDMesh Mesh)
         {
             int 
                 NumVertices = Mesh.Vertecies.Length;
@@ -72,8 +59,24 @@ namespace Irit2Powerpoint
                 ITDParser.VERTEX_STRUCT_SIZE,
                 3 * sizeof(double));
 
+            GL.VertexAttribPointer(2,
+                3,
+                VertexAttribPointerType.Double,
+                false,
+                ITDParser.VERTEX_STRUCT_SIZE,
+                6 * sizeof(double));
+
+            GL.VertexAttribPointer(3,
+                2,
+                VertexAttribPointerType.Double,
+                false,
+                ITDParser.VERTEX_STRUCT_SIZE,
+                9 * sizeof(double));
+
             GL.EnableVertexArrayAttrib(this.VAO, 0);
             GL.EnableVertexArrayAttrib(this.VAO, 1);
+            GL.EnableVertexArrayAttrib(this.VAO, 2);
+            GL.EnableVertexArrayAttrib(this.VAO, 3);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
             GL.BindVertexArray(0);

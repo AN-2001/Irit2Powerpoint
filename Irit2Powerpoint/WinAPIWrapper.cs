@@ -137,11 +137,6 @@ namespace Irit2Powerpoint
             InvalidateRect(this.hWnd, IntPtr.Zero, true);
         }
 
-        public void SetActiveModel(string Filepath)
-        {
-            Renderer.SetActiveModel(Filepath);
-        }
-
         public void SetVisibility(bool Visib)
         {
             ShowWindow(this.hWnd, Visib ? SW_SHOW : SW_HIDE);
@@ -210,6 +205,11 @@ namespace Irit2Powerpoint
                     break;
             }
             return DefWindowProc(hWnd, uMsg, wParam, lParam);
+        }
+
+        public GlRenderer GetRenderer()
+        {
+            return this.Renderer;
         }
 
         public enum MouseButton

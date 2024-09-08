@@ -15,7 +15,7 @@ namespace Irit2Powerpoint {
     /// 
     [Microsoft.VisualStudio.Tools.Applications.Runtime.StartupObjectAttribute(0)]
     [global::System.Security.Permissions.PermissionSetAttribute(global::System.Security.Permissions.SecurityAction.Demand, Name="FullTrust")]
-    public sealed partial class ThisAddIn : Microsoft.Office.Tools.AddInBase {
+    public sealed partial class I2P : Microsoft.Office.Tools.AddInBase {
         
         internal Microsoft.Office.Tools.CustomTaskPaneCollection CustomTaskPanes;
         
@@ -28,7 +28,7 @@ namespace Irit2Powerpoint {
         /// 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Never)]
-        public ThisAddIn(global::Microsoft.Office.Tools.Factory factory, global::System.IServiceProvider serviceProvider) : 
+        public I2P(global::Microsoft.Office.Tools.Factory factory, global::System.IServiceProvider serviceProvider) : 
                 base(factory, serviceProvider, "AddIn", "ThisAddIn") {
             Globals.Factory = factory;
         }
@@ -40,7 +40,7 @@ namespace Irit2Powerpoint {
         protected override void Initialize() {
             base.Initialize();
             this.Application = this.GetHostItem<Microsoft.Office.Interop.PowerPoint.Application>(typeof(Microsoft.Office.Interop.PowerPoint.Application), "Application");
-            Globals.ThisAddIn = this;
+            Globals.I2P = this;
             global::System.Windows.Forms.Application.EnableVisualStyles();
             this.InitializeCachedData();
             this.InitializeControls();
@@ -174,19 +174,19 @@ namespace Irit2Powerpoint {
         private Globals() {
         }
         
-        private static ThisAddIn _ThisAddIn;
+        private static I2P _I2P;
         
         private static global::Microsoft.Office.Tools.Factory _factory;
         
         private static ThisRibbonCollection _ThisRibbonCollection;
         
-        internal static ThisAddIn ThisAddIn {
+        internal static I2P I2P {
             get {
-                return _ThisAddIn;
+                return _I2P;
             }
             set {
-                if ((_ThisAddIn == null)) {
-                    _ThisAddIn = value;
+                if ((_I2P == null)) {
+                    _I2P = value;
                 }
                 else {
                     throw new System.NotSupportedException();
