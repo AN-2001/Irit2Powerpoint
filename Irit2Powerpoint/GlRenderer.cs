@@ -11,10 +11,11 @@ namespace Irit2Powerpoint
     {
         public static int PolyProg, CrvProg, GridProg;
 
-        public static readonly string UNIFORM_BLOCK_NAME = "Transforms";
+        public static readonly string TRANS_BLOCK_NAME = "Transforms";
+        public static readonly string LIGHT_BLOCK_NAME = "Lights";
         public static readonly string POLY_VERT = @"
         #version 330 core
-        layout (location = 0) in vec3 Pos;
+        layout (location = 0) in vec3 Position;
         layout (location = 1) in vec3 Normal;
         layout (location = 2) in vec3 Colour;
         layout (location = 3) in vec2 uv;
@@ -29,28 +30,21 @@ namespace Irit2Powerpoint
     
         layout (std140) uniform Lights
         {
-            vec3 Position[3];
-            vec3 Colour[3];
+            vec3 LightPos[3];
+            vec3 LightCol[3];
         };
 
-        vec4 LightPos = vec4(10.f, 10.f, 10.f, 1.f);
         out vec3 Norm;
-        out vec3 Diffuse;
         
         void main()
         {
             mat4 ModelView = View * World;
 
-            vec3 ViewPos = (ModelView * vec4(Pos, 1.f)).xyz;
+            vec3 ViewPos = (ModelView * vec4(Position, 1.f)).xyz;
             vec3 ViewNorm = (InvTranspose * vec4(Normal, 1.f)).xyz;
-            vec3 ViewLight = (ModelView * LightPos).xyz;
 
             gl_Position = Projection * vec4(ViewPos, 1.f); 
             Norm = Colour;
-            vec3 ToLight = normalize(ViewLight - ViewPos);
-            float DiffuseCoeff = max(dot(ToLight, ViewNorm), 0);
-            
-            Diffuse = DiffuseCoeff * vec3(1.f, 0.f, 0.f) + vec3(0.1f, 0.f, 0.f);
         }"; 
         
         public static readonly string POLY_FRAG = @"
@@ -66,7 +60,7 @@ namespace Irit2Powerpoint
 
         public static readonly string CRV_VERT = @"
         #version 330 core
-        layout (location = 0) in vec3 Pos;
+        layout (location = 0) in vec3 Position;
         layout (location = 1) in vec3 Normal;
         layout (location = 2) in vec3 Colour;
         layout (location = 3) in vec2 uv;
@@ -84,7 +78,7 @@ namespace Irit2Powerpoint
         void main()
         {
             mat4 ModelView = View * World;
-            vec3 ViewPos = (ModelView * vec4(Pos, 1.f)).xyz;
+            vec3 ViewPos = (ModelView * vec4(Position, 1.f)).xyz;
 
             gl_Position = Projection * vec4(ViewPos, 1.f); 
             gl_Position.z -= 0.0001f;
@@ -103,7 +97,7 @@ namespace Irit2Powerpoint
 
         public static readonly string GRID_VERT = @"
         #version 330 core
-        layout (location = 0) in vec3 Pos;
+        layout (location = 0) in vec3 Position;
         layout (location = 1) in vec3 Normal;
         layout (location = 2) in vec3 Colour;
         layout (location = 3) in vec2 uv;
@@ -124,13 +118,13 @@ namespace Irit2Powerpoint
             mat4 ModelViewInv = inverse(View * World);
             mat4 ProjectionInv = inverse(Projection);
 
-            NearPoint = ModelViewInv * ProjectionInv * vec4( Pos.xy, -1.f, 1.f);
+            NearPoint = ModelViewInv * ProjectionInv * vec4( Position.xy, -1.f, 1.f);
             NearPoint = NearPoint / NearPoint.w;
 
-            FarPoint = ModelViewInv * ProjectionInv * vec4( Pos.xy, 1.f, 1.f);
+            FarPoint = ModelViewInv * ProjectionInv * vec4( Position.xy, 1.f, 1.f);
             FarPoint = FarPoint / FarPoint.w;
 
-            gl_Position = vec4(Pos, 1.f);
+            gl_Position = vec4(Position, 1.f);
         }"; 
 
         public static readonly string GRID_FRAG = @"
@@ -198,7 +192,7 @@ namespace Irit2Powerpoint
         public static readonly string GRID_KEY = "_GRID_";
     }
 
-    struct TransformBlock
+    struct TransformBlock 
     {
         public OpenTK.Matrix4 World;
         public OpenTK.Matrix4 InvTranspose;
@@ -210,18 +204,71 @@ namespace Irit2Powerpoint
 
     struct LightBlock
     {
-        public OpenTK.Vector3 Position0;
-        public OpenTK.Vector3 Position1;
-        public OpenTK.Vector3 Position2;
-        public OpenTK.Vector3 Colour0;
-        public OpenTK.Vector3 Colour1;
-        public OpenTK.Vector3 Colour2;
+        public OpenTK.Vector3 LightPos0;
+        public OpenTK.Vector3 LightPos1;
+        public OpenTK.Vector3 LightPos2;
+        public OpenTK.Vector3 LightCol0;
+        public OpenTK.Vector3 LightCol1;
+        public OpenTK.Vector3 LightCol2;
         public static readonly int
             Size = OpenTK.BlittableValueType<LightBlock>.Stride;
 
     }
 
-    class TransformContext
+    abstract class BaseContext
+    {
+        protected int ubo;
+        protected int BlockSize;
+        protected bool NeedUpdate;
+        int BindingIndex;
+        string UniformName;
+
+        public BaseContext(string UniformName, int BlockSize, int BindingIndex)
+        {
+            this.BindingIndex = BindingIndex;
+            this.UniformName = UniformName;
+            this.BlockSize = BlockSize;
+            ubo = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.UniformBuffer, ubo);
+            /* Allocate the struct. */
+            GL.BufferData(BufferTarget.UniformBuffer,
+                    BlockSize,
+                    IntPtr.Zero,
+                    BufferUsageHint.StaticDraw);
+            GL.BindBufferBase(BufferRangeTarget.UniformBuffer, BindingIndex, ubo);
+            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+            NeedUpdate = true;
+        }
+
+        public void Destroy()
+        {
+            GL.DeleteBuffer(ubo);
+        }
+
+        public void InitSync(int Program)
+        {
+            int Index = GL.GetUniformBlockIndex(Program, UniformName);
+            GL.UniformBlockBinding(Program, Index, BindingIndex);
+        }
+
+
+        abstract public void PerformSync();
+
+        protected void PerformSyncImpl<T>(T Block) where T : struct
+        {
+            /* Upload matrices to GPU. */
+            GL.BindBuffer(BufferTarget.UniformBuffer, ubo);
+            GL.BufferSubData(BufferTarget.UniformBuffer,
+                    IntPtr.Zero,
+                    BlockSize,
+                    ref Block);
+            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+            NeedUpdate = false;
+        }
+
+    }
+
+    class TransformContext : BaseContext
     {
         private float Zoom;
         private int Width, Height;
@@ -231,32 +278,15 @@ namespace Irit2Powerpoint
                                ActiveWorld,
                                View,
                                Projection;
-        private bool NeedMatrixUpdate;
-        private int ubo;
 
-        public TransformContext()
+        public TransformContext() : base(ShaderSources.TRANS_BLOCK_NAME, TransformBlock.Size, 0)
         {
-            ubo = GL.GenBuffer();
-            GL.BindBuffer(BufferTarget.UniformBuffer, ubo);
-            /* Allocate the struct. */
-            GL.BufferData(BufferTarget.UniformBuffer,
-                    TransformBlock.Size,
-                    IntPtr.Zero,
-                    BufferUsageHint.StaticDraw);
-            GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 0, ubo);
-            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
             Reset();
         }
 
-        public void InitSync(int Program)
+        public override void PerformSync()
         {
-            int Index = GL.GetUniformBlockIndex(Program, ShaderSources.UNIFORM_BLOCK_NAME);
-            GL.UniformBlockBinding(Program, Index, 0);
-        }
-
-        public void PerformSync()
-        {
-            if (!NeedMatrixUpdate)
+            if (!NeedUpdate)
                 return;
             OpenTK.Matrix4 World = SavedWorld * ActiveWorld;
             TransformBlock Block = new TransformBlock();
@@ -267,14 +297,7 @@ namespace Irit2Powerpoint
             Block.InvTranspose.Transpose();
             Block.Projection = Projection;
 
-            /* Upload matrices to GPU. */
-            GL.BindBuffer(BufferTarget.UniformBuffer, ubo);
-            GL.BufferSubData(BufferTarget.UniformBuffer,
-                    IntPtr.Zero,
-                    TransformBlock.Size,
-                    ref Block);
-            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
-            NeedMatrixUpdate = false;
+            PerformSyncImpl(Block);
         }
 
         public OpenTK.Matrix4 GetActiveWorld()
@@ -286,19 +309,19 @@ namespace Irit2Powerpoint
         {
             SavedWorld = SavedWorld * ActiveWorld;
             ActiveWorld = OpenTK.Matrix4.Identity;
-            NeedMatrixUpdate = true;
+            NeedUpdate = true;
         }
 
         public void SetView(OpenTK.Matrix4 Mat)
         {
             View = Mat;
-            NeedMatrixUpdate = true;
+            NeedUpdate = true;
         }
 
         public void SetActiveWorld(OpenTK.Matrix4 Mat)
         {
             ActiveWorld = Mat;
-            NeedMatrixUpdate = true;
+            NeedUpdate = true;
         }
 
         public void SetRes(int Width, int Height)
@@ -312,7 +335,7 @@ namespace Irit2Powerpoint
         {
             Projection = OpenTK.Matrix4.CreateOrthographic(Width * Zoom, Height * Zoom,
                                                             zNear, zFar);
-            NeedMatrixUpdate = true;
+            NeedUpdate = true;
         }
 
         public void SetZoom(int Direction)
@@ -340,10 +363,46 @@ namespace Irit2Powerpoint
                                           new OpenTK.Vector3(0, 30 / Len, -10 / Len)));
             UpdateProjection();
         }
+    }
 
-        public void Destroy()
+    class LightContext : BaseContext
+    {
+        OpenTK.Vector3[] Positions;
+        OpenTK.Vector3[] Colours;
+
+        public LightContext() : base(ShaderSources.LIGHT_BLOCK_NAME, LightBlock.Size, 1)
         {
-            GL.DeleteBuffer(ubo);
+            Positions = new OpenTK.Vector3[3];
+            Colours = new OpenTK.Vector3[3];
+        }
+
+        override public void PerformSync()
+        {
+            if (!NeedUpdate)
+                return;
+            LightBlock Block = new LightBlock();
+
+            Block.LightPos0 = Positions[0];
+            Block.LightPos1 = Positions[1];
+            Block.LightPos2 = Positions[2];
+
+            Block.LightCol0 = Colours[0];
+            Block.LightCol1 = Colours[1];
+            Block.LightCol2 = Colours[2];
+
+            PerformSyncImpl(Block);
+        }
+
+        public void SetPos(int Idx, OpenTK.Vector3 Pos)
+        {
+            Positions[Idx] = Pos;
+            NeedUpdate = true;
+        }
+
+        public void SetCol(int Idx, OpenTK.Vector3 Col)
+        {
+            Colours[Idx] = Col;
+            NeedUpdate = true;
         }
     }
 
@@ -356,6 +415,7 @@ namespace Irit2Powerpoint
         private string LastPath;
         private DateTime Time;
         public TransformContext TransCtx;
+        public LightContext LightCtx;
 
         public GlRenderer(IntPtr hWnd)
         {
@@ -367,6 +427,7 @@ namespace Irit2Powerpoint
             Context.LoadAll();
 
             TransCtx = new TransformContext();
+            LightCtx = new LightContext();
 
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.Blend);
@@ -379,6 +440,7 @@ namespace Irit2Powerpoint
                                                ShaderSources.CRV_FRAG);
             ShaderSources.GridProg = InitShader(ShaderSources.GRID_VERT,
                                                 ShaderSources.GRID_FRAG);
+            LightCtx.InitSync(ShaderSources.PolyProg);
             GL.ClearColor(new Color4(0.0f, 0.0f, 0.0f, 0.0f));
             Loaded = false;
             LastPath = null;
@@ -499,6 +561,7 @@ namespace Irit2Powerpoint
             }
 
             TransCtx.PerformSync();
+            LightCtx.PerformSync();
 
             /* Draw loading screen here. */
 
@@ -551,6 +614,7 @@ namespace Irit2Powerpoint
             GL.DeleteProgram(ShaderSources.CrvProg);
             GL.DeleteProgram(ShaderSources.GridProg);
             TransCtx.Destroy();
+            LightCtx.Destroy();
         }
 
         public static string GetErrorString(ErrorCode errorCode)

@@ -7,6 +7,7 @@
 - Stop stupid error when there's already a dummy in a slide [ DONE ]
 - Add proper error handling [ DONE ]
 - Add light support, only support 3 lights, maybe render light objects [ DONE ]
+- Add context interface [ DONE ]
 - Implement loading screen [ ]
 - Add arc-ball controls [ ]
 - Implement proper model normalization on laod, perhaps do it in C [ ]
