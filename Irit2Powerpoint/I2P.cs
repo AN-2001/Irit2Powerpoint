@@ -202,7 +202,7 @@ namespace Irit2Powerpoint
         void SlideShowOnSlide(PowerPoint.SlideShowWindow Wn)
         {
             PowerPoint.Shape Dummy;
-            int x, y, w, h;
+            int x, y, w, h, WinLeft, WinTop;
             string Path;
 
             // MessageBox.Show("NEW SLIDE!");
@@ -219,7 +219,11 @@ namespace Irit2Powerpoint
                 w = PointToPixelX(Dummy.Width * (Wn.View.Zoom / 100f), (IntPtr)Wn.HWND);
                 h = PointToPixelY(Dummy.Height * (Wn.View.Zoom / 100f), (IntPtr)Wn.HWND);
 
-                GlWindow.SetPosition(x, y);
+                WinLeft = PointToPixelX(Wn.Left * (Wn.View.Zoom / 100f), (IntPtr)Wn.HWND);
+                WinTop = PointToPixelY(Wn.Top * (Wn.View.Zoom / 100f), (IntPtr)Wn.HWND);
+
+
+                GlWindow.SetPosition(x, y, WinLeft, WinTop);
                 GlWindow.SetSize(w, h);
                 GlWindow.SetVisibility(true);
 

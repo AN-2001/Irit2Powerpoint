@@ -119,11 +119,11 @@ namespace Irit2Powerpoint
         }
 
         #region InnerFunctions
-        public void SetPosition(int x, int y)
+        public void SetPosition(int x, int y, int WinLeft, int WinTop)
         {
             this.x = x;
             this.y = y;
-            SetWindowPos(hWnd, IntPtr.Zero, x, y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE);
+            SetWindowPos(hWnd, IntPtr.Zero, WinLeft + x, WinTop + y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE);
             InvalidateRect(this.hWnd, IntPtr.Zero, true);
         }
 
