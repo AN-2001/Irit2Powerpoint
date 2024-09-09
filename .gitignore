@@ -1,9 +1,8 @@
 /.vs/*
-/Irit2Powerpoint/bin/*
-/Irit2Powerpoint/obj/*
-/Irit2PowerpointTests/bin/*
-/Irit2PowerpointTests/obj/*
+/*/bin/*
+/*/obj/*
 /x64/*
 /*/.vs
 /*/x64
 /*/debug
+/TestResults/*
