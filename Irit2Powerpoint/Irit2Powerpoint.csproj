@@ -160,23 +160,33 @@
     <Compile Include="exceptions.cs" />
     <Compile Include="GlResource.cs" />
     <Compile Include="GlResourceManager.cs" />
+    <Compile Include="ImportSettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ImportSettingsForm.Designer.cs">
+      <DependentUpon>ImportSettingsForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="ITDParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="GlRenderer.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="WinAPIDclr.cs" />
     <Compile Include="WinAPIDef.cs" />
     <Compile Include="WinAPIWrapper.cs" />
+    <EmbeddedResource Include="ImportSettingsForm.resx">
+      <DependentUpon>ImportSettingsForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
@@ -204,7 +214,11 @@
     <EmbeddedResource Include="Ribbon.xml" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Resources\" />
+    <None Include="Resources\loadIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\cameraIcon.png" />
+    <Content Include="Resources\settingsIcon.png" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

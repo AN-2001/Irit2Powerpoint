@@ -24,7 +24,7 @@ static int CountGeom(IPObjectStruct *PObj, int *Vertecies, int *Polygons, int *P
 static int PopulateGeom(MeshStruct *Mesh, IPObjectStruct *PObj);
 static int PopulateGeomAux(MeshStruct *Mesh, IPObjectStruct *PObj, int *vc);
 
-ITDPARSER_API MeshStruct *ITDParserParse(const char *Path)
+ITDPARSER_API MeshStruct *ITDParserParse(const char *Path, ImportSettings Settings)
 {
     MeshStruct *Mesh;
     IPObjectStruct *PObj;

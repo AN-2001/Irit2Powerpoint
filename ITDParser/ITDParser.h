@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdbool.h>
+
 #ifdef ITDPARSER_EXPORTS
 #define ITDPARSER_API __declspec(dllexport)
 #else
@@ -13,6 +15,15 @@ typedef ITDPARSER_API struct VertexStruct {
     double u, v;
 } VertexStruct;
 
+typedef ITDPARSER_API struct ImportSettings
+{
+    int PolygonFineness;
+    int PolylineFineness;
+    int IsolinesSamples;
+    int PolygonOptimal;
+    int PolylineOptimal;
+} ImportSettings;
+
 typedef ITDPARSER_API struct MeshStruct {
     VertexStruct *Vertices;
     int *PolygonMeshSizes, 
@@ -22,5 +33,5 @@ typedef ITDPARSER_API struct MeshStruct {
         TotalPolylineMeshes;
 } MeshStruct;
 
-ITDPARSER_API MeshStruct *ITDParserParse(const char *Path);
+ITDPARSER_API MeshStruct *ITDParserParse(const char *Path, ImportSettings Settings);
 ITDPARSER_API void ITDParserFree(MeshStruct *Mesh);

@@ -24,11 +24,23 @@ namespace Irit2Powerpoint
     public class GlResource
     {
         public int VAO, VBO;
+        public GlRenderer.RenderSettings RenderSettings;
 
         /* Mesh records, stores offsets + vertex count. */
         public List<GlMeshRecord> PolygonRecords, PolylineRecords;
 
+        public GlResource(ITDParser.ITDMesh Mesh, GlRenderer.RenderSettings RenderSettings)
+        {
+            InitFromMesh(Mesh);
+            this.RenderSettings = RenderSettings;
+        }
+
         public GlResource(ITDParser.ITDMesh Mesh)
+        {
+            InitFromMesh(Mesh);
+        }
+
+        private void InitFromMesh(ITDParser.ITDMesh Mesh)
         {
             int 
                 NumVertices = Mesh.Vertecies.Length;

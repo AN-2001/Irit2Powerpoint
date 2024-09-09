@@ -7,32 +7,44 @@ using System.Windows.Forms;
 
 namespace Irit2Powerpoint
 {
+
+    public struct LoadRequest
+    {
+        public string Path;
+        public ITDParser.ImportSettings ImportSettings;
+        public GlRenderer.RenderSettings RenderSettings;
+    };
+
+    struct LoadResult
+    {
+        public ITDParser.ITDMesh Mesh;
+        public GlRenderer.RenderSettings RenderSettings;
+    };
+
     public class GlResourceManager
     {
         private const int TASK_COUNT = 64;
         private Dictionary<string, GlResource> ResourceMap;
-        private Dictionary<string, ITDParser.ITDMesh> MeshMap;
+        private Dictionary<string, LoadResult> ResultMap;
         private Task[] Tasks;
-        private Queue<string> LoadQueue;
+        private Queue<LoadRequest> LoadQueue;
         private Mutex Mutex;
-        private static SynchronizationContext SyncContext;
 
         public GlResourceManager()
         {
             Mutex = new Mutex();
             ResourceMap = new Dictionary<string, GlResource>();
-            MeshMap = new Dictionary<string, ITDParser.ITDMesh>();
+            ResultMap = new Dictionary<string, LoadResult>();
             Tasks = new Task[TASK_COUNT];
-            LoadQueue = new Queue<string>();
-            SyncContext = SynchronizationContext.Current;
+            LoadQueue = new Queue<LoadRequest>();
         }
 
-        private bool QueueImpl(string Key)
+        private bool QueueImpl(LoadRequest Request)
         {
             int i;
 
             /* Exit if we already loaded this key. */
-            if (ResourceMap.ContainsKey(Key) || MeshMap.ContainsKey(Key))
+            if (ResourceMap.ContainsKey(Request.Path) || ResultMap.ContainsKey(Request.Path))
                 return true;
 
             for (i = 0; i < TASK_COUNT; i++) {
@@ -41,17 +53,20 @@ namespace Irit2Powerpoint
                     Tasks[i] = Task.Factory.StartNew(
                         () =>
                         {
-                            ITDParser.ITDMesh Mesh;
+                            LoadResult
+                                Result = new LoadResult();
+
                             try
                             {
-                                Mesh = ITDParser.Parse(Key);
-                            } catch (ParseException Ex)
+                                Result.RenderSettings = Request.RenderSettings;
+                                Result.Mesh = ITDParser.Parse(Request.Path, Request.ImportSettings);
+                            } catch (ParseException)
                             {
                                 return;
                             }
 
                             Mutex.WaitOne();
-                            MeshMap[Key] = Mesh;
+                            ResultMap[Request.Path] = Result;
                             Mutex.ReleaseMutex();
                         });
                     return true;
@@ -62,25 +77,25 @@ namespace Irit2Powerpoint
         }
 
         /* Queue a load task on the threadpool. */
-        public void QueueLoadFromDisk(string Key)
+        public void QueueLoadFromDisk(LoadRequest Request)
         {
             /* First try to load already queued resources. */
             TryLoadFromQueue();
             /* Then try to queue the given key. */
-            if (!QueueImpl(Key))
-                LoadQueue.Enqueue(Key);
+            if (!QueueImpl(Request))
+                LoadQueue.Enqueue(Request);
         }
 
         private void TryLoadFromQueue()
         {
-            string Key;
-            Queue<string> Copy = new Queue<string>();
+            LoadRequest Request;
+            Queue<LoadRequest> Copy = new Queue<LoadRequest>();
 
             while (LoadQueue.Count > 0)
             {
-                Key = LoadQueue.Dequeue();
-                if (!QueueImpl(Key))
-                    Copy.Enqueue(Key);
+                Request = LoadQueue.Dequeue();
+                if (!QueueImpl(Request))
+                    Copy.Enqueue(Request);
             }
 
             Copy.ToList().ForEach(e => LoadQueue.Enqueue(e));
@@ -111,7 +126,7 @@ namespace Irit2Powerpoint
         public GlResource GetResource(string Key)
         {
             GlResource Ret;
-            ITDParser.ITDMesh Mesh;
+            LoadResult Result;
 
             TryLoadFromQueue();
             if (ResourceMap.ContainsKey(Key))
@@ -120,17 +135,17 @@ namespace Irit2Powerpoint
             /* If it doesn't exist then we're either stil loading or we 
              * need to finalize. */
             Mutex.WaitOne();
-            if (!MeshMap.ContainsKey(Key))
+            if (!ResultMap.ContainsKey(Key))
             {
                 Mutex.ReleaseMutex();
                 throw new StillLoadingException();
             }
 
-            Mesh = MeshMap[Key];
-            MeshMap.Remove(Key);
+            Result = ResultMap[Key];
+            ResultMap.Remove(Key);
             Mutex.ReleaseMutex();
 
-            Ret = new GlResource(Mesh);
+            Ret = new GlResource(Result.Mesh, Result.RenderSettings);
             ResourceMap[Key] = Ret;
             return Ret;
         }

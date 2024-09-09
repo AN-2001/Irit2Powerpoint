@@ -5,16 +5,23 @@ using System.Windows.Forms;
 using Microsoft.Office.Core;
 using System.Drawing;
 using System.Linq;
-using System.Windows.Forms;
 using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Irit2Powerpoint
 {
+
+
     public partial class I2P
     {
+        private const string __PATH_KEY__ = "_I2P_PATH_";
+        private const string __RENDER_SETTINGS_KEY__ = "_I2P_RENDER_SETTINGS_";
+        private const string __IMPORT_SETTINGS_KEY__ = "_I2P_IMPORT_SETTINGS_";
+        private const string __DUMMY_KEY__ = "_I2P_DUMMY_";
         private WindowWrapper GlWindow;
         private GlResourceManager ResourceManager;
+        private Ribbon RibbonControl;
+        private Timer RibbonUpdateTimer;
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
@@ -31,13 +38,28 @@ namespace Irit2Powerpoint
 
             /* Reuse the same GLWindow accross different slides. */
             GlWindow = new WindowWrapper();
+            RibbonUpdateTimer = new Timer();
+            RibbonUpdateTimer.Interval = 100;
+            RibbonUpdateTimer.Tick += OnRibbonTimer;
+            RibbonUpdateTimer.Start();
+        }
+
+        public void OnRibbonTimer(Object obj, EventArgs Args)
+        {
+            RibbonControl.Refresh();
         }
 
         public void OnPresentation(PowerPoint.Presentation Presentation)
         {
             List<string> PathsInUse = GetPathsInUse();
-            foreach(string Str in PathsInUse)
-                ResourceManager.QueueLoadFromDisk(Str);
+            LoadRequest Request;
+
+            Request = new LoadRequest();
+            foreach (string Str in PathsInUse)
+            {
+                Request.Path = Str;
+                ResourceManager.QueueLoadFromDisk(Request);
+            }
         }
 
         public static GlResourceManager GetResourceManager()
@@ -57,7 +79,7 @@ namespace Irit2Powerpoint
                 if (GetDummyFromSlide(Application.ActivePresentation.Slides[i],
                                 out Dummy))
                 {
-                    Paths.Add(Dummy.Tags["I2PPATH"]);
+                    Paths.Add(Dummy.Tags[__PATH_KEY__]);
                 }
             }
             return Paths;
@@ -77,24 +99,49 @@ namespace Irit2Powerpoint
             ResourceManager.ConsistencyCleanup(GetPathsInUse().ToArray());
         }
 
+        public bool ActiveSlideContainsDummy()
+        {
+            PowerPoint.Shape Dummy;
+            try
+            {
+                return GetDummyFromSlide(Application.ActiveWindow.View.Slide, out Dummy);
+            } catch (Exception)
+            {
+                return false;
+            }
+        }
+
         public void InitDummyRect(string Path)
         {
+            LoadRequest Request;
             PowerPoint.Shape Dummy;
             PowerPoint.Slide
                 Slide = Application.ActiveWindow.View.Slide;
            
             if (GetDummyFromSlide(Slide, out Dummy)) {
-                Dummy.Tags.Add("I2PPATH", Path);
-                ResourceManager.QueueLoadFromDisk(Path);
+                Dummy.Tags.Add( __PATH_KEY__ , Path);
+                Request = new LoadRequest();
+                Request.Path = Path;
+                ResourceManager.QueueLoadFromDisk(Request);
                 return;
             }
 
+            ITDParser.ImportSettings ImportSettings = ITDParser.DefaultImportSettings;
+            GlRenderer.RenderSettings RenderSettings = GlRenderer.DefaultRenderSettings;
+
             Dummy = Slide.Shapes.AddShape(Office.MsoAutoShapeType.msoShapeRectangle ,0, 0, 400, 300);
             Dummy.TextFrame.TextRange.Text = "IRIT2POWERPOINT DUMMY";
-            Dummy.Tags.Add("I2PDUMMY", "true");
-            Dummy.Tags.Add("I2PPATH", Path);
+            Dummy.Tags.Add(__DUMMY_KEY__ , "true");
+            Dummy.Tags.Add(__PATH_KEY__, Path);
+            Dummy.Tags.Add(__IMPORT_SETTINGS_KEY__, ITDParser.SerializeImportSettings(ImportSettings));
+            Dummy.Tags.Add(__RENDER_SETTINGS_KEY__, GlRenderer.SerializeRenderSettings(RenderSettings));
             Dummy.Fill.ForeColor.RGB = Color.FromArgb(100, 100, 100).ToArgb();
-            ResourceManager.QueueLoadFromDisk(Path);
+
+            Request = new LoadRequest();
+            Request.Path = Path;
+            Request.ImportSettings = ITDParser.DefaultImportSettings;
+            Request.RenderSettings = GlRenderer.DefaultRenderSettings;
+            ResourceManager.QueueLoadFromDisk(Request);
         }
 
         /* Extracts the Irit2Powerpoint dummy from a slide. */
@@ -109,7 +156,7 @@ namespace Irit2Powerpoint
             for (i = 1; i <= Slide.Shapes.Count; i++)
                 for (j = 1; j <= Slide.Shapes[i].Tags.Count; j++)
                 {
-                    if (Slide.Shapes[i].Tags.Name(j) == "I2PDUMMY")
+                    if (Slide.Shapes[i].Tags.Name(j) == __DUMMY_KEY__)
                     {
                         Dummy = Slide.Shapes[i];
                         return true;
@@ -174,7 +221,7 @@ namespace Irit2Powerpoint
                 GlWindow.SetSize(w, h);
                 GlWindow.SetVisibility(true);
 
-                Path = Dummy.Tags["I2PPATH"];
+                Path = Dummy.Tags[__PATH_KEY__];
                 GlWindow.GetRenderer().SetActiveModel(Path);
             } else
                 GlWindow.SetVisibility(false);
@@ -186,11 +233,13 @@ namespace Irit2Powerpoint
         {
             GlWindow.Destroy();
             ResourceManager.Destroy();
+            RibbonUpdateTimer.Stop();
         }
 
         protected override Microsoft.Office.Core.IRibbonExtensibility CreateRibbonExtensibilityObject()
         {
-            return new Ribbon();
+            RibbonControl = new Ribbon();
+            return RibbonControl;
         }
 
         #region VSTO generated code

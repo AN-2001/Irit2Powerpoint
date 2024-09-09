@@ -3,26 +3,8 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using System.Drawing;
 using Office = Microsoft.Office.Core;
-
-// TODO:  Follow these steps to enable the Ribbon (XML) item:
-
-// 1: Copy the following code block into the ThisAddin, ThisWorkbook, or ThisDocument class.
-
-//  protected override Microsoft.Office.Core.IRibbonExtensibility CreateRibbonExtensibilityObject()
-//  {
-//      return new Ribbon();
-//  }
-
-// 2. Create callback methods in the "Ribbon Callbacks" region of this class to handle user
-//    actions, such as clicking a button. Note: if you have exported this Ribbon from the Ribbon designer,
-//    move your code from the event handlers to the callback methods and modify the code to work with the
-//    Ribbon extensibility (RibbonX) programming model.
-
-// 3. Assign attributes to the control tags in the Ribbon XML file to identify the appropriate callback methods in your code.  
-
-// For more information, see the Ribbon XML documentation in the Visual Studio Tools for Office Help.
-
 
 namespace Irit2Powerpoint
 {
@@ -45,28 +27,60 @@ namespace Irit2Powerpoint
         #endregion
 
         #region Ribbon Callbacks
-        //Create callback methods here. For more information about adding callback methods, visit https://go.microsoft.com/fwlink/?LinkID=271226
 
         public void Ribbon_Load(Office.IRibbonUI ribbonUI)
         {
             this.ribbon = ribbonUI;
         }
 
-        public void OnButtonClick(Office.IRibbonControl Control)
+        public void OnImportButton(Office.IRibbonControl Control)
         {
             I2P AddIn = Globals.I2P;
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
-                openFileDialog.Filter = "obj file (*.obj)|*.pptx|All files (*.*)|*.*";
-                openFileDialog.FilterIndex = 2;
+                openFileDialog.Filter = "itd file (*.itd)|*.itd|obj file (*.obj)|*.obj|stl file (*.stl)|*.stl|All files|*.obj;*.itd;*.stl";
+                openFileDialog.FilterIndex = 0;
                 openFileDialog.RestoreDirectory = true;
 
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    /* Add the dummy rect so that the user can position the window. */
                     AddIn.InitDummyRect(openFileDialog.FileName);
-                }
             }
+        }
+
+        public void OnSettingsButton(Office.IRibbonControl Control)
+        {
+            I2P AddIn = Globals.I2P;
+        }
+
+        public void OnRenderButton(Office.IRibbonControl Control)
+        {
+            I2P AddIn = Globals.I2P;
+        }
+
+        public Bitmap OnGetImage(Office.IRibbonControl Control)
+        {
+            switch (Control.Id)
+            {
+                case "ImportButton":
+                    return Properties.Resources.loadIcon;
+                case "ImportSettingsButton":
+                    return Properties.Resources.settingsIcon;
+                case "RenderSettingsButton":
+                    return Properties.Resources.cameraIcon;
+                default:
+                    return null;
+            }
+        }
+
+        public bool OnGetRenderEnabled(Office.IRibbonControl Control)
+        {
+            I2P AddIn = Globals.I2P;
+            return AddIn.ActiveSlideContainsDummy();
+        }
+
+        public void Refresh()
+        {
+            this.ribbon.InvalidateControl("RenderSettingsButton");
         }
 
         #endregion

@@ -1,9 +1,8 @@
 ﻿using System;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Graphics;
-using System.Diagnostics;
-using System.Threading;
-
+using System.Text;
+using System.Windows.Forms;
 
 namespace Irit2Powerpoint
 {
@@ -215,7 +214,7 @@ namespace Irit2Powerpoint
 
     }
 
-    abstract class BaseContext
+    public abstract class BaseContext
     {
         protected int ubo;
         protected int BlockSize;
@@ -268,7 +267,7 @@ namespace Irit2Powerpoint
 
     }
 
-    class TransformContext : BaseContext
+    public class TransformContext : BaseContext
     {
         private float Zoom;
         private int Width, Height;
@@ -279,7 +278,8 @@ namespace Irit2Powerpoint
                                View,
                                Projection;
 
-        public TransformContext() : base(ShaderSources.TRANS_BLOCK_NAME, TransformBlock.Size, 0)
+        public TransformContext()
+            : base(ShaderSources.TRANS_BLOCK_NAME, TransformBlock.Size, 0)
         {
             Reset();
         }
@@ -365,7 +365,7 @@ namespace Irit2Powerpoint
         }
     }
 
-    class LightContext : BaseContext
+    public class LightContext : BaseContext
     {
         OpenTK.Vector3[] Positions;
         OpenTK.Vector3[] Colours;
@@ -406,8 +406,84 @@ namespace Irit2Powerpoint
         }
     }
 
-    class GlRenderer
+    public class GlRenderer
     {
+        public struct RenderSettings
+        {
+            public bool FlipNormals;
+            public OpenTK.Vector3 DefaultSolidColour;
+            public OpenTK.Vector3 DefaultCurveColour;
+            public OpenTK.Vector3 BackgroundColour;
+            public OpenTK.Vector3 GridColour;
+            public bool OverrideColour;
+            public int AntiAliasingLevel;
+            public bool DisplayGrid;
+            public bool BackfaceCulling;
+            public bool DisplayNormals;
+            public double NearPlane, FarPlane;
+            public double NormalLength;
+        };
+
+        public static string SerializeRenderSettings(RenderSettings Settings)
+        {
+            StringBuilder
+                sb = new StringBuilder();
+
+            sb.AppendFormat("{0};{1},{2},{3};{4},{5},{6};{7},{8},{9};{10},{11},{12};{13};{14};{15};{16};{17};{18};{19};{20}",
+                            Settings.FlipNormals,
+                            Settings.DefaultSolidColour.X, Settings.DefaultSolidColour.Y, Settings.DefaultSolidColour.Z,
+                            Settings.DefaultCurveColour.X, Settings.DefaultCurveColour.Y, Settings.DefaultCurveColour.Z,
+                            Settings.BackgroundColour.X, Settings.BackgroundColour.Y, Settings.BackgroundColour.Z,
+                            Settings.GridColour.X, Settings.GridColour.Y, Settings.GridColour.Z,
+                            Settings.OverrideColour, Settings.AntiAliasingLevel, Settings.DisplayGrid,
+                            Settings.BackfaceCulling, Settings.DisplayNormals, Settings.NearPlane,
+                            Settings.FarPlane,
+                            Settings.NormalLength);
+            return sb.ToString();
+        }
+
+        public static RenderSettings DeserializeRenderSettings(string String)
+        {
+            RenderSettings
+                Settings = new RenderSettings();
+            String[] Splitted = String.Split(';');
+
+            try
+            {
+                Settings.FlipNormals = bool.Parse(Splitted[0]);
+                Settings.DefaultSolidColour = VecFromStr(Splitted[1]);
+                Settings.DefaultCurveColour = VecFromStr(Splitted[2]);
+                Settings.BackgroundColour = VecFromStr(Splitted[3]);
+                Settings.GridColour = VecFromStr(Splitted[4]);
+                Settings.OverrideColour = bool.Parse(Splitted[5]);
+                Settings.AntiAliasingLevel = int.Parse(Splitted[6]);
+                Settings.DisplayGrid = bool.Parse(Splitted[7]);
+                Settings.BackfaceCulling = bool.Parse(Splitted[8]);
+                Settings.DisplayNormals = bool.Parse(Splitted[9]);
+                Settings.NearPlane = double.Parse(Splitted[10]);
+                Settings.FarPlane = double.Parse(Splitted[11]);
+                Settings.NormalLength = double.Parse(Splitted[12]);
+            } catch(Exception)
+            {
+                MessageBox.Show("Render Settings string was corrupted, ignoring and using defaults.");
+                Settings = DefaultRenderSettings;
+            }
+
+            return Settings;
+        }
+
+        private static OpenTK.Vector3 VecFromStr(string String)
+        {
+            OpenTK.Vector3
+                Vec = new OpenTK.Vector3();
+            String[] Splitted = String.Split(',');
+
+            Vec.X = float.Parse(Splitted[0]);
+            Vec.Y = float.Parse(Splitted[1]);
+            Vec.Z = float.Parse(Splitted[2]);
+            return Vec;
+        }
+
         private GraphicsContext Context;
         private OpenTK.Platform.IWindowInfo Info;
         private GlResource ActiveResource;
@@ -416,6 +492,22 @@ namespace Irit2Powerpoint
         private DateTime Time;
         public TransformContext TransCtx;
         public LightContext LightCtx;
+        public static RenderSettings DefaultRenderSettings = new RenderSettings()
+        {
+            FlipNormals = false,
+            DefaultSolidColour = new OpenTK.Vector3(1.0f, 0.0f, 0.0f),
+            DefaultCurveColour = new OpenTK.Vector3(1.0f, 1.0f, 0.0f),
+            BackgroundColour = new OpenTK.Vector3(0.0f, 0.0f, 0.0f),
+            GridColour = new OpenTK.Vector3(0.2f, 0.2f, 0.2f),
+            OverrideColour = false,
+            AntiAliasingLevel = 0,
+            DisplayGrid = true,
+            BackfaceCulling = false,
+            DisplayNormals = true,
+            NearPlane = -300,
+            FarPlane = 300,
+            NormalLength = 1.0f
+        };
 
         public GlRenderer(IntPtr hWnd)
         {
@@ -615,28 +707,6 @@ namespace Irit2Powerpoint
             GL.DeleteProgram(ShaderSources.GridProg);
             TransCtx.Destroy();
             LightCtx.Destroy();
-        }
-
-        public static string GetErrorString(ErrorCode errorCode)
-        {
-            switch (errorCode)
-            {
-                case ErrorCode.InvalidEnum:
-                    return "Invalid Enum";
-                case ErrorCode.InvalidValue:
-                    return "Invalid Value";
-                case ErrorCode.InvalidOperation:
-                    return "Invalid Operation";
-                case ErrorCode.OutOfMemory:
-                    return "Out of Memory";
-                case ErrorCode.TableTooLarge:
-                    return "Table Too Large";
-                case ErrorCode.NoError:
-                    return "No Error";
-                default:
-                    return $"Unknown Error ({errorCode})";
-            }
-
         }
 
     }

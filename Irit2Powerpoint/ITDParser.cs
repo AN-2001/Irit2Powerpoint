@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
 namespace Irit2Powerpoint
 {
@@ -19,7 +20,59 @@ namespace Irit2Powerpoint
             public double u, v;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct ImportSettings
+        {
+            public int PolygonFineness;
+            public int PolylineFineness;
+            public int IsolinesSamples;
+            public int PolygonOptimal;
+            public int PolylineOptimal;
+        };
+
+        public static string SerializeImportSettings(ImportSettings Settings)
+        {
+            StringBuilder
+                sb = new StringBuilder();
+
+            sb.AppendFormat("{0};{1};{2};{3};{4}",
+                Settings.PolygonFineness, Settings.PolylineFineness,
+                Settings.IsolinesSamples, Settings.PolygonOptimal,
+                Settings.PolylineOptimal);
+            return sb.ToString();
+        }
+
+        public static ImportSettings DeserializeImportSettings(string String)
+        {
+            ImportSettings
+                Settings = new ImportSettings();
+            string[] Splitted = String.Split(';');
+
+            try
+            {
+                Settings.PolygonFineness = int.Parse(Splitted[0]);
+                Settings.PolylineFineness = int.Parse(Splitted[1]);
+                Settings.IsolinesSamples = int.Parse(Splitted[2]);
+                Settings.PolygonOptimal = int.Parse(Splitted[3]);
+                Settings.PolylineOptimal = int.Parse(Splitted[4]);
+            } catch(Exception)
+            {
+                MessageBox.Show("Import settings string was corrupted, using default.");
+                Settings = DefaultImportSettings;
+            }
+
+            return Settings;
+        }
+
         public static int VERTEX_STRUCT_SIZE = Marshal.SizeOf(typeof(VertexStruct));
+        public static ImportSettings DefaultImportSettings = new ImportSettings()
+        {
+            PolygonFineness = 64,
+            PolylineFineness = 32,
+            IsolinesSamples = 0,
+            PolygonOptimal = 0,
+            PolylineOptimal = 0,
+        };
 
         [StructLayout(LayoutKind.Sequential)]
         public struct ITDMesh
@@ -38,19 +91,19 @@ namespace Irit2Powerpoint
         }
 
         [DllImport("ITDParser.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr ITDParserParse([MarshalAs(UnmanagedType.LPStr)] StringBuilder Str);
+        private static extern IntPtr ITDParserParse([MarshalAs(UnmanagedType.LPStr)] StringBuilder Str, ImportSettings Settings);
 
         [DllImport("ITDParser.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr ITDParserFree(IntPtr Struct);
 
-        public static ITDMesh Parse(string Path)
+        public static ITDMesh Parse(string Path, ImportSettings Settings)
         {
             ITDMesh Mesh;
             MeshStruct Struct;
             StringBuilder 
                 PathAsBuilder = new StringBuilder(Path);
             IntPtr /* Call C API to parse ITD file. */
-                Ret = ITDParserParse(PathAsBuilder);
+                Ret = ITDParserParse(PathAsBuilder, Settings);
             if (Ret == IntPtr.Zero)
                 throw new ParseException($"Error parsing ITD file at {Path}");
 
