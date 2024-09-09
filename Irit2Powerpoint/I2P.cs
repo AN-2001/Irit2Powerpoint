@@ -123,6 +123,7 @@ namespace Irit2Powerpoint
                 Request = new LoadRequest();
                 Request.Path = Path;
                 ResourceManager.QueueLoadFromDisk(Request);
+                ResourceManager.ConsistencyCleanup(GetPathsInUse().ToArray());
                 return;
             }
 
@@ -142,6 +143,7 @@ namespace Irit2Powerpoint
             Request.ImportSettings = ITDParser.DefaultImportSettings;
             Request.RenderSettings = GlRenderer.DefaultRenderSettings;
             ResourceManager.QueueLoadFromDisk(Request);
+            ResourceManager.ConsistencyCleanup(GetPathsInUse().ToArray());
         }
 
         /* Extracts the Irit2Powerpoint dummy from a slide. */
