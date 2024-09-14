@@ -114,6 +114,8 @@ static int CountGeom(IPObjectStruct *PObj, int *Vertecies, int *Polygons, int *P
     *Vertecies = *Polygons = *Polylines = 0;
     
     for (; PObj; PObj = PObj -> Pnext) {
+	if (!IP_IS_POLY_OBJ(PObj))
+	    continue;
 	PolyIter = PObj -> U.Pl;
 	while (PolyIter) {
 	    VertIter = PolyIter -> PVertex;
@@ -140,6 +142,8 @@ static int PopulateGeom(MeshStruct *Mesh, IPObjectStruct *PObj)
 
     /* First populate polygons, then polylines. */    
     for (Iter = PObj, pc = 0; Iter; Iter = Iter -> Pnext) {
+	if (!IP_IS_POLY_OBJ(Iter))
+	    continue;
 	if (IP_IS_POLYGON_OBJ(Iter)) {
 	    n = PopulateGeomAux(Mesh, Iter, &vc); 
 	    Mesh -> PolygonMeshSizes[pc++] = n;
@@ -147,6 +151,8 @@ static int PopulateGeom(MeshStruct *Mesh, IPObjectStruct *PObj)
     }
 
     for (Iter = PObj, pc = 0; Iter; Iter = Iter -> Pnext) {
+	if (!IP_IS_POLY_OBJ(Iter))
+	    continue;
 	if (IP_IS_POLYLINE_OBJ(Iter)) {
 	    n = PopulateGeomAux(Mesh, Iter, &vc); 
 	    Mesh -> PolylineMeshSizes[pc++] = n;
@@ -216,7 +222,7 @@ static void GetUV(IPVertexStruct *Vert, double *u, double *v)
 {
     float *UV;
 
-    if ((UV = IritMiscAttrGetUVAttrib(Vert -> Attr, "uvals") != NULL)) {
+    if ((UV = IritMiscAttrGetUVAttrib(Vert -> Attr, "uvals")) != NULL) {
 	*u = UV[0];
 	*v = UV[1];
 	return;
