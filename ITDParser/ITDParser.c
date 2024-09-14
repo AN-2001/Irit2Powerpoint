@@ -37,6 +37,8 @@ ITDPARSER_API MeshStruct *ITDParserParse(const char *Path, ImportSettings Settin
     if (!PObj)
 	return NULL;
 
+    IritPrsrPutObjectToFile3("C:\\Irit2Powerpoint\\x64\\Debug\\test0.itd", PObj, 0);
+
     if (!CountGeom(PObj, &NumVertices, &NumPolygonMeshes, &NumPolylineMeshes)) {
 	IritPrsrFreeObject(PObj);
 	return NULL;
@@ -53,7 +55,7 @@ ITDPARSER_API MeshStruct *ITDParserParse(const char *Path, ImportSettings Settin
 	ITDParserFree(Mesh);
 	return NULL;
     }
-    IritPrsrPutObjectToFile3("test.itd", PObj, 0);
+    IritPrsrPutObjectToFile3("C:\\Irit2Powerpoint\\x64\\Debug\\test1.itd", PObj, 0);
     IritPrsrFreeObjectList(PObj);
     return Mesh;
 }
