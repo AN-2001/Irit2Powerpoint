@@ -53,6 +53,7 @@ ITDPARSER_API MeshStruct *ITDParserParse(const char *Path, ImportSettings Settin
 	ITDParserFree(Mesh);
 	return NULL;
     }
+    IritPrsrPutObjectToFile3("test.itd", PObj, 0);
     IritPrsrFreeObjectList(PObj);
     return Mesh;
 }
