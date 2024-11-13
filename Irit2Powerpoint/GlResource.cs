@@ -23,11 +23,17 @@ namespace Irit2Powerpoint
 
     public class GlResource
     {
+        public OpenTK.Matrix4 ViewMat;
+        public OpenTK.Matrix4 ProjMat;
+        public OpenTK.Vector3 BBoxMin;
+        public OpenTK.Vector3 BBoxMax;
+        public bool ContainsView;
+        public bool ContainsProj;
         public int VAO, VBO;
         public GlRenderer.RenderSettings RenderSettings;
 
         /* Mesh records, stores offsets + vertex count. */
-        public List<GlMeshRecord> PolygonRecords, PolylineRecords;
+        public GlMeshRecord PolygonRecord, PolylineRecord;
 
         public GlResource(ITDParser.ITDMesh Mesh, GlRenderer.RenderSettings RenderSettings)
         {
@@ -45,7 +51,11 @@ namespace Irit2Powerpoint
             int 
                 NumVertices = Mesh.Vertecies.Length;
 
+            GenMateices(Mesh.ViewMat, Mesh.ProjMat);
             GenRecords(Mesh);
+
+            BBoxMin = new OpenTK.Vector3((float)Mesh.Min[0], (float)Mesh.Min[1], (float)Mesh.Min[2]);
+            BBoxMax = new OpenTK.Vector3((float)Mesh.Max[0], (float)Mesh.Max[1], (float)Mesh.Max[2]);
             GL.GenVertexArrays(1, out this.VAO);
             GL.GenBuffers(1, out this.VBO);
 
@@ -94,25 +104,42 @@ namespace Irit2Powerpoint
             GL.BindVertexArray(0);
         }
 
+        private void GenMateices(double[] View, double[] Proj)
+        {
+            ProjMat = ViewMat = OpenTK.Matrix4.Zero;
+            ContainsProj = ContainsView = false;
+
+            if (View != null)
+            {
+                ViewMat = new OpenTK.Matrix4((float)View[ 0], (float)View[ 1], (float)View[ 2], (float)View[ 3],
+                                             (float)View[ 4], (float)View[ 5], (float)View[ 6], (float)View[ 7],
+                                             (float)View[ 8], (float)View[ 9], (float)View[10], (float)View[11],
+                                             (float)View[12], (float)View[13], (float)View[14], (float)View[15]);
+                ContainsView = true;
+            }
+
+            if (Proj != null)
+            {
+                ProjMat = new OpenTK.Matrix4((float)Proj[ 0], (float)Proj[ 1], (float)Proj[ 2], (float)Proj[ 3],
+                                             (float)Proj[ 4], (float)Proj[ 5], (float)Proj[ 6], (float)Proj[ 7],
+                                             (float)Proj[ 8], (float)Proj[ 9], (float)Proj[10], (float)Proj[11],
+                                             (float)Proj[12], (float)Proj[13], (float)Proj[14], (float)Proj[15]);
+                ContainsProj = true;
+            }
+
+        }
+
         private void GenRecords(ITDParser.ITDMesh Mesh)
         {
-            int 
-                Offset = 0;
+            int TotalSize, Offset;
 
-            this.PolygonRecords = new List<GlMeshRecord>();
-            foreach(int Size in Mesh.PolygonMeshSizes)
-            {
-                this.PolygonRecords.Add(new GlMeshRecord(Offset, Size));
-                Offset = Offset + Size;
-            }
+            Offset = 0;
+            TotalSize = Mesh.PolygonMeshSizes.Sum();
+            this.PolygonRecord = new GlMeshRecord(Offset, TotalSize);
 
-            this.PolylineRecords = new List<GlMeshRecord>();
-            foreach(int Size in Mesh.PolylineMeshSizes)
-            {
-                this.PolylineRecords.Add(new GlMeshRecord(Offset, Size));
-                Offset = Offset + Size;
-            }
-
+            Offset = TotalSize;
+            TotalSize = Mesh.PolylineMeshSizes.Sum();
+            this.PolylineRecord = new GlMeshRecord(Offset, TotalSize);
         }
 
         public void Destroy()

@@ -80,6 +80,8 @@ namespace Irit2Powerpoint
             public VertexStruct[] Vertecies; /* All the vertecies that this ITD file uses. */
             public int[] PolygonMeshSizes, /* The number of polygon meshes is the length of this array. */
                          PolylineMeshSizes; /* The number of polyline meshes is the length of this array. */
+            public double[] ViewMat, ProjMat; /* 4x4 matrices in row major form. */
+            public double[] Min, Max;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -87,6 +89,9 @@ namespace Irit2Powerpoint
         {
             public IntPtr Vertices;
             public IntPtr PolygonMeshSizes, PolylineMeshSizes;
+            public IntPtr ViewMatrix, ProjMatrix;
+            public double MinX, MinY, MinZ,
+                          MaxX, MaxY, MaxZ;
             public int TotalVertices, TotalPolygonMeshes, TotalPolylineMeshes;
         }
 
@@ -122,9 +127,29 @@ namespace Irit2Powerpoint
             ITDMesh Ret;
             int i;
 
+            Ret.ViewMat = null;
+            Ret.ProjMat = null;
+            Ret.Min = new double[3];
+            Ret.Max = new double[3];
+
+            Ret.Min[0] = Mesh.MinX; Ret.Min[1] = Mesh.MinY; Ret.Min[2] = Mesh.MinZ;
+            Ret.Max[0] = Mesh.MaxX; Ret.Max[1] = Mesh.MaxY; Ret.Max[2] = Mesh.MaxZ;
+
             Ret.PolygonMeshSizes = new int[Mesh.TotalPolygonMeshes];
             Ret.PolylineMeshSizes = new int[Mesh.TotalPolylineMeshes];
             Ret.Vertecies = new VertexStruct[Mesh.TotalVertices];
+
+            if (Mesh.ViewMatrix != IntPtr.Zero)
+            {
+                Ret.ViewMat = new double[16];
+                Marshal.Copy(Mesh.ViewMatrix, Ret.ViewMat, 0, 16);
+            }
+
+            if (Mesh.ProjMatrix != IntPtr.Zero)
+            {
+                Ret.ProjMat = new double[16];
+                Marshal.Copy(Mesh.ProjMatrix, Ret.ProjMat, 0, 16);
+            }
 
             if (Mesh.TotalPolygonMeshes > 0)
                 Marshal.Copy(Mesh.PolygonMeshSizes, Ret.PolygonMeshSizes, 0, Mesh.TotalPolygonMeshes);

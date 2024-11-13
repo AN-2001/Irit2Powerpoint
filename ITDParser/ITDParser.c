@@ -12,6 +12,11 @@
 #include "inc_irit/ip_cnvrt.h"
 #include "objectProcessor.h"
 
+/* TODO: */
+/*  - Move matrices to c# and use them instead. */
+/*  - Implement C# GUI. */
+/*  - Send Gershon the demo. */
+
 #define ITD_PRSR_SUCCESS (1)
 #define ITD_PRSR_FAILURE (0)
 #define ITD_PRSR_MALLOC(Size) ((Size) ? malloc(Size) : NULL)
@@ -37,8 +42,6 @@ ITDPARSER_API MeshStruct *ITDParserParse(const char *Path, ImportSettings Settin
     if (!PObj)
 	return NULL;
 
-    IritPrsrPutObjectToFile3("C:\\Irit2Powerpoint\\x64\\Debug\\test0.itd", PObj, 0);
-
     if (!CountGeom(PObj, &NumVertices, &NumPolygonMeshes, &NumPolylineMeshes)) {
 	IritPrsrFreeObject(PObj);
 	return NULL;
@@ -55,7 +58,6 @@ ITDPARSER_API MeshStruct *ITDParserParse(const char *Path, ImportSettings Settin
 	ITDParserFree(Mesh);
 	return NULL;
     }
-    IritPrsrPutObjectToFile3("C:\\Irit2Powerpoint\\x64\\Debug\\test1.itd", PObj, 0);
     IritPrsrFreeObjectList(PObj);
     return Mesh;
 }
@@ -92,6 +94,9 @@ static MeshStruct *ITDParserAllocStruct(int NumVertices,
     Ret -> PolylineMeshSizes = ITD_PRSR_MALLOC(sizeof(*Ret -> PolylineMeshSizes) * NumPolylineMeshes);
     Ret -> TotalPolylineMeshes = NumPolylineMeshes;
     ITD_PRSR_ZAP(Ret -> PolylineMeshSizes, Ret -> TotalPolylineMeshes);
+
+    Ret -> MinX = Ret -> MinY = Ret -> MinZ =  INFINITY;
+    Ret -> MaxX = Ret -> MaxY = Ret -> MaxZ = -INFINITY;
 
     /* Verify that all allocations passed. */
     if ((Ret -> TotalVertices && !Ret -> Vertices) ||
@@ -136,9 +141,35 @@ static int CountGeom(IPObjectStruct *PObj, int *Vertecies, int *Polygons, int *P
 static int PopulateGeom(MeshStruct *Mesh, IPObjectStruct *PObj)
 {
     IPObjectStruct *Iter;
+    IrtHmgnMatType Mat;
+    const char *Name;
     int vc, pc, n;
 
     vc = 0;
+
+    /* Parse in 3 passes, it could be done in 1 but who cares... */
+
+    /* First look for matrices, allocate them and save them. */
+    for (Iter = PObj; Iter; Iter = Iter -> Pnext) {
+	if (!IP_IS_MAT_OBJ(Iter))
+	    continue;
+	memcpy(Mat, Iter -> U.Mat, sizeof(Mat));
+	Name = IP_GET_OBJ_NAME(Iter);
+	if (strcmp(Name, "VIEW_MAT") == 0) {
+	    Mesh -> ViewMatrix = malloc(sizeof(Mat));
+	    if (!Mesh -> ViewMatrix) {
+		return ITD_PRSR_FAILURE;
+	    }
+	    memcpy(Mesh -> ViewMatrix, Mat, sizeof(Mat));
+	} else if(strcmp(Name, "PROJ_MAT") == 0) {
+	    Mesh -> ProjMatrix = malloc(sizeof(Mat));
+	    if (!Mesh -> ProjMatrix) {
+		return ITD_PRSR_FAILURE;
+	    }
+	    memcpy(Mesh -> ProjMatrix, Mat, sizeof(Mat));
+	}
+
+    }
 
     /* First populate polygons, then polylines. */    
     for (Iter = PObj, pc = 0; Iter; Iter = Iter -> Pnext) {
@@ -246,13 +277,20 @@ static int PopulateGeomAux(MeshStruct *Mesh, IPObjectStruct *PObj, int *vc)
 	VertIter = PolyIter -> PVertex;
 	GetUV(VertIter, &u, &v);
 	do {
-	    /* Flip y and z. */
+	    Mesh -> MinX = fmin(Mesh -> MinX, VertIter -> Coord[0]);
+	    Mesh -> MinY = fmin(Mesh -> MinY, VertIter -> Coord[1]);
+	    Mesh -> MinZ = fmin(Mesh -> MinZ, VertIter -> Coord[2]);
+
+	    Mesh -> MaxX = fmax(Mesh -> MaxX, VertIter -> Coord[0]);
+	    Mesh -> MaxY = fmax(Mesh -> MaxY, VertIter -> Coord[1]);
+	    Mesh -> MaxZ = fmax(Mesh -> MaxZ, VertIter -> Coord[2]);
+
 	    Mesh -> Vertices[(*vc)++] = (VertexStruct){.x = VertIter -> Coord[0],
-						       .y = VertIter -> Coord[2],
-						       .z = VertIter -> Coord[1],
+						       .y = VertIter -> Coord[1],
+						       .z = VertIter -> Coord[2],
 						       .nx = VertIter -> Normal[0],
-						       .ny = VertIter -> Normal[2],
-						       .nz = VertIter -> Normal[1],
+						       .ny = VertIter -> Normal[1],
+						       .nz = VertIter -> Normal[2],
 						       .r = r, .g = g, .b = b,
 						       .u = u, .v = v};
 	    NumVertices++;

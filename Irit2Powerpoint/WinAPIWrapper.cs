@@ -63,8 +63,7 @@ namespace Irit2Powerpoint
             if (IsMoving)
             {
                 Trans = Renderer.TransCtx.GetActiveWorld();
-                Zoom = Renderer.TransCtx.GetZoom();
-                Renderer.TransCtx.SetActiveWorld(Trans * OpenTK.Matrix4.CreateTranslation(dx * Zoom, -dy * Zoom, 0));
+                Renderer.TransCtx.SetActiveWorld(Trans * OpenTK.Matrix4.CreateTranslation(dx, -dy, 0));
             }
 
             if (IsRotating)

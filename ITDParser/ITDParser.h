@@ -27,8 +27,11 @@ typedef ITDPARSER_API struct ImportSettings
 typedef ITDPARSER_API struct MeshStruct {
     VertexStruct *Vertices;
     int *PolygonMeshSizes, 
-        *PolylineMeshSizes, 
-        TotalVertices,
+        *PolylineMeshSizes;
+    double *ViewMatrix, *ProjMatrix, 
+            MinX, MinY, MinZ,
+            MaxX, MaxY, MaxZ;
+    int TotalVertices,
         TotalPolygonMeshes,
         TotalPolylineMeshes;
 } MeshStruct;

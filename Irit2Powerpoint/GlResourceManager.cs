@@ -109,10 +109,6 @@ namespace Irit2Powerpoint
             /* Iterate over all keys, destroy each one that's not in use. */
             foreach (KeyValuePair<string, GlResource> Pair in ResourceMap)
             {
-                /* Never delete the grid. */
-                if (Pair.Key == Constants.GRID_KEY)
-                    continue;
-
                 if (!InUse.Contains(Pair.Key))
                 {
                     Pair.Value.Destroy();

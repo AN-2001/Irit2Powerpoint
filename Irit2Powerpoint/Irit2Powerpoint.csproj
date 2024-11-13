@@ -176,6 +176,12 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Resources\RenderSettings.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Resources\RenderSettings.Designer.cs">
+      <DependentUpon>RenderSettings.cs</DependentUpon>
+    </Compile>
     <Compile Include="WinAPIDclr.cs" />
     <Compile Include="WinAPIDef.cs" />
     <Compile Include="WinAPIWrapper.cs" />
@@ -212,6 +218,9 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Resources\RenderSettings.resx">
+      <DependentUpon>RenderSettings.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Ribbon.xml" />
   </ItemGroup>
   <ItemGroup>

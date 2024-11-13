@@ -8,7 +8,7 @@ namespace Irit2Powerpoint
 {
     struct ShaderSources
     {
-        public static int PolyProg, CrvProg, GridProg;
+        public static int PolyProg, CrvProg;
 
         public static readonly string TRANS_BLOCK_NAME = "Transforms";
         public static readonly string LIGHT_BLOCK_NAME = "Lights";
@@ -27,34 +27,66 @@ namespace Irit2Powerpoint
             mat4 Projection;
         };
     
+
+        out vec3 Norm;
+        out vec3 Pos;
+        out vec3 VertColour;
+        
+        void main()
+        {
+            mat4 ModelView = World * View;
+
+            vec3 ViewPos = (ModelView * vec4(Position, 1.f)).xyz;
+            vec3 ViewNorm = (InvTranspose * vec4(Normal, 1.f)).xyz;
+
+            gl_Position = Projection * vec4(ViewPos, 1.f); 
+            Norm = ViewNorm;
+            Pos = ViewPos;
+            VertColour = Colour;
+        }"; 
+        
+        public static readonly string POLY_FRAG = @"
+        #version 330 core
+        in vec3 Norm;
+        in vec3 Pos;
+        in vec3 VertColour;
+        out vec4 FragColor;
+
         layout (std140) uniform Lights
         {
             vec3 LightPos[3];
             vec3 LightCol[3];
         };
 
-        out vec3 Norm;
-        
-        void main()
+        layout (std140) uniform Transforms
         {
-            mat4 ModelView = View * World;
-
-            vec3 ViewPos = (ModelView * vec4(Position, 1.f)).xyz;
-            vec3 ViewNorm = (InvTranspose * vec4(Normal, 1.f)).xyz;
-
-            gl_Position = Projection * vec4(ViewPos, 1.f); 
-            Norm = Colour;
-        }"; 
-        
-        public static readonly string POLY_FRAG = @"
-        #version 330 core
-        in vec3 Norm;
-        in vec3 Diffuse;
-        out vec4 FragColor;
+            mat4 World;
+            mat4 InvTranspose;
+            mat4 View;
+            mat4 Projection;
+        };
 
         void main()
         {
-            FragColor = vec4(Norm, 1.0f);
+            vec3 CameraPos = (inverse(View) * inverse(World) * vec4(vec3(0.f), 1.f)).xyz;
+            vec3 DiffuseCoeff = VertColour;
+            vec3 AmbientCoeff = VertColour * 0.1f;
+            vec3 SpecularCoeff = vec3(1.f);
+            float SpecularPower = 4.f;
+
+            vec3 LightWorld = (World * View * vec4(LightPos[0], 1.f)).xyz;
+            vec3 LightVector = normalize(LightWorld - Pos);
+            vec3 ViewVector = normalize(CameraPos - Pos);
+
+            vec3 N = normalize(Norm);
+            vec3 R = 2 * dot(LightVector, N) * N - LightVector;
+
+            float DiffuseAngle = max(dot(LightVector, N), 0.f);
+            float Specular = pow(max(dot(R, normalize(ViewVector)), 0.f), SpecularPower) * DiffuseAngle;
+
+            vec3 PixelColour = max(min(AmbientCoeff + DiffuseCoeff * DiffuseAngle + Specular * SpecularCoeff, vec3(1.f)), vec3(0.f));
+
+            FragColor = vec4(vec3(1.f), 1.f);
         }";
 
         public static readonly string CRV_VERT = @"
@@ -76,7 +108,7 @@ namespace Irit2Powerpoint
 
         void main()
         {
-            mat4 ModelView = View * World;
+            mat4 ModelView = World * View;
             vec3 ViewPos = (ModelView * vec4(Position, 1.f)).xyz;
 
             gl_Position = Projection * vec4(ViewPos, 1.f); 
@@ -93,102 +125,6 @@ namespace Irit2Powerpoint
         {
             FragColor = vec4(Col, 1.0f);
         }";
-
-        public static readonly string GRID_VERT = @"
-        #version 330 core
-        layout (location = 0) in vec3 Position;
-        layout (location = 1) in vec3 Normal;
-        layout (location = 2) in vec3 Colour;
-        layout (location = 3) in vec2 uv;
-
-        layout (std140) uniform Transforms
-        {
-            mat4 World;
-            mat4 InvTranspose;
-            mat4 View;
-            mat4 Projection;
-        };
-
-        out vec4 NearPoint;
-        out vec4 FarPoint;
-
-        void main()
-        {
-            mat4 ModelViewInv = inverse(View * World);
-            mat4 ProjectionInv = inverse(Projection);
-
-            NearPoint = ModelViewInv * ProjectionInv * vec4( Position.xy, -1.f, 1.f);
-            NearPoint = NearPoint / NearPoint.w;
-
-            FarPoint = ModelViewInv * ProjectionInv * vec4( Position.xy, 1.f, 1.f);
-            FarPoint = FarPoint / FarPoint.w;
-
-            gl_Position = vec4(Position, 1.f);
-        }"; 
-
-        public static readonly string GRID_FRAG = @"
-        #version 330 core
-        out vec4 FragColor;
-        in vec4 NearPoint, FarPoint;
-
-        layout (std140) uniform Transforms
-        {
-            mat4 World;
-            mat4 InvTranspose;
-            mat4 View;
-            mat4 Projection;
-        };
-
-
-        vec4 grid(vec3 fragPos3D, float scale, bool drawAxis) {
-            vec2 coord = fragPos3D.xz * scale;
-            vec2 derivative = fwidth(coord);
-            vec2 grid = abs(fract(coord - 0.5) - 0.5) / derivative;
-            float line = min(grid.x, grid.y);
-            float minimumz = min(derivative.y, 1);
-            float minimumx = min(derivative.x, 1);
-            vec4 color = vec4(0.2, 0.2, 0.2, 1.0 - min(line, 1.0));
-            // z axis
-            if(fragPos3D.x > -0.1 * minimumx && fragPos3D.x < 0.1 * minimumx)
-                color.z = 1.0;
-            // x axis
-            if(fragPos3D.z > -0.1 * minimumz && fragPos3D.z < 0.1 * minimumz)
-                color.x = 1.0;
-            return color;
-        }
-
-        float computeDepth(vec3 pos) {
-
-            vec4 clip_space_pos = Projection * View * World * vec4(pos.xyz, 1.0);
-            float NDC = clip_space_pos.z / clip_space_pos.w;
-            float Far = gl_DepthRange.far;
-            float Near = gl_DepthRange.near;
-            return (((Far - Near) * NDC) + Near + Far) / 2.0f;
-        }
-        
-        float getLinearDepth(vec3 Pos) {
-            vec4 clip_space_pos = Projection * View * World * vec4(Pos.xyz, 1.0);
-            float NDC = clip_space_pos.z / clip_space_pos.w;
-            return NDC;
-        }   
-
-        void main()
-        {
-            float t = -NearPoint.y / (FarPoint.y - NearPoint.y);
-            vec3 fragPos3D = (NearPoint + t * (FarPoint - NearPoint)).xyz;
-
-            vec4 GridCol = grid(fragPos3D, 10, true) + grid(fragPos3D, 1, true);
-            float Fade = max(0.5f - getLinearDepth(fragPos3D), 0.f);
-
-            FragColor = GridCol;
-            FragColor.a *= Fade;
-            gl_FragDepth = computeDepth(fragPos3D);
-        }";
-    }
-   
-    struct Constants
-    {
-        public static readonly string GRID_KEY = "_GRID_";
     }
 
     struct TransformBlock 
@@ -255,7 +191,7 @@ namespace Irit2Powerpoint
 
         protected void PerformSyncImpl<T>(T Block) where T : struct
         {
-            /* Upload matrices to GPU. */
+            /* Upload block to GPU. */
             GL.BindBuffer(BufferTarget.UniformBuffer, ubo);
             GL.BufferSubData(BufferTarget.UniformBuffer,
                     IntPtr.Zero,
@@ -269,7 +205,7 @@ namespace Irit2Powerpoint
 
     public class TransformContext : BaseContext
     {
-        private float Zoom;
+        private float Zoom, AspectRatio;
         private int Width, Height;
         private int zNear = -300,
                     zFar = 300;
@@ -328,24 +264,37 @@ namespace Irit2Powerpoint
         {
             this.Width = Width;
             this.Height = Height;
+            this.AspectRatio = (float)Width / Height;
             UpdateProjection();
         }
 
         private void UpdateProjection()
         {
-            Projection = OpenTK.Matrix4.CreateOrthographic(Width * Zoom, Height * Zoom,
-                                                            zNear, zFar);
+            Projection = OpenTK.Matrix4.CreateOrthographic(1 * AspectRatio, 1,
+                                                           zNear, zFar);
             NeedUpdate = true;
         }
 
+        public void UpdateProjection(OpenTK.Vector3 BBMin, OpenTK.Vector3 BBMax)
+        {
+            Projection = OpenTK.Matrix4.CreateOrthographicOffCenter( BBMin.X, BBMax.X,
+                                                                     BBMin.Y, BBMax.Y,
+                                                                     zNear, zFar);
+            NeedUpdate = true;
+        }
+
+
+
         public void SetZoom(int Direction)
         {
+            float Dir;
             if (Direction > 0)
-                Zoom /= 1.1f;
+                Dir = 1 / 1.1f;
             else
-                Zoom *= 1.1f;
+                Dir = 1.1f;
 
-            UpdateProjection();
+            Zoom = Zoom * Dir;
+            SetActiveWorld(ActiveWorld * OpenTK.Matrix4.CreateScale(Dir));
         }
 
         public float GetZoom()
@@ -357,10 +306,9 @@ namespace Irit2Powerpoint
         {
             Zoom = 1;
             ActiveWorld = SavedWorld = OpenTK.Matrix4.Identity;
-            float Len = (float)Math.Sqrt(10 * 10 + 30 * 30);
-            SetView(OpenTK.Matrix4.LookAt(new OpenTK.Vector3(0, 10, 30),
+            SetView(OpenTK.Matrix4.LookAt(new OpenTK.Vector3(0, 0, 1),
                                           new OpenTK.Vector3(0, 0, 0),
-                                          new OpenTK.Vector3(0, 30 / Len, -10 / Len)));
+                                          new OpenTK.Vector3(0, 0, 1)));
             UpdateProjection();
         }
     }
@@ -525,57 +473,18 @@ namespace Irit2Powerpoint
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-            CreateGridResource();
             ShaderSources.PolyProg = InitShader(ShaderSources.POLY_VERT,
                                                 ShaderSources.POLY_FRAG);
             ShaderSources.CrvProg = InitShader(ShaderSources.CRV_VERT,
                                                ShaderSources.CRV_FRAG);
-            ShaderSources.GridProg = InitShader(ShaderSources.GRID_VERT,
-                                                ShaderSources.GRID_FRAG);
             LightCtx.InitSync(ShaderSources.PolyProg);
             GL.ClearColor(new Color4(0.0f, 0.0f, 0.0f, 0.0f));
             Loaded = false;
             LastPath = null;
             Time = DateTime.Now;
-        }
 
-        private void CreateGridResource()
-        {
-            int i;
-            ITDParser.ITDMesh Grid = new ITDParser.ITDMesh();
-            OpenTK.Vector3[] Geometry = new OpenTK.Vector3[6]
-            {
-                new OpenTK.Vector3(-1, -1, 0),
-                new OpenTK.Vector3( 1, -1, 0),
-                new OpenTK.Vector3(-1,  1, 0),
-
-                new OpenTK.Vector3( 1, 1, 0),
-                new OpenTK.Vector3(-1, 1, 0),
-                new OpenTK.Vector3( 1,-1, 0)
-            };
-
-            Grid.Vertecies = new ITDParser.VertexStruct[6];
-            Grid.PolygonMeshSizes = new int[1];
-            Grid.PolylineMeshSizes = Array.Empty<int>();
-
-            Grid.PolygonMeshSizes[0] = 6;
-
-            for (i = 0; i < 6; i++)
-            {
-                Grid.Vertecies[i].x = Geometry[i].X;
-                Grid.Vertecies[i].y = Geometry[i].Y;
-                Grid.Vertecies[i].z = Geometry[i].Z;
-                Grid.Vertecies[i].nx = 0;
-                Grid.Vertecies[i].ny = 0;
-                Grid.Vertecies[i].nz = 0;
-                Grid.Vertecies[i].r = 0;
-                Grid.Vertecies[i].g = 0;
-                Grid.Vertecies[i].b = 0;
-                Grid.Vertecies[i].u = 0;
-                Grid.Vertecies[i].v = 0;
-            }
-
-            I2P.GetResourceManager().SetResource("_GRID_", Grid);
+            LightCtx.SetPos(0, new OpenTK.Vector3(10, 10, 10));
+            LightCtx.SetCol(0, new OpenTK.Vector3(1, 1, 1));
         }
 
         private int InitShader(string VertSrc, string FragSrc)
@@ -655,28 +564,21 @@ namespace Irit2Powerpoint
             TransCtx.PerformSync();
             LightCtx.PerformSync();
 
-            /* Draw loading screen here. */
-
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             if (Loaded)
             {
                 GL.BindVertexArray(ActiveResource.VAO);
 
                 GL.UseProgram(ShaderSources.PolyProg);
-                foreach (GlMeshRecord Record in ActiveResource.PolygonRecords)
-                    GL.DrawArrays(PrimitiveType.Triangles, Record.Offset, Record.NumElements);
+                GL.DrawArrays(PrimitiveType.Triangles,
+                              ActiveResource.PolygonRecord.Offset,
+                              ActiveResource.PolygonRecord.NumElements);
 
                 GL.UseProgram(ShaderSources.CrvProg);
-                foreach (GlMeshRecord Record in ActiveResource.PolylineRecords)
-                    GL.DrawArrays(PrimitiveType.LineStrip, Record.Offset, Record.NumElements);
+                GL.DrawArrays(PrimitiveType.LineStrip,
+                              ActiveResource.PolylineRecord.Offset,
+                              ActiveResource.PolylineRecord.NumElements);
             }
-
-            GlResource GridResource = I2P.GetResourceManager().GetResource(Constants.GRID_KEY);
-
-            GL.BindVertexArray(GridResource.VAO);
-                GL.UseProgram(ShaderSources.GridProg);
-            foreach (GlMeshRecord Record in GridResource.PolygonRecords)
-                GL.DrawArrays(PrimitiveType.Triangles, Record.Offset, Record.NumElements);
 
             Context.SwapBuffers();
             GL.BindVertexArray(0);
@@ -691,6 +593,11 @@ namespace Irit2Powerpoint
                 Loaded = true;
                 LastPath = null;
                 TransCtx.Reset();
+
+                if (this.ActiveResource.ContainsView)
+                    TransCtx.SetView(this.ActiveResource.ViewMat);
+               // TransCtx.UpdateProjection(this.ActiveResource.BBoxMin,
+               //                           this.ActiveResource.BBoxMax);
             }
             catch (StillLoadingException)  
             {
@@ -704,7 +611,6 @@ namespace Irit2Powerpoint
         {
             GL.DeleteProgram(ShaderSources.PolyProg);
             GL.DeleteProgram(ShaderSources.CrvProg);
-            GL.DeleteProgram(ShaderSources.GridProg);
             TransCtx.Destroy();
             LightCtx.Destroy();
         }

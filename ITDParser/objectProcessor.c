@@ -192,6 +192,9 @@ static IPObjectStruct *TriangulateObject(IPObjectStruct *PObj)
 		Tmp = IritPrsrCopyObject(NULL, PObj, TRUE);
 		IRIT_LIST_PUSH(Tmp, Triangulated);
 	    }
+	} else if (IP_IS_MAT_OBJ(PObj)) {
+	    Tmp = IritPrsrCopyObject(NULL, PObj, TRUE);
+	    IRIT_LIST_PUSH(Tmp, Triangulated);
 	}
     }
     return Triangulated;
