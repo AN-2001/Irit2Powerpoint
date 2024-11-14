@@ -169,6 +169,7 @@ namespace Irit2Powerpoint
             Size = OpenTK.BlittableValueType<TransformBlock>.Stride;
     }
 
+#pragma warning disable CS0649
     /* DONT REMOVE a1, a2, a3, they're for alllignment on GPU memory. */
     struct SettingsBlock
     {
@@ -183,6 +184,7 @@ namespace Irit2Powerpoint
         public static readonly int
             Size = OpenTK.BlittableValueType<SettingsBlock>.Stride;
     }
+#pragma warning restore CS0649
 
     public abstract class BaseContext
     {

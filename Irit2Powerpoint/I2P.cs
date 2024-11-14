@@ -21,6 +21,7 @@ namespace Irit2Powerpoint
         private WindowWrapper GlWindow;
         private GlResourceManager ResourceManager;
         private Ribbon RibbonControl;
+        private ITDParser.ImportSettings CurrentImportSettings;
         private Timer RibbonUpdateTimer;
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
@@ -35,6 +36,7 @@ namespace Irit2Powerpoint
             this.Application.AfterPresentationOpen += OnPresentation;
 
             ResourceManager = new GlResourceManager();
+            CurrentImportSettings = ITDParser.DefaultImportSettings;
 
             /* Reuse the same GLWindow accross different slides. */
             GlWindow = new WindowWrapper();
@@ -47,6 +49,16 @@ namespace Irit2Powerpoint
         public void OnRibbonTimer(Object obj, EventArgs Args)
         {
             RibbonControl.Refresh();
+        }
+
+        public ITDParser.ImportSettings GetCurrentImportSettings()
+        {
+            return CurrentImportSettings;
+        }
+
+        public void SetCurrentImportSettings(ITDParser.ImportSettings ImportSettings)
+        {
+            CurrentImportSettings = ImportSettings;
         }
 
         public void OnPresentation(PowerPoint.Presentation Presentation)
@@ -141,7 +153,7 @@ namespace Irit2Powerpoint
                 return;
             }
 
-            ITDParser.ImportSettings ImportSettings = ITDParser.DefaultImportSettings;
+            ITDParser.ImportSettings ImportSettings = CurrentImportSettings;
             GlRenderer.RenderSettings RenderSettings = GlRenderer.DefaultRenderSettings;
 
             Dummy = Slide.Shapes.AddShape(Office.MsoAutoShapeType.msoShapeRectangle ,0, 0, 400, 300);
@@ -154,7 +166,7 @@ namespace Irit2Powerpoint
 
             Request = new LoadRequest();
             Request.Path = Path;
-            Request.ImportSettings = ITDParser.DefaultImportSettings;
+            Request.ImportSettings = ImportSettings;
             ResourceManager.QueueLoadFromDisk(Request);
             ResourceManager.ConsistencyCleanup(GetPathsInUse().ToArray());
         }

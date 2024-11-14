@@ -50,6 +50,12 @@ namespace Irit2Powerpoint
         public void OnSettingsButton(Office.IRibbonControl Control)
         {
             I2P AddIn = Globals.I2P;
+            ITDParser.ImportSettings
+                Settings = AddIn.GetCurrentImportSettings();
+            Resources.ImportSettings
+                SettingsForm = new Resources.ImportSettings(Settings);
+            if (SettingsForm.ShowDialog() == DialogResult.OK)
+                AddIn.SetCurrentImportSettings(SettingsForm.PickedSettings);
         }
 
         public void OnRenderButton(Office.IRibbonControl Control)

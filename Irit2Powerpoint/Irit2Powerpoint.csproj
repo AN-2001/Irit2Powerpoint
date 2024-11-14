@@ -176,6 +176,12 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Resources\ImportSettings.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Resources\ImportSettings.Designer.cs">
+      <DependentUpon>ImportSettings.cs</DependentUpon>
+    </Compile>
     <Compile Include="Resources\RenderSettings.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -218,6 +224,9 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Resources\ImportSettings.resx">
+      <DependentUpon>ImportSettings.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Resources\RenderSettings.resx">
       <DependentUpon>RenderSettings.cs</DependentUpon>
     </EmbeddedResource>
