@@ -6,7 +6,12 @@
 #include "inc_irit/geom_lib.h"
 #include "inc_irit/cagd_lib.h"
 #include "ITDParser.h"
+#include <Windows.h>
 
+
+static HANDLE gMutex;
+static ImportSettings gImportSettings;
+static int FirstEntry = 1;
 
 
 static IPObjectStruct *TriangulateObject(IPObjectStruct *PObj);
@@ -16,11 +21,21 @@ IPObjectStruct *LoadFromFile(const char *FileName, ImportSettings ImportSettings
 {
     IPObjectStruct *Loaded, *Tris;
 
+    if (InterlockedExchange(&FirstEntry, 1)) {
+	gMutex = CreateMutex(NULL, FALSE, NULL);
+	if (!gMutex)
+	    return NULL;
+    }
 
     Loaded = LoadFromFileAux(FileName);
     Loaded = IritPrsrResolveInstances(Loaded);
 
-    Loaded = IritPrsrFlattenForrest(Loaded, TRUE);
+    if (WaitForSingleObject(gMutex, INFINITE) == WAIT_OBJECT_0) {
+	gImportSettings = ImportSettings;
+	Loaded = IritPrsrFlattenForrest(Loaded, TRUE);
+	ReleaseMutex(gMutex);
+    }
+
     Tris = TriangulateObject(Loaded);
     IritPrsrFreeObjectList(Loaded);
 
@@ -218,8 +233,8 @@ IPObjectStruct *IritPrsrProcessFreeForm(IPFreeFormStruct *FreeForms)
         IP_SET_POLYLINE_OBJ(Object);
         for (Curve = Curves; Curve != NULL; Curve = Curve -> Pnext) {
             Poly = IritPrsrCurve2Polylines(Curve,
-                                     32,
-                                     SYMB_CRV_APPROX_UNIFORM);
+                                     gImportSettings.PolylineFineness,
+                                     gImportSettings.PolylineOptimal);
             Object -> U.Pl = IritPrsrAppendPolyLists(Poly, Object -> U.Pl);
         }
         IritCagdCrvFreeList(Curves);
@@ -237,8 +252,8 @@ IPObjectStruct *IritPrsrProcessFreeForm(IPFreeFormStruct *FreeForms)
             RelativeFineNess = 1.0;
 
         IritPrsrTSrf2PlysInitTessInfo2(&TessInfo, FALSE,
-			         RelativeFineNess * 32,
-			         TRUE, TRUE, FALSE, NULL);
+			         RelativeFineNess * gImportSettings.PolygonFineness,
+			         TRUE, TRUE, gImportSettings.PolygonOptimal, NULL);
 
         Surfaces = Object -> U.Srfs;
         Object -> U.Pl = NULL;
@@ -283,8 +298,8 @@ IPObjectStruct *IritPrsrProcessFreeForm(IPFreeFormStruct *FreeForms)
             RelativeFineNess = 1.0;
 
         IritPrsrTSrf2PlysInitTessInfo2(&TessInfo, FALSE,
-			         RelativeFineNess * 32,
-			         TRUE, TRUE, FALSE, NULL);
+			         RelativeFineNess * gImportSettings.PolygonFineness,
+			         TRUE, TRUE, gImportSettings.PolygonOptimal, NULL);
 
         TrimSrfs = Object -> U.TrimSrfs;
         Object -> U.Pl = NULL;
@@ -327,8 +342,8 @@ IPObjectStruct *IritPrsrProcessFreeForm(IPFreeFormStruct *FreeForms)
             RelativeFineNess = 1.0;
 
         IritPrsrTSrf2PlysInitTessInfo2(&TessInfo, FALSE,
-			         RelativeFineNess * 32,
-			         TRUE, TRUE, FALSE, NULL);
+			         RelativeFineNess * gImportSettings.PolygonFineness,
+			         TRUE, TRUE, gImportSettings.PolygonOptimal, NULL);
 
 	TrivTVStruct *Trivar,
 	    *Trivars = Object -> U.Trivars;
@@ -358,8 +373,8 @@ IPObjectStruct *IritPrsrProcessFreeForm(IPFreeFormStruct *FreeForms)
             RelativeFineNess = 1.0;
 
         IritPrsrTSrf2PlysInitTessInfo2(&TessInfo, FALSE,
-			         RelativeFineNess * 32,
-			         TRUE, TRUE, FALSE, NULL);
+			         RelativeFineNess * gImportSettings.PolygonFineness,
+			         TRUE, TRUE, gImportSettings.PolygonOptimal, NULL);
 
         TriSrfs = Object -> U.TriSrfs;
         Object -> U.Pl = NULL;
