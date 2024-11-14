@@ -87,21 +87,6 @@ namespace Irit2Powerpoint
                 AddIn.SetRenderSettingsInActiveSlide(SettingsForm.PickedSettings);
         }
 
-        public Bitmap OnGetImage(Office.IRibbonControl Control)
-        {
-            switch (Control.Id)
-            {
-                case "ImportButton":
-                    return Properties.Resources.loadIcon;
-                case "ImportSettingsButton":
-                    return Properties.Resources.settingsIcon;
-                case "RenderSettingsButton":
-                    return Properties.Resources.cameraIcon;
-                default:
-                    return null;
-            }
-        }
-
         public bool OnGetRenderEnabled(Office.IRibbonControl Control)
         {
             I2P AddIn = Globals.I2P;

@@ -5,13 +5,14 @@
 #include "inc_irit/ip_cnvrt.h"
 #include "inc_irit/geom_lib.h"
 #include "inc_irit/cagd_lib.h"
+#include "ITDParser.h"
 
 
 
 static IPObjectStruct *TriangulateObject(IPObjectStruct *PObj);
 static IPObjectStruct *LoadFromFileAux(const char *FileName);
 
-IPObjectStruct *LoadFromFile(const char *FileName)
+IPObjectStruct *LoadFromFile(const char *FileName, ImportSettings ImportSettings)
 {
     IPObjectStruct *Loaded, *Tris;
 
