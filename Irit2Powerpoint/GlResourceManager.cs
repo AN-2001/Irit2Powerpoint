@@ -14,16 +14,11 @@ namespace Irit2Powerpoint
         public ITDParser.ImportSettings ImportSettings;
     };
 
-    struct LoadResult
-    {
-        public ITDParser.ITDMesh Mesh;
-    };
-
     public class GlResourceManager
     {
         private const int TASK_COUNT = 64;
         private Dictionary<string, GlResource> ResourceMap;
-        private Dictionary<string, LoadResult> ResultMap;
+        private Dictionary<string, ITDParser.ITDMesh> ResultMap;
         private Task[] Tasks;
         private Queue<LoadRequest> LoadQueue;
         private Mutex Mutex;
@@ -32,14 +27,25 @@ namespace Irit2Powerpoint
         {
             Mutex = new Mutex();
             ResourceMap = new Dictionary<string, GlResource>();
-            ResultMap = new Dictionary<string, LoadResult>();
+            ResultMap = new Dictionary<string, ITDParser.ITDMesh>();
             Tasks = new Task[TASK_COUNT];
             LoadQueue = new Queue<LoadRequest>();
+        }
+
+        public string BuildResourceKey(string Path, ITDParser.ImportSettings Settings)
+        {
+            return BuildResourceKey(Path, ITDParser.SerializeImportSettings(Settings));
+        }
+
+        public string BuildResourceKey(string Path, string SettingsAsString)
+        {
+            return Path + SettingsAsString;
         }
 
         private bool QueueImpl(LoadRequest Request)
         {
             int i;
+            string Key;
 
             /* Exit if we already loaded this key. */
             if (ResourceMap.ContainsKey(Request.Path) || ResultMap.ContainsKey(Request.Path))
@@ -51,19 +57,18 @@ namespace Irit2Powerpoint
                     Tasks[i] = Task.Factory.StartNew(
                         () =>
                         {
-                            LoadResult
-                                Result = new LoadResult();
-
+                            ITDParser.ITDMesh Mesh;
                             try
                             {
-                                Result.Mesh = ITDParser.Parse(Request.Path, Request.ImportSettings);
+                                Mesh = ITDParser.Parse(Request.Path, Request.ImportSettings);
                             } catch (ParseException)
                             {
                                 return;
                             }
 
                             Mutex.WaitOne();
-                            ResultMap[Request.Path] = Result;
+                            Key = BuildResourceKey(Request.Path, Request.ImportSettings);
+                            ResultMap[Key] = Mesh;
                             Mutex.ReleaseMutex();
                         });
                     return true;
@@ -119,7 +124,7 @@ namespace Irit2Powerpoint
         public GlResource GetResource(string Key)
         {
             GlResource Ret;
-            LoadResult Result;
+            ITDParser.ITDMesh Mesh;
 
             TryLoadFromQueue();
             if (ResourceMap.ContainsKey(Key))
@@ -134,23 +139,13 @@ namespace Irit2Powerpoint
                 throw new StillLoadingException();
             }
 
-            Result = ResultMap[Key];
+            Mesh = ResultMap[Key];
             ResultMap.Remove(Key);
             Mutex.ReleaseMutex();
 
-            Ret = new GlResource(Result.Mesh);
+            Ret = new GlResource(Mesh);
             ResourceMap[Key] = Ret;
             return Ret;
-        }
-
-
-        public void SetResource(string Key, ITDParser.ITDMesh Mesh)
-        {
-            GlResource
-                Resource = new GlResource(Mesh);
-
-            TryLoadFromQueue();
-            ResourceMap[Key] = Resource;
         }
 
         public void Destroy()

@@ -51,15 +51,9 @@ namespace Irit2Powerpoint
 
         public void OnPresentation(PowerPoint.Presentation Presentation)
         {
-            List<string> PathsInUse = GetPathsInUse();
-            LoadRequest Request;
-
-            Request = new LoadRequest();
-            foreach (string Str in PathsInUse)
-            {
-                Request.Path = Str;
+            List<LoadRequest> RequestsInUse = GetLoadRequestsInUse();
+            foreach (LoadRequest Request in RequestsInUse)
                 ResourceManager.QueueLoadFromDisk(Request);
-            }
         }
 
         public static GlResourceManager GetResourceManager()
@@ -81,10 +75,10 @@ namespace Irit2Powerpoint
             if (GetDummyFromSlide(Application.ActiveWindow.View.Slide, out Dummy)) 
                 Dummy.Tags.Add(__RENDER_SETTINGS_KEY__, GlRenderer.SerializeRenderSettings(Settings));
         }
-
-        private List<string> GetPathsInUse()
+        private List<LoadRequest> GetLoadRequestsInUse()
         {
-            List<String> Paths = new List<string>();
+            List<LoadRequest> Requests = new List<LoadRequest>();
+            LoadRequest Request;
             int i;
             PowerPoint.Shape Dummy;
 
@@ -93,10 +87,34 @@ namespace Irit2Powerpoint
                 if (GetDummyFromSlide(Application.ActivePresentation.Slides[i],
                                 out Dummy))
                 {
-                    Paths.Add(Dummy.Tags[__PATH_KEY__]);
+                    Request.Path = Dummy.Tags[__PATH_KEY__];
+                    Request.ImportSettings = ITDParser.DeserializeImportSettings(Dummy.Tags[__IMPORT_SETTINGS_KEY__]);
+                    Requests.Add(Request);
                 }
             }
-            return Paths;
+            return Requests;
+        }
+
+        private List<string> GetKeysInUse()
+        {
+            List<String> Keys = new List<string>();
+            int i;
+            string Key, Path, Settings;
+            PowerPoint.Shape Dummy;
+
+            for (i = 1; i <= Application.ActivePresentation.Slides.Count; i++)
+            {
+                if (GetDummyFromSlide(Application.ActivePresentation.Slides[i],
+                                out Dummy))
+                {
+                    Path = Dummy.Tags[__PATH_KEY__];
+                    Settings = Dummy.Tags[__IMPORT_SETTINGS_KEY__];
+
+                    Key = ResourceManager.BuildResourceKey(Path, Settings);
+                    Keys.Add(Key);
+                }
+            }
+            return Keys;
         }
 
         public void SlideChanged(PowerPoint.SlideRange SldRange)
@@ -110,7 +128,7 @@ namespace Irit2Powerpoint
                                 out Dummy))
                     Dummy.Visible = MsoTriState.msoTrue;
             }
-            ResourceManager.ConsistencyCleanup(GetPathsInUse().ToArray());
+            ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
         }
 
         public bool ActiveSlideContainsDummy()
@@ -137,7 +155,7 @@ namespace Irit2Powerpoint
                 Request = new LoadRequest();
                 Request.Path = Path;
                 ResourceManager.QueueLoadFromDisk(Request);
-                ResourceManager.ConsistencyCleanup(GetPathsInUse().ToArray());
+                ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
                 return;
             }
 
@@ -156,7 +174,7 @@ namespace Irit2Powerpoint
             Request.Path = Path;
             Request.ImportSettings = ITDParser.DefaultImportSettings;
             ResourceManager.QueueLoadFromDisk(Request);
-            ResourceManager.ConsistencyCleanup(GetPathsInUse().ToArray());
+            ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
         }
 
         /* Extracts the Irit2Powerpoint dummy from a slide. */
@@ -183,14 +201,14 @@ namespace Irit2Powerpoint
 
         void NewSlideShow(PowerPoint.SlideShowWindow Wn)
         {
-            ResourceManager.ConsistencyCleanup(GetPathsInUse().ToArray());
+            ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
         }
 
         void EndSlideShow(PowerPoint.Presentation Pres)
         {
             /* Once a slide show ends hide the GL window. */
             GlWindow.SetVisibility(false);
-            ResourceManager.ConsistencyCleanup(GetPathsInUse().ToArray());
+            ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
         }
 
         /* Helpers to use to position the window. */
@@ -216,8 +234,9 @@ namespace Irit2Powerpoint
         {
             PowerPoint.Shape Dummy;
             int x, y, w, h, WinLeft, WinTop;
-            string Path;
+            string Path, Key;
             GlRenderer.RenderSettings RenderSettings;
+            ITDParser.ImportSettings ImportSettings;
 
             // MessageBox.Show("NEW SLIDE!");
 
@@ -243,11 +262,13 @@ namespace Irit2Powerpoint
 
                 Path = Dummy.Tags[__PATH_KEY__];
                 RenderSettings = GlRenderer.DeserializeRenderSettings(Dummy.Tags[__RENDER_SETTINGS_KEY__]);
-                GlWindow.GetRenderer().SetActiveModel(Path, RenderSettings);
+                ImportSettings = ITDParser.DeserializeImportSettings(Dummy.Tags[__IMPORT_SETTINGS_KEY__]);
+                Key = ResourceManager.BuildResourceKey(Path, ImportSettings);
+                GlWindow.GetRenderer().SetActiveModel(Key, RenderSettings);
             } else
                 GlWindow.SetVisibility(false);
 
-            ResourceManager.ConsistencyCleanup(GetPathsInUse().ToArray());
+            ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
         }
 
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
