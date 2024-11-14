@@ -12,13 +12,11 @@ namespace Irit2Powerpoint
     {
         public string Path;
         public ITDParser.ImportSettings ImportSettings;
-        public GlRenderer.RenderSettings RenderSettings;
     };
 
     struct LoadResult
     {
         public ITDParser.ITDMesh Mesh;
-        public GlRenderer.RenderSettings RenderSettings;
     };
 
     public class GlResourceManager
@@ -58,7 +56,6 @@ namespace Irit2Powerpoint
 
                             try
                             {
-                                Result.RenderSettings = Request.RenderSettings;
                                 Result.Mesh = ITDParser.Parse(Request.Path, Request.ImportSettings);
                             } catch (ParseException)
                             {
@@ -141,7 +138,7 @@ namespace Irit2Powerpoint
             ResultMap.Remove(Key);
             Mutex.ReleaseMutex();
 
-            Ret = new GlResource(Result.Mesh, Result.RenderSettings);
+            Ret = new GlResource(Result.Mesh);
             ResourceMap[Key] = Ret;
             return Ret;
         }

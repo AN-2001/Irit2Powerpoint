@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using System.Drawing;
 using System.Diagnostics;
 
 
@@ -39,6 +40,8 @@ namespace Irit2Powerpoint
             // Swap out the winproc function.
             SetWindowLongPtr(hWnd, GWL_WNDPROC, Proc);
 
+
+
             ShowWindow(this.hWnd, SW_HIDE);
             Renderer = new GlRenderer(this.hWnd);
         }
@@ -51,8 +54,9 @@ namespace Irit2Powerpoint
         /* Called when the window detects mouse movement. */
         public void OnMouseMove(int x, int y)
         {
-            OpenTK.Matrix4 Trans, Tmp;
-            float Zoom;
+            OpenTK.Matrix4 Trans, Tmp, Proj;
+            OpenTK.Vector4 v;
+            float Zoom, Width, Height;
 
             /* Handle the mouse moving */
             dx = x - LastMouseX;
@@ -63,16 +67,24 @@ namespace Irit2Powerpoint
             if (IsMoving)
             {
                 Trans = Renderer.TransCtx.GetActiveWorld();
-                Renderer.TransCtx.SetActiveWorld(Trans * OpenTK.Matrix4.CreateTranslation(dx, -dy, 0));
+                Proj = Renderer.TransCtx.GetProjection();
+                Width = Renderer.TransCtx.GetWidth();
+                Height = Renderer.TransCtx.GetHeight();
+
+                v = new OpenTK.Vector4(dx * (2.0f / Width), -dy * (2.0f / Height), 0, 0);
+                v = Proj.Inverted() * v;
+
+                Renderer.TransCtx.SetActiveModelView(Trans * OpenTK.Matrix4.CreateTranslation(v.Xyz));
             }
 
+            /* Rotation is harder to get right... we'll just use an alright approximation.. */
             if (IsRotating)
             {
                 Trans = Renderer.TransCtx.GetActiveWorld();
                 Zoom = Renderer.TransCtx.GetZoom();
                 Zoom = Math.Min(Zoom, 0.01f);
                 Tmp = OpenTK.Matrix4.CreateRotationY(dx * Zoom) * OpenTK.Matrix4.CreateRotationX(dy * Zoom);
-                Renderer.TransCtx.SetActiveWorld(Trans * Tmp);
+                Renderer.TransCtx.SetActiveModelView(Trans * Tmp);
             }
         }
 
@@ -82,7 +94,7 @@ namespace Irit2Powerpoint
 
             /* Handle a mouse press */
             if (State == MouseState.MOUSE_UP) {
-                Renderer.TransCtx.SaveActiveWorld();
+                Renderer.TransCtx.SaveActiveModelView();
                 IsMoving = false;
                 IsRotating = false;
                 return;

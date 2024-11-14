@@ -67,6 +67,20 @@ namespace Irit2Powerpoint
             return Globals.I2P.ResourceManager;
         }
 
+        public GlRenderer.RenderSettings GetRenderSettingsFromActiveSlide()
+        {
+            PowerPoint.Shape Dummy;
+            if( GetDummyFromSlide(Application.ActiveWindow.View.Slide, out Dummy)) 
+                return GlRenderer.DeserializeRenderSettings(Dummy.Tags[__RENDER_SETTINGS_KEY__]);
+            return GlRenderer.DefaultRenderSettings;
+        }
+
+        public void SetRenderSettingsInActiveSlide(GlRenderer.RenderSettings Settings)
+        {
+            PowerPoint.Shape Dummy;
+            if (GetDummyFromSlide(Application.ActiveWindow.View.Slide, out Dummy)) 
+                Dummy.Tags.Add(__RENDER_SETTINGS_KEY__, GlRenderer.SerializeRenderSettings(Settings));
+        }
 
         private List<string> GetPathsInUse()
         {
@@ -141,14 +155,13 @@ namespace Irit2Powerpoint
             Request = new LoadRequest();
             Request.Path = Path;
             Request.ImportSettings = ITDParser.DefaultImportSettings;
-            Request.RenderSettings = GlRenderer.DefaultRenderSettings;
             ResourceManager.QueueLoadFromDisk(Request);
             ResourceManager.ConsistencyCleanup(GetPathsInUse().ToArray());
         }
 
         /* Extracts the Irit2Powerpoint dummy from a slide. */
         private bool GetDummyFromSlide(PowerPoint.Slide Slide,
-                                       out PowerPoint.Shape Dummy)
+                                      out PowerPoint.Shape Dummy)
         {
             int i, j;
 
@@ -204,6 +217,7 @@ namespace Irit2Powerpoint
             PowerPoint.Shape Dummy;
             int x, y, w, h, WinLeft, WinTop;
             string Path;
+            GlRenderer.RenderSettings RenderSettings;
 
             // MessageBox.Show("NEW SLIDE!");
 
@@ -228,7 +242,8 @@ namespace Irit2Powerpoint
                 GlWindow.SetVisibility(true);
 
                 Path = Dummy.Tags[__PATH_KEY__];
-                GlWindow.GetRenderer().SetActiveModel(Path);
+                RenderSettings = GlRenderer.DeserializeRenderSettings(Dummy.Tags[__RENDER_SETTINGS_KEY__]);
+                GlWindow.GetRenderer().SetActiveModel(Path, RenderSettings);
             } else
                 GlWindow.SetVisibility(false);
 

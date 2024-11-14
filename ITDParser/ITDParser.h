@@ -22,6 +22,7 @@ typedef ITDPARSER_API struct ImportSettings
     int IsolinesSamples;
     int PolygonOptimal;
     int PolylineOptimal;
+    int FlipNormals;
 } ImportSettings;
 
 typedef ITDPARSER_API struct MeshStruct {
@@ -34,6 +35,7 @@ typedef ITDPARSER_API struct MeshStruct {
     int TotalVertices,
         TotalPolygonMeshes,
         TotalPolylineMeshes;
+    int PerVertexColour;
 } MeshStruct;
 
 ITDPARSER_API MeshStruct *ITDParserParse(const char *Path, ImportSettings Settings);

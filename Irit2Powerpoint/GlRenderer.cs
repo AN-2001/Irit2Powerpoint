@@ -11,7 +11,7 @@ namespace Irit2Powerpoint
         public static int PolyProg, CrvProg;
 
         public static readonly string TRANS_BLOCK_NAME = "Transforms";
-        public static readonly string LIGHT_BLOCK_NAME = "Lights";
+        public static readonly string SETTINGS_BLOCK_NAME = "Settings";
         public static readonly string POLY_VERT = @"
         #version 330 core
         layout (location = 0) in vec3 Position;
@@ -21,24 +21,29 @@ namespace Irit2Powerpoint
 
         layout (std140) uniform Transforms
         {
-            mat4 World;
+            mat4 ModelView;
+            mat4 Inverse;
             mat4 InvTranspose;
-            mat4 View;
             mat4 Projection;
         };
-    
 
+        layout (std140) uniform Settings
+        {
+            vec3 LightPos;
+            vec3 LightCol;
+            vec3 DfltSolidClr;
+            vec3 DfltCrvClr;
+            int PerVertexColour;
+        };
+    
         out vec3 Norm;
         out vec3 Pos;
         out vec3 VertColour;
         
         void main()
         {
-            mat4 ModelView = World * View;
-
             vec3 ViewPos = (ModelView * vec4(Position, 1.f)).xyz;
             vec3 ViewNorm = (InvTranspose * vec4(Normal, 1.f)).xyz;
-
             gl_Position = Projection * vec4(ViewPos, 1.f); 
             Norm = ViewNorm;
             Pos = ViewPos;
@@ -52,29 +57,36 @@ namespace Irit2Powerpoint
         in vec3 VertColour;
         out vec4 FragColor;
 
-        layout (std140) uniform Lights
-        {
-            vec3 LightPos[3];
-            vec3 LightCol[3];
-        };
-
         layout (std140) uniform Transforms
         {
-            mat4 World;
+            mat4 ModelView;
+            mat4 Inverse;
             mat4 InvTranspose;
-            mat4 View;
             mat4 Projection;
+        };
+
+        layout (std140) uniform Settings
+        {
+            vec3 LightPos;
+            vec3 LightCol;
+            vec3 DfltSolidClr;
+            vec3 DfltCrvClr;
+            int PerVertexColour;
         };
 
         void main()
         {
-            vec3 CameraPos = (inverse(View) * inverse(World) * vec4(vec3(0.f), 1.f)).xyz;
-            vec3 DiffuseCoeff = VertColour;
-            vec3 AmbientCoeff = VertColour * 0.1f;
+            vec3 Colour = VertColour;
+            if (PerVertexColour == 0)
+                Colour = DfltSolidClr;
+
+            vec3 CameraPos = (Inverse * vec4(vec3(0.f), 1.f)).xyz;
+            vec3 DiffuseCoeff = Colour;
+            vec3 AmbientCoeff = Colour * 0.1f;
             vec3 SpecularCoeff = vec3(1.f);
             float SpecularPower = 4.f;
 
-            vec3 LightWorld = (World * View * vec4(LightPos[0], 1.f)).xyz;
+            vec3 LightWorld = (ModelView * vec4(LightPos, 1.f)).xyz;
             vec3 LightVector = normalize(LightWorld - Pos);
             vec3 ViewVector = normalize(CameraPos - Pos);
 
@@ -86,7 +98,7 @@ namespace Irit2Powerpoint
 
             vec3 PixelColour = max(min(AmbientCoeff + DiffuseCoeff * DiffuseAngle + Specular * SpecularCoeff, vec3(1.f)), vec3(0.f));
 
-            FragColor = vec4(vec3(1.f), 1.f);
+            FragColor = vec4(vec3(PixelColour), 1.f);
         }";
 
         public static readonly string CRV_VERT = @"
@@ -98,17 +110,25 @@ namespace Irit2Powerpoint
 
         layout (std140) uniform Transforms
         {
-            mat4 World;
+            mat4 ModelView;
+            mat4 Inverse;
             mat4 InvTranspose;
-            mat4 View;
             mat4 Projection;
+        };
+
+        layout (std140) uniform Settings
+        {
+            vec3 LightPos;
+            vec3 LightCol;
+            vec3 DfltSolidClr;
+            vec3 DfltCrvClr;
+            int PerVertexColour;
         };
         
         out vec3 Col;
 
         void main()
         {
-            mat4 ModelView = World * View;
             vec3 ViewPos = (ModelView * vec4(Position, 1.f)).xyz;
 
             gl_Position = Projection * vec4(ViewPos, 1.f); 
@@ -121,33 +141,47 @@ namespace Irit2Powerpoint
         out vec4 FragColor;
         in vec3 Col;
 
+        layout (std140) uniform Settings
+        {
+            vec3 LightPos;
+            vec3 LightCol;
+            vec3 DfltSolidClr;
+            vec3 DfltCrvClr;
+            int PerVertexColour;
+        };
+
         void main()
         {
-            FragColor = vec4(Col, 1.0f);
+            vec3 Colour = Col;
+            if (PerVertexColour == 0)
+                Colour = DfltCrvClr;
+            FragColor = vec4(Colour, 1.0f);
         }";
     }
 
     struct TransformBlock 
     {
-        public OpenTK.Matrix4 World;
+        public OpenTK.Matrix4 ModelView;
+        public OpenTK.Matrix4 Inverse;
         public OpenTK.Matrix4 InvTranspose;
-        public OpenTK.Matrix4 View;
         public OpenTK.Matrix4 Projection;
         public static readonly int
             Size = OpenTK.BlittableValueType<TransformBlock>.Stride;
     }
 
-    struct LightBlock
+    /* DONT REMOVE a1, a2, a3, they're for alllignment on GPU memory. */
+    struct SettingsBlock
     {
-        public OpenTK.Vector3 LightPos0;
-        public OpenTK.Vector3 LightPos1;
-        public OpenTK.Vector3 LightPos2;
-        public OpenTK.Vector3 LightCol0;
-        public OpenTK.Vector3 LightCol1;
-        public OpenTK.Vector3 LightCol2;
+        public OpenTK.Vector3 LightPos;
+        public float a1;
+        public OpenTK.Vector3 LightCol;
+        public float a2;
+        public OpenTK.Vector3 DfltSolidClr;
+        public float a3;
+        public OpenTK.Vector3 DfltCrvClr;
+        public int PerVertexColour;
         public static readonly int
-            Size = OpenTK.BlittableValueType<LightBlock>.Stride;
-
+            Size = OpenTK.BlittableValueType<SettingsBlock>.Stride;
     }
 
     public abstract class BaseContext
@@ -188,6 +222,7 @@ namespace Irit2Powerpoint
 
 
         abstract public void PerformSync();
+        abstract public void Reset();
 
         protected void PerformSyncImpl<T>(T Block) where T : struct
         {
@@ -207,11 +242,8 @@ namespace Irit2Powerpoint
     {
         private float Zoom, AspectRatio;
         private int Width, Height;
-        private int zNear = -300,
-                    zFar = 300;
-        private OpenTK.Matrix4 SavedWorld,
-                               ActiveWorld,
-                               View,
+        private OpenTK.Matrix4 SavedModelView,
+                               ActiveModelView,
                                Projection;
 
         public TransformContext()
@@ -224,12 +256,12 @@ namespace Irit2Powerpoint
         {
             if (!NeedUpdate)
                 return;
-            OpenTK.Matrix4 World = SavedWorld * ActiveWorld;
+            OpenTK.Matrix4 ModelView = SavedModelView * ActiveModelView;
             TransformBlock Block = new TransformBlock();
 
-            Block.World = World;
-            Block.View = View;
-            Block.InvTranspose = Block.World.Inverted();
+            Block.ModelView = ModelView;
+            Block.Inverse = ModelView.Inverted();
+            Block.InvTranspose = ModelView.Inverted();
             Block.InvTranspose.Transpose();
             Block.Projection = Projection;
 
@@ -238,25 +270,30 @@ namespace Irit2Powerpoint
 
         public OpenTK.Matrix4 GetActiveWorld()
         {
-            return ActiveWorld;
+            return ActiveModelView;
         }
 
-        public void SaveActiveWorld()
+        public void SaveActiveModelView()
         {
-            SavedWorld = SavedWorld * ActiveWorld;
-            ActiveWorld = OpenTK.Matrix4.Identity;
+            SavedModelView = SavedModelView * ActiveModelView;
+            ActiveModelView = OpenTK.Matrix4.Identity;
             NeedUpdate = true;
         }
 
-        public void SetView(OpenTK.Matrix4 Mat)
+        public void SetProjection(OpenTK.Matrix4 Mat)
         {
-            View = Mat;
+            Projection = Mat;
             NeedUpdate = true;
         }
 
-        public void SetActiveWorld(OpenTK.Matrix4 Mat)
+        public OpenTK.Matrix4 GetProjection()
         {
-            ActiveWorld = Mat;
+            return Projection;
+        }
+
+        public void SetActiveModelView(OpenTK.Matrix4 Mat)
+        {
+            ActiveModelView = Mat;
             NeedUpdate = true;
         }
 
@@ -265,36 +302,28 @@ namespace Irit2Powerpoint
             this.Width = Width;
             this.Height = Height;
             this.AspectRatio = (float)Width / Height;
-            UpdateProjection();
-        }
-
-        private void UpdateProjection()
-        {
-            Projection = OpenTK.Matrix4.CreateOrthographic(1 * AspectRatio, 1,
-                                                           zNear, zFar);
-            NeedUpdate = true;
         }
 
         public void UpdateProjection(OpenTK.Vector3 BBMin, OpenTK.Vector3 BBMax)
         {
-            Projection = OpenTK.Matrix4.CreateOrthographicOffCenter( BBMin.X, BBMax.X,
-                                                                     BBMin.Y, BBMax.Y,
-                                                                     zNear, zFar);
+            float w = (BBMax.X - BBMin.X);
+            float h = (BBMax.Y - BBMin.Y);
+            float m = Math.Max(w, h);
+            Projection = OpenTK.Matrix4.CreateOrthographic(m * AspectRatio, m, -1000, 1000);
             NeedUpdate = true;
         }
-
-
 
         public void SetZoom(int Direction)
         {
             float Dir;
             if (Direction > 0)
-                Dir = 1 / 1.1f;
-            else
                 Dir = 1.1f;
+            else
+                Dir = 1.0f / 1.1f;
 
             Zoom = Zoom * Dir;
-            SetActiveWorld(ActiveWorld * OpenTK.Matrix4.CreateScale(Dir));
+            SetActiveModelView(ActiveModelView *
+                            OpenTK.Matrix4.CreateScale(Dir));
         }
 
         public float GetZoom()
@@ -302,74 +331,81 @@ namespace Irit2Powerpoint
             return Zoom;
         }
 
-        public void Reset()
+        public float GetWidth()
+        {
+            return Width;
+        }
+
+        public float GetHeight()
+        {
+            return Height;
+        }
+
+        public override void Reset()
         {
             Zoom = 1;
-            ActiveWorld = SavedWorld = OpenTK.Matrix4.Identity;
-            SetView(OpenTK.Matrix4.LookAt(new OpenTK.Vector3(0, 0, 1),
-                                          new OpenTK.Vector3(0, 0, 0),
-                                          new OpenTK.Vector3(0, 0, 1)));
-            UpdateProjection();
+            SavedModelView = OpenTK.Matrix4.Identity;
+            SetActiveModelView(OpenTK.Matrix4.LookAt(new OpenTK.Vector3(0, 0, 1),
+                                                     new OpenTK.Vector3(0, 0, 0),
+                                                     new OpenTK.Vector3(0, 1, 0)));
+            SaveActiveModelView();
         }
     }
 
-    public class LightContext : BaseContext
+    public class SettingsContext : BaseContext
     {
-        OpenTK.Vector3[] Positions;
-        OpenTK.Vector3[] Colours;
+        GlRenderer.RenderSettings Settings;
+        bool PerVertexColour;
 
-        public LightContext() : base(ShaderSources.LIGHT_BLOCK_NAME, LightBlock.Size, 1)
+        public SettingsContext() : base(ShaderSources.SETTINGS_BLOCK_NAME, SettingsBlock.Size, 1)
         {
-            Positions = new OpenTK.Vector3[3];
-            Colours = new OpenTK.Vector3[3];
+            Reset();
+        }
+
+        public void UpdateSettings(GlRenderer.RenderSettings Settings)
+        {
+            this.Settings = Settings;
+            GL.ClearColor(Settings.BackgroundColour.X, Settings.BackgroundColour.Y, Settings.BackgroundColour.Z, 0.0f);
+            NeedUpdate = true;
+        }
+
+        public void UpdatePerVertexColor(bool Val)
+        {
+            PerVertexColour = Val;
+            NeedUpdate = true;
         }
 
         override public void PerformSync()
         {
             if (!NeedUpdate)
                 return;
-            LightBlock Block = new LightBlock();
+            SettingsBlock Block = new SettingsBlock();
 
-            Block.LightPos0 = Positions[0];
-            Block.LightPos1 = Positions[1];
-            Block.LightPos2 = Positions[2];
-
-            Block.LightCol0 = Colours[0];
-            Block.LightCol1 = Colours[1];
-            Block.LightCol2 = Colours[2];
-
+            Block.LightPos = Settings.LightPosition;
+            Block.LightCol = Settings.LightColour;
+            Block.DfltSolidClr = Settings.DefaultSolidColour;
+            Block.DfltCrvClr = Settings.DefaultCurveColour;
+            Block.PerVertexColour = PerVertexColour ? 1 : 0;
             PerformSyncImpl(Block);
         }
 
-        public void SetPos(int Idx, OpenTK.Vector3 Pos)
+        public override void Reset()
         {
-            Positions[Idx] = Pos;
-            NeedUpdate = true;
+            Settings = GlRenderer.DefaultRenderSettings;
+            PerVertexColour = false;
         }
 
-        public void SetCol(int Idx, OpenTK.Vector3 Col)
-        {
-            Colours[Idx] = Col;
-            NeedUpdate = true;
-        }
     }
 
     public class GlRenderer
     {
         public struct RenderSettings
         {
-            public bool FlipNormals;
+            public OpenTK.Vector3 LightPosition;
+            public OpenTK.Vector3 LightColour;
             public OpenTK.Vector3 DefaultSolidColour;
             public OpenTK.Vector3 DefaultCurveColour;
             public OpenTK.Vector3 BackgroundColour;
-            public OpenTK.Vector3 GridColour;
-            public bool OverrideColour;
-            public int AntiAliasingLevel;
-            public bool DisplayGrid;
-            public bool BackfaceCulling;
-            public bool DisplayNormals;
-            public double NearPlane, FarPlane;
-            public double NormalLength;
         };
 
         public static string SerializeRenderSettings(RenderSettings Settings)
@@ -377,16 +413,12 @@ namespace Irit2Powerpoint
             StringBuilder
                 sb = new StringBuilder();
 
-            sb.AppendFormat("{0};{1},{2},{3};{4},{5},{6};{7},{8},{9};{10},{11},{12};{13};{14};{15};{16};{17};{18};{19};{20}",
-                            Settings.FlipNormals,
+            sb.AppendFormat("{0},{1},{2};{3},{4},{5};{6},{7},{8};{9},{10},{11};{12},{13},{14}",
+                            Settings.LightPosition.X, Settings.LightPosition.Y, Settings.LightPosition.Z,
+                            Settings.LightColour.X, Settings.LightColour.Y, Settings.LightColour.Z,
                             Settings.DefaultSolidColour.X, Settings.DefaultSolidColour.Y, Settings.DefaultSolidColour.Z,
                             Settings.DefaultCurveColour.X, Settings.DefaultCurveColour.Y, Settings.DefaultCurveColour.Z,
-                            Settings.BackgroundColour.X, Settings.BackgroundColour.Y, Settings.BackgroundColour.Z,
-                            Settings.GridColour.X, Settings.GridColour.Y, Settings.GridColour.Z,
-                            Settings.OverrideColour, Settings.AntiAliasingLevel, Settings.DisplayGrid,
-                            Settings.BackfaceCulling, Settings.DisplayNormals, Settings.NearPlane,
-                            Settings.FarPlane,
-                            Settings.NormalLength);
+                            Settings.BackgroundColour.X, Settings.BackgroundColour.Y, Settings.BackgroundColour.Z);
             return sb.ToString();
         }
 
@@ -398,19 +430,11 @@ namespace Irit2Powerpoint
 
             try
             {
-                Settings.FlipNormals = bool.Parse(Splitted[0]);
-                Settings.DefaultSolidColour = VecFromStr(Splitted[1]);
-                Settings.DefaultCurveColour = VecFromStr(Splitted[2]);
-                Settings.BackgroundColour = VecFromStr(Splitted[3]);
-                Settings.GridColour = VecFromStr(Splitted[4]);
-                Settings.OverrideColour = bool.Parse(Splitted[5]);
-                Settings.AntiAliasingLevel = int.Parse(Splitted[6]);
-                Settings.DisplayGrid = bool.Parse(Splitted[7]);
-                Settings.BackfaceCulling = bool.Parse(Splitted[8]);
-                Settings.DisplayNormals = bool.Parse(Splitted[9]);
-                Settings.NearPlane = double.Parse(Splitted[10]);
-                Settings.FarPlane = double.Parse(Splitted[11]);
-                Settings.NormalLength = double.Parse(Splitted[12]);
+                Settings.LightPosition = VecFromStr(Splitted[0]);
+                Settings.LightColour = VecFromStr(Splitted[1]);
+                Settings.DefaultSolidColour = VecFromStr(Splitted[2]);
+                Settings.DefaultCurveColour = VecFromStr(Splitted[3]);
+                Settings.BackgroundColour = VecFromStr(Splitted[4]);
             } catch(Exception)
             {
                 MessageBox.Show("Render Settings string was corrupted, ignoring and using defaults.");
@@ -435,26 +459,19 @@ namespace Irit2Powerpoint
         private GraphicsContext Context;
         private OpenTK.Platform.IWindowInfo Info;
         private GlResource ActiveResource;
+        private RenderSettings ActiveSettings;
         private bool Loaded;
         private string LastPath;
         private DateTime Time;
         public TransformContext TransCtx;
-        public LightContext LightCtx;
+        public SettingsContext SettingsCtx;
         public static RenderSettings DefaultRenderSettings = new RenderSettings()
         {
-            FlipNormals = false,
+            LightPosition = new OpenTK.Vector3(10.0f, 10.0f, -10.0f),
+            LightColour = new OpenTK.Vector3(1.0f, 1.0f, 1.0f),
             DefaultSolidColour = new OpenTK.Vector3(1.0f, 0.0f, 0.0f),
             DefaultCurveColour = new OpenTK.Vector3(1.0f, 1.0f, 0.0f),
             BackgroundColour = new OpenTK.Vector3(0.0f, 0.0f, 0.0f),
-            GridColour = new OpenTK.Vector3(0.2f, 0.2f, 0.2f),
-            OverrideColour = false,
-            AntiAliasingLevel = 0,
-            DisplayGrid = true,
-            BackfaceCulling = false,
-            DisplayNormals = true,
-            NearPlane = -300,
-            FarPlane = 300,
-            NormalLength = 1.0f
         };
 
         public GlRenderer(IntPtr hWnd)
@@ -467,24 +484,20 @@ namespace Irit2Powerpoint
             Context.LoadAll();
 
             TransCtx = new TransformContext();
-            LightCtx = new LightContext();
+            SettingsCtx = new SettingsContext();
 
             GL.Enable(EnableCap.DepthTest);
-            GL.Enable(EnableCap.Blend);
-            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-
             ShaderSources.PolyProg = InitShader(ShaderSources.POLY_VERT,
                                                 ShaderSources.POLY_FRAG);
             ShaderSources.CrvProg = InitShader(ShaderSources.CRV_VERT,
                                                ShaderSources.CRV_FRAG);
-            LightCtx.InitSync(ShaderSources.PolyProg);
-            GL.ClearColor(new Color4(0.0f, 0.0f, 0.0f, 0.0f));
+            SettingsCtx.InitSync(ShaderSources.PolyProg);
+            SettingsCtx.InitSync(ShaderSources.CrvProg);
+
             Loaded = false;
             LastPath = null;
             Time = DateTime.Now;
 
-            LightCtx.SetPos(0, new OpenTK.Vector3(10, 10, 10));
-            LightCtx.SetCol(0, new OpenTK.Vector3(1, 1, 1));
         }
 
         private int InitShader(string VertSrc, string FragSrc)
@@ -556,13 +569,13 @@ namespace Irit2Powerpoint
                     Span = DateTime.Now - Time;
                 if (Span.TotalSeconds >= 1)
                 {
-                    SetActiveModel(LastPath);
+                    SetActiveModel(LastPath, ActiveSettings);
                     Time = DateTime.Now;
                 }
             }
 
             TransCtx.PerformSync();
-            LightCtx.PerformSync();
+            SettingsCtx.PerformSync();
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             if (Loaded)
@@ -585,24 +598,39 @@ namespace Irit2Powerpoint
             GL.UseProgram(0);
         }
 
-        public void SetActiveModel(string Filepath)
+        public void SetActiveModel(string Filepath, GlRenderer.RenderSettings Settings)
         {
+
             try
             {
-                this.ActiveResource = I2P.GetResourceManager().GetResource(Filepath);
+                ActiveResource = I2P.GetResourceManager().GetResource(Filepath);
                 Loaded = true;
                 LastPath = null;
                 TransCtx.Reset();
+                SettingsCtx.Reset();
 
-                if (this.ActiveResource.ContainsView)
-                    TransCtx.SetView(this.ActiveResource.ViewMat);
-               // TransCtx.UpdateProjection(this.ActiveResource.BBoxMin,
-               //                           this.ActiveResource.BBoxMax);
+                SettingsCtx.UpdatePerVertexColor(ActiveResource.PerVertexColour);
+                SettingsCtx.UpdateSettings(Settings);
+                if (this.ActiveResource.ContainsView) {
+                    TransCtx.SetActiveModelView(this.ActiveResource.ViewMat);
+                    TransCtx.SaveActiveModelView();
+                }
+
+                if (this.ActiveResource.ContainsProj)
+                {
+                    TransCtx.SetProjection(this.ActiveResource.ProjMat);
+                }
+                else
+                {
+                    TransCtx.UpdateProjection(this.ActiveResource.BBoxMin,
+                                              this.ActiveResource.BBoxMax);
+                }
             }
             catch (StillLoadingException)  
             {
                 Loaded = false;
                 LastPath = Filepath;
+                ActiveSettings = Settings;
             }
 
         }
@@ -612,7 +640,7 @@ namespace Irit2Powerpoint
             GL.DeleteProgram(ShaderSources.PolyProg);
             GL.DeleteProgram(ShaderSources.CrvProg);
             TransCtx.Destroy();
-            LightCtx.Destroy();
+            SettingsCtx.Destroy();
         }
 
     }

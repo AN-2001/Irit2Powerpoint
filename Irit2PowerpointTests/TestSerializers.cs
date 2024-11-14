@@ -19,6 +19,7 @@ namespace Irit2PowerpointTests
             Settings.IsolinesSamples = 3;
             Settings.PolygonOptimal = 4;
             Settings.PolylineOptimal = 5;
+            Settings.FlipNormals = 6;
 
             After = ITDParser.DeserializeImportSettings(ITDParser.SerializeImportSettings(Settings));
             Assert.AreEqual(Settings, After);
@@ -30,18 +31,11 @@ namespace Irit2PowerpointTests
             GlRenderer.RenderSettings Settings = GlRenderer.DefaultRenderSettings;
             GlRenderer.RenderSettings After;
 
-            Settings.AntiAliasingLevel = 1;
-            Settings.BackfaceCulling = true;
-            Settings.BackgroundColour = new OpenTK.Vector3(4, 5, 6);
-            Settings.DefaultCurveColour = new OpenTK.Vector3(7, 8, 9);
-            Settings.DefaultSolidColour = new OpenTK.Vector3(10, 11, 12);
-            Settings.DisplayGrid = false;
-            Settings.DisplayNormals = true;
-            Settings.FarPlane = 13;
-            Settings.NearPlane = 14;
-            Settings.OverrideColour = false;
-            Settings.NormalLength = 15;
-            Settings.GridColour = new OpenTK.Vector3(16, 17, 18);
+            Settings.LightPosition = new OpenTK.Vector3(1, 2, 3);
+            Settings.LightColour = new OpenTK.Vector3(4, 5, 6);
+            Settings.BackgroundColour = new OpenTK.Vector3(7, 8, 9);
+            Settings.DefaultCurveColour = new OpenTK.Vector3(10, 11, 12);
+            Settings.DefaultSolidColour = new OpenTK.Vector3(13, 14, 15);
 
             After = GlRenderer.DeserializeRenderSettings(GlRenderer.SerializeRenderSettings(Settings));
             Assert.AreEqual(Settings, After);

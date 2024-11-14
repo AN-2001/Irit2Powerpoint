@@ -13,7 +13,6 @@
 #include "objectProcessor.h"
 
 /* TODO: */
-/*  - Move matrices to c# and use them instead. */
 /*  - Implement C# GUI. */
 /*  - Send Gershon the demo. */
 
@@ -26,8 +25,8 @@ static MeshStruct *ITDParserAllocStruct(int NumVertices,
 				        int NumPolygonMeshes,
 				        int NumPolylineMeshes);
 static int CountGeom(IPObjectStruct *PObj, int *Vertecies, int *Polygons, int *Polylines);
-static int PopulateGeom(MeshStruct *Mesh, IPObjectStruct *PObj);
-static int PopulateGeomAux(MeshStruct *Mesh, IPObjectStruct *PObj, int *vc);
+static int PopulateGeom(MeshStruct *Mesh, IPObjectStruct *PObj, ImportSettings *Settings);
+static int PopulateGeomAux(MeshStruct *Mesh, IPObjectStruct *PObj, int *vc, ImportSettings *Settings);
 
 ITDPARSER_API MeshStruct *ITDParserParse(const char *Path, ImportSettings Settings)
 {
@@ -37,6 +36,7 @@ ITDPARSER_API MeshStruct *ITDParserParse(const char *Path, ImportSettings Settin
 	NumVertices = 0,
 	NumPolygonMeshes = 0,
 	NumPolylineMeshes = 0;
+    GMBBBboxStruct BBox;
 
     PObj = LoadFromFile(Path);
     if (!PObj)
@@ -53,11 +53,16 @@ ITDPARSER_API MeshStruct *ITDParserParse(const char *Path, ImportSettings Settin
 	return NULL;
     }
 
-    if (!PopulateGeom(Mesh, PObj)) {
+    if (!PopulateGeom(Mesh, PObj, &Settings)) {
 	IritPrsrFreeObject(PObj);
 	ITDParserFree(Mesh);
 	return NULL;
     }
+
+    IritGeomBBComputeBboxObjectList(PObj, &BBox, 0);
+    Mesh -> MinX = BBox.Min[0];  Mesh -> MinY = BBox.Min[1];  Mesh -> MinZ = BBox.Min[2];
+    Mesh -> MaxX = BBox.Max[0];  Mesh -> MaxY = BBox.Max[1];  Mesh -> MaxZ = BBox.Max[2];
+
     IritPrsrFreeObjectList(PObj);
     return Mesh;
 }
@@ -97,6 +102,7 @@ static MeshStruct *ITDParserAllocStruct(int NumVertices,
 
     Ret -> MinX = Ret -> MinY = Ret -> MinZ =  INFINITY;
     Ret -> MaxX = Ret -> MaxY = Ret -> MaxZ = -INFINITY;
+    Ret -> PerVertexColour = 1;
 
     /* Verify that all allocations passed. */
     if ((Ret -> TotalVertices && !Ret -> Vertices) ||
@@ -138,7 +144,7 @@ static int CountGeom(IPObjectStruct *PObj, int *Vertecies, int *Polygons, int *P
 
     return ITD_PRSR_SUCCESS;
 }
-static int PopulateGeom(MeshStruct *Mesh, IPObjectStruct *PObj)
+static int PopulateGeom(MeshStruct *Mesh, IPObjectStruct *PObj, ImportSettings *Settings)
 {
     IPObjectStruct *Iter;
     IrtHmgnMatType Mat;
@@ -176,7 +182,7 @@ static int PopulateGeom(MeshStruct *Mesh, IPObjectStruct *PObj)
 	if (!IP_IS_POLY_OBJ(Iter))
 	    continue;
 	if (IP_IS_POLYGON_OBJ(Iter)) {
-	    n = PopulateGeomAux(Mesh, Iter, &vc); 
+	    n = PopulateGeomAux(Mesh, Iter, &vc, Settings); 
 	    Mesh -> PolygonMeshSizes[pc++] = n;
 	}
     }
@@ -185,7 +191,7 @@ static int PopulateGeom(MeshStruct *Mesh, IPObjectStruct *PObj)
 	if (!IP_IS_POLY_OBJ(Iter))
 	    continue;
 	if (IP_IS_POLYLINE_OBJ(Iter)) {
-	    n = PopulateGeomAux(Mesh, Iter, &vc); 
+	    n = PopulateGeomAux(Mesh, Iter, &vc, Settings); 
 	    Mesh -> PolylineMeshSizes[pc++] = n;
 	}
     }
@@ -193,7 +199,7 @@ static int PopulateGeom(MeshStruct *Mesh, IPObjectStruct *PObj)
     return ITD_PRSR_SUCCESS;
 }
 
-static void GetColor(IPObjectStruct *PObj, double *r, double *g, double *b)
+static int GetColor(IPObjectStruct *PObj, double *r, double *g, double *b)
 {
     int Colour, i, ri, gi, bi;
     static int ColourTable[][4] =  {
@@ -230,7 +236,7 @@ static void GetColor(IPObjectStruct *PObj, double *r, double *g, double *b)
 	*r = ri / 255.0;
 	*g = bi / 255.0;
 	*b = gi / 255.0;
-	return;
+	return TRUE;
     }
 
     if ((Colour = IritMiscAttrGetObjectColor(PObj)) != IP_ATTR_NO_COLOR) {
@@ -239,14 +245,12 @@ static void GetColor(IPObjectStruct *PObj, double *r, double *g, double *b)
 		*r = ColourTable[i][1] / 255.0;
 		*g = ColourTable[i][2] / 255.0;
 		*b = ColourTable[i][3] / 255.0;
-		return;
+		return TRUE;
 	    }
 	}
     }
 
-    *r = 1.0;
-    *g = 0;
-    *b = 0;
+    return FALSE;
 }
 
 static void GetUV(IPVertexStruct *Vert, double *u, double *v)
@@ -262,35 +266,49 @@ static void GetUV(IPVertexStruct *Vert, double *u, double *v)
     *v = 0;
 }
 
-static int PopulateGeomAux(MeshStruct *Mesh, IPObjectStruct *PObj, int *vc)
+static int PopulateGeomAux(MeshStruct *Mesh, IPObjectStruct *PObj, int *vc, ImportSettings *Settings)
 {
     IPPolygonStruct *PolyIter;
     IPVertexStruct *VertIter;
     double r, g, b, u, v;
+    IrtRType nx, ny, nz;
     int NumVertices;
 
     PolyIter = PObj -> U.Pl;
 
-    GetColor(PObj, &r, &g, &b);
+    if (!GetColor(PObj, &r, &g, &b)) {
+	Mesh -> PerVertexColour = 0;
+	r = g = b = 0;
+    }
+
     NumVertices = 0;
     while (PolyIter) {
 	VertIter = PolyIter -> PVertex;
+
 	GetUV(VertIter, &u, &v);
 	do {
-	    Mesh -> MinX = fmin(Mesh -> MinX, VertIter -> Coord[0]);
-	    Mesh -> MinY = fmin(Mesh -> MinY, VertIter -> Coord[1]);
-	    Mesh -> MinZ = fmin(Mesh -> MinZ, VertIter -> Coord[2]);
+	    nx = PolyIter -> Plane[0];
+	    ny = PolyIter -> Plane[1];
+	    nz = PolyIter -> Plane[2];
 
-	    Mesh -> MaxX = fmax(Mesh -> MaxX, VertIter -> Coord[0]);
-	    Mesh -> MaxY = fmax(Mesh -> MaxY, VertIter -> Coord[1]);
-	    Mesh -> MaxZ = fmax(Mesh -> MaxZ, VertIter -> Coord[2]);
+	    if (IP_HAS_NORMAL_VRTX(VertIter)) {
+	       nx = VertIter -> Normal[0];
+	       ny = VertIter -> Normal[1];
+	       nz = VertIter -> Normal[2];
+	    }
+
+	    if (Settings -> FlipNormals) {
+		nx = -nx;
+		ny = -ny;
+		nz = -nz;
+	    }
 
 	    Mesh -> Vertices[(*vc)++] = (VertexStruct){.x = VertIter -> Coord[0],
 						       .y = VertIter -> Coord[1],
 						       .z = VertIter -> Coord[2],
-						       .nx = VertIter -> Normal[0],
-						       .ny = VertIter -> Normal[1],
-						       .nz = VertIter -> Normal[2],
+						       .nx = nx,
+						       .ny = ny,
+						       .nz = nz,
 						       .r = r, .g = g, .b = b,
 						       .u = u, .v = v};
 	    NumVertices++;

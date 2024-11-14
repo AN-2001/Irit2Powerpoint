@@ -27,6 +27,7 @@ namespace Irit2Powerpoint
         public OpenTK.Matrix4 ProjMat;
         public OpenTK.Vector3 BBoxMin;
         public OpenTK.Vector3 BBoxMax;
+        public bool PerVertexColour;
         public bool ContainsView;
         public bool ContainsProj;
         public int VAO, VBO;
@@ -34,12 +35,6 @@ namespace Irit2Powerpoint
 
         /* Mesh records, stores offsets + vertex count. */
         public GlMeshRecord PolygonRecord, PolylineRecord;
-
-        public GlResource(ITDParser.ITDMesh Mesh, GlRenderer.RenderSettings RenderSettings)
-        {
-            InitFromMesh(Mesh);
-            this.RenderSettings = RenderSettings;
-        }
 
         public GlResource(ITDParser.ITDMesh Mesh)
         {
@@ -51,6 +46,7 @@ namespace Irit2Powerpoint
             int 
                 NumVertices = Mesh.Vertecies.Length;
 
+            PerVertexColour = Mesh.PerVertexColor;
             GenMateices(Mesh.ViewMat, Mesh.ProjMat);
             GenRecords(Mesh);
 

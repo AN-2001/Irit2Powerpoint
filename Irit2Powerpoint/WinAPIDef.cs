@@ -19,6 +19,7 @@ namespace Irit2Powerpoint
         public const uint WS_EX_DLGMODALFRAME = 0x00000001;
         public const uint WS_EX_TOPMOST = 0x00000008;
         public const uint WS_EX_TOOLWINDOW = 0x00000080;
+        public const uint WS_EX_LAYERED = 0x00080000;
         public const int CW_USEDEFAULT = unchecked((int)0x80000000);
         public const uint SWP_NOSIZE = 0x0001;
         public const uint SWP_NOMOVE = 0x0002;

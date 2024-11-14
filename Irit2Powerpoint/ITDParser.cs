@@ -28,6 +28,7 @@ namespace Irit2Powerpoint
             public int IsolinesSamples;
             public int PolygonOptimal;
             public int PolylineOptimal;
+            public int FlipNormals;
         };
 
         public static string SerializeImportSettings(ImportSettings Settings)
@@ -35,10 +36,10 @@ namespace Irit2Powerpoint
             StringBuilder
                 sb = new StringBuilder();
 
-            sb.AppendFormat("{0};{1};{2};{3};{4}",
+            sb.AppendFormat("{0};{1};{2};{3};{4};{5}",
                 Settings.PolygonFineness, Settings.PolylineFineness,
                 Settings.IsolinesSamples, Settings.PolygonOptimal,
-                Settings.PolylineOptimal);
+                Settings.PolylineOptimal, Settings.FlipNormals);
             return sb.ToString();
         }
 
@@ -55,6 +56,7 @@ namespace Irit2Powerpoint
                 Settings.IsolinesSamples = int.Parse(Splitted[2]);
                 Settings.PolygonOptimal = int.Parse(Splitted[3]);
                 Settings.PolylineOptimal = int.Parse(Splitted[4]);
+                Settings.FlipNormals = int.Parse(Splitted[5]);
             } catch(Exception)
             {
                 MessageBox.Show("Import settings string was corrupted, using default.");
@@ -72,6 +74,7 @@ namespace Irit2Powerpoint
             IsolinesSamples = 0,
             PolygonOptimal = 0,
             PolylineOptimal = 0,
+            FlipNormals = 0,
         };
 
         [StructLayout(LayoutKind.Sequential)]
@@ -82,6 +85,7 @@ namespace Irit2Powerpoint
                          PolylineMeshSizes; /* The number of polyline meshes is the length of this array. */
             public double[] ViewMat, ProjMat; /* 4x4 matrices in row major form. */
             public double[] Min, Max;
+            public bool PerVertexColor;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -93,6 +97,7 @@ namespace Irit2Powerpoint
             public double MinX, MinY, MinZ,
                           MaxX, MaxY, MaxZ;
             public int TotalVertices, TotalPolygonMeshes, TotalPolylineMeshes;
+            public int PerVertexColour;
         }
 
         [DllImport("ITDParser.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -132,6 +137,7 @@ namespace Irit2Powerpoint
             Ret.Min = new double[3];
             Ret.Max = new double[3];
 
+            Ret.PerVertexColor = Mesh.PerVertexColour == 1;
             Ret.Min[0] = Mesh.MinX; Ret.Min[1] = Mesh.MinY; Ret.Min[2] = Mesh.MinZ;
             Ret.Max[0] = Mesh.MaxX; Ret.Max[1] = Mesh.MaxY; Ret.Max[2] = Mesh.MaxZ;
 

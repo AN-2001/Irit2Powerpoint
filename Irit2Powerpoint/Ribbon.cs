@@ -55,6 +55,13 @@ namespace Irit2Powerpoint
         public void OnRenderButton(Office.IRibbonControl Control)
         {
             I2P AddIn = Globals.I2P;
+            GlRenderer.RenderSettings
+                Settings = AddIn.GetRenderSettingsFromActiveSlide();
+            Resources.RenderSettings
+                SettingsForm = new Resources.RenderSettings(Settings);
+
+            if (SettingsForm.ShowDialog() == DialogResult.OK)
+                AddIn.SetRenderSettingsInActiveSlide(SettingsForm.PickedSettings);
         }
 
         public Bitmap OnGetImage(Office.IRibbonControl Control)
@@ -84,6 +91,7 @@ namespace Irit2Powerpoint
         }
 
         #endregion
+        
 
         #region Helpers
 
