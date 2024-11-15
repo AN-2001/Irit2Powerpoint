@@ -12,6 +12,7 @@ namespace Irit2Powerpoint
 {
 
 
+
     public partial class I2P
     {
         private const string __PATH_KEY__ = "_I2P_PATH_";
@@ -161,18 +162,20 @@ namespace Irit2Powerpoint
             PowerPoint.Shape Dummy;
             PowerPoint.Slide
                 Slide = Application.ActiveWindow.View.Slide;
+
+            ITDParser.ImportSettings ImportSettings = CurrentImportSettings;
+            GlRenderer.RenderSettings RenderSettings = GlRenderer.DefaultRenderSettings;
            
             if (GetDummyFromSlide(Slide, out Dummy)) {
                 Dummy.Tags.Add( __PATH_KEY__ , Path);
+                Dummy.Tags.Add(__IMPORT_SETTINGS_KEY__, ITDParser.SerializeImportSettings(ImportSettings));
                 Request = new LoadRequest();
                 Request.Path = Path;
+                Request.ImportSettings = ImportSettings;
                 ResourceManager.QueueLoadFromDisk(Request);
                 ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
                 return;
             }
-
-            ITDParser.ImportSettings ImportSettings = CurrentImportSettings;
-            GlRenderer.RenderSettings RenderSettings = GlRenderer.DefaultRenderSettings;
 
             Dummy = Slide.Shapes.AddShape(Office.MsoAutoShapeType.msoShapeRectangle ,0, 0, 400, 300);
             Dummy.TextFrame.TextRange.Text = "IRIT2POWERPOINT DUMMY";

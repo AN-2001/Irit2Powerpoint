@@ -1,12 +1,14 @@
 #pragma once
 
 #include <stdbool.h>
+#include <Windows.h>
 
 #ifdef ITDPARSER_EXPORTS
 #define ITDPARSER_API __declspec(dllexport)
 #else
 #define ITDPARSER_API __declspec(dllimport)
 #endif
+
 
 typedef ITDPARSER_API struct VertexStruct {
     double x, y, z;
@@ -37,6 +39,8 @@ typedef ITDPARSER_API struct MeshStruct {
         TotalPolylineMeshes;
     int PerVertexColour;
 } MeshStruct;
+
+DWORD TLSIndex;
 
 ITDPARSER_API MeshStruct *ITDParserParse(const char *Path, ImportSettings Settings);
 ITDPARSER_API void ITDParserFree(MeshStruct *Mesh);

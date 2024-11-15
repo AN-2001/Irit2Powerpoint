@@ -5,7 +5,6 @@ namespace Irit2Powerpoint
 {
     public class WinAPIDclr
     {
-
         [DllImport("user32.dll", SetLastError = true)]
         public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
         #region WinAPIImports

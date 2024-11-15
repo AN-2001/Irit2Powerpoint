@@ -40,8 +40,6 @@ namespace Irit2Powerpoint
             // Swap out the winproc function.
             SetWindowLongPtr(hWnd, GWL_WNDPROC, Proc);
 
-
-
             ShowWindow(this.hWnd, SW_HIDE);
             Renderer = new GlRenderer(this.hWnd);
         }

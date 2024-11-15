@@ -59,7 +59,7 @@ namespace Irit2Powerpoint
 
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    AddIn.InitDummyRect(GetRelativePath(openFileDialog.FileName));
+                    AddIn.InitDummyRect(openFileDialog.FileName);
                 }
             }
         }

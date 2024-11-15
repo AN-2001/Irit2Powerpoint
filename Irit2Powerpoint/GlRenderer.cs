@@ -489,6 +489,7 @@ namespace Irit2Powerpoint
             SettingsCtx = new SettingsContext();
 
             GL.Enable(EnableCap.DepthTest);
+
             ShaderSources.PolyProg = InitShader(ShaderSources.POLY_VERT,
                                                 ShaderSources.POLY_FRAG);
             ShaderSources.CrvProg = InitShader(ShaderSources.CRV_VERT,
