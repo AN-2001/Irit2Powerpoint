@@ -14,6 +14,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ITDParser", "ITDParser\ITDP
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Irit2PowerpointTests", "Irit2PowerpointTests\Irit2PowerpointTests.csproj", "{7857E2D6-C33F-4994-B254-C2BF55CCE625}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Irit2PowerpointInstaller", "Irit2PowerpointInstaller\Irit2PowerpointInstaller.vdproj", "{7975F90E-FE43-430D-8CBC-819E14D90BD1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,6 +61,12 @@ Global
 		{7857E2D6-C33F-4994-B254-C2BF55CCE625}.Release|x64.Build.0 = Release|Any CPU
 		{7857E2D6-C33F-4994-B254-C2BF55CCE625}.Release|x86.ActiveCfg = Release|Any CPU
 		{7857E2D6-C33F-4994-B254-C2BF55CCE625}.Release|x86.Build.0 = Release|Any CPU
+		{7975F90E-FE43-430D-8CBC-819E14D90BD1}.Debug|Any CPU.ActiveCfg = Debug
+		{7975F90E-FE43-430D-8CBC-819E14D90BD1}.Debug|x64.ActiveCfg = Debug
+		{7975F90E-FE43-430D-8CBC-819E14D90BD1}.Debug|x86.ActiveCfg = Debug
+		{7975F90E-FE43-430D-8CBC-819E14D90BD1}.Release|Any CPU.ActiveCfg = Release
+		{7975F90E-FE43-430D-8CBC-819E14D90BD1}.Release|x64.ActiveCfg = Release
+		{7975F90E-FE43-430D-8CBC-819E14D90BD1}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

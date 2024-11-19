@@ -471,9 +471,9 @@ namespace Irit2Powerpoint
         {
             LightPosition = new OpenTK.Vector3(10.0f, 10.0f, -10.0f),
             LightColour = new OpenTK.Vector3(1.0f, 1.0f, 1.0f),
-            DefaultSolidColour = new OpenTK.Vector3(1.0f, 0.0f, 0.0f),
-            DefaultCurveColour = new OpenTK.Vector3(1.0f, 1.0f, 0.0f),
-            BackgroundColour = new OpenTK.Vector3(0.0f, 0.0f, 0.0f),
+            DefaultSolidColour = new OpenTK.Vector3(0.7f, 0.4f, 0.2f),
+            DefaultCurveColour = new OpenTK.Vector3(0.9f, 0.75f, 0.2f),
+            BackgroundColour = new OpenTK.Vector3(0.2f, 0.2f, 0.2f),
         };
 
         public GlRenderer(IntPtr hWnd)
@@ -481,9 +481,11 @@ namespace Irit2Powerpoint
 
             Info = OpenTK.Platform.Utilities.CreateWindowsWindowInfo(hWnd);
             Context = new GraphicsContext(GraphicsMode.Default,
-                            Info, 4, 0, GraphicsContextFlags.Default);
+                            Info, 3, 5, GraphicsContextFlags.Default);
             Context.MakeCurrent(Info);
             Context.LoadAll();
+
+            string str = GL.GetString(StringName.Version);
 
             TransCtx = new TransformContext();
             SettingsCtx = new SettingsContext();
@@ -497,6 +499,8 @@ namespace Irit2Powerpoint
             SettingsCtx.InitSync(ShaderSources.PolyProg);
             SettingsCtx.InitSync(ShaderSources.CrvProg);
 
+            SettingsCtx.UpdateSettings(DefaultRenderSettings);
+            SettingsCtx.UpdatePerVertexColor(false);
             Loaded = false;
             LastPath = null;
             Time = DateTime.Now;
@@ -596,7 +600,10 @@ namespace Irit2Powerpoint
                               ActiveResource.PolylineRecord.NumElements);
             }
 
+            ErrorCode code = GL.GetError();
+
             Context.SwapBuffers();
+
             GL.BindVertexArray(0);
             GL.UseProgram(0);
         }

@@ -177,8 +177,9 @@ namespace Irit2Powerpoint
                 return;
             }
 
-            Dummy = Slide.Shapes.AddShape(Office.MsoAutoShapeType.msoShapeRectangle ,0, 0, 400, 300);
-            Dummy.TextFrame.TextRange.Text = "IRIT2POWERPOINT DUMMY";
+            Dummy = Slide.Shapes.AddShape(Office.MsoAutoShapeType.msoShapeRectangle, 0, 0, 400, 300);
+            Dummy.TextFrame.TextRange.Text = "IRIT2POWERPOINT";
+            Dummy.TextFrame.TextRange.Font.Bold = MsoTriState.msoTrue;
             Dummy.Tags.Add(__DUMMY_KEY__ , "true");
             Dummy.Tags.Add(__PATH_KEY__, Path);
             Dummy.Tags.Add(__IMPORT_SETTINGS_KEY__, ITDParser.SerializeImportSettings(ImportSettings));
@@ -231,8 +232,9 @@ namespace Irit2Powerpoint
         {
             using (Graphics g = Graphics.FromHwnd(HWnd))
             {
-                return (int)(Point * g.DpiX / 72.0f);
+                return (int)((Point * g.DpiX) / 72.0f);
             }
+
         }
 
         /* Helpers to use to position the window. */
@@ -240,7 +242,7 @@ namespace Irit2Powerpoint
         {
             using (Graphics g = Graphics.FromHwnd(HWnd))
             {
-                return (int)(Point * g.DpiY / 72.0f);
+                return (int)((Point * g.DpiY) / 72.0f);
             }
         }
 
@@ -248,12 +250,12 @@ namespace Irit2Powerpoint
         void SlideShowOnSlide(PowerPoint.SlideShowWindow Wn)
         {
             PowerPoint.Shape Dummy;
-            int x, y, w, h, WinLeft, WinTop;
+            int x, y, w, h, WinLeft, WinTop, WinWidth, WinHeight;
+            float SlideWidth, SlideHeight, LetterBoxOffset, AspectScale;
             string Path, Key;
             GlRenderer.RenderSettings RenderSettings;
             ITDParser.ImportSettings ImportSettings;
-
-            // MessageBox.Show("NEW SLIDE!");
+            float ZoomFactor;
 
             /* Check for the dummy and if it exists determine the size/position of the  */
             /* GLWindow from it. */
@@ -261,15 +263,32 @@ namespace Irit2Powerpoint
             {
                 Dummy.Visible = MsoTriState.msoFalse;
 
+                SlideWidth = PointToPixelX(Wn.Presentation.PageSetup.SlideWidth, (IntPtr)Wn.HWND);
+                SlideHeight = PointToPixelY(Wn.Presentation.PageSetup.SlideHeight, (IntPtr)Wn.HWND);
+
+                WinLeft = PointToPixelX(Wn.Left, (IntPtr)Wn.HWND);
+                WinTop = PointToPixelY(Wn.Top, (IntPtr)Wn.HWND);
+                WinWidth = PointToPixelX(Wn.Width, (IntPtr)Wn.HWND);
+                WinHeight = PointToPixelY(Wn.Height, (IntPtr)Wn.HWND);
+
+                AspectScale = Math.Min(WinWidth / SlideWidth, WinHeight / SlideHeight);
+
+                /* Calculate the letter box size using the aspect ratios. */
+
+                LetterBoxOffset = (WinWidth - SlideWidth * AspectScale) / 2.0f;
+
+                /* Include the zoom factor when calculating positions. */
+                ZoomFactor = Wn.View.Zoom / 100f;
+
                 /* Calculate the window's shape and send it to the renderer. */
-                x = PointToPixelX(Dummy.Left * (Wn.View.Zoom / 100f), (IntPtr)Wn.HWND);
-                y = PointToPixelY(Dummy.Top * (Wn.View.Zoom / 100f), (IntPtr)Wn.HWND);
-                w = PointToPixelX(Dummy.Width * (Wn.View.Zoom / 100f), (IntPtr)Wn.HWND);
-                h = PointToPixelY(Dummy.Height * (Wn.View.Zoom / 100f), (IntPtr)Wn.HWND);
+                x = PointToPixelX(Dummy.Left * ZoomFactor, (IntPtr)Wn.HWND);
+                y = PointToPixelY(Dummy.Top * ZoomFactor, (IntPtr)Wn.HWND);
+                w = PointToPixelX(Dummy.Width * ZoomFactor, (IntPtr)Wn.HWND);
+                h = PointToPixelY(Dummy.Height * ZoomFactor, (IntPtr)Wn.HWND);
 
-                WinLeft = PointToPixelX(Wn.Left * (Wn.View.Zoom / 100f), (IntPtr)Wn.HWND);
-                WinTop = PointToPixelY(Wn.Top * (Wn.View.Zoom / 100f), (IntPtr)Wn.HWND);
 
+                /* Account for black boxes when the aspect ratio isn't hte same. */
+                x = (int)(x + LetterBoxOffset);
 
                 GlWindow.SetPosition(x, y, WinLeft, WinTop);
                 GlWindow.SetSize(w, h);

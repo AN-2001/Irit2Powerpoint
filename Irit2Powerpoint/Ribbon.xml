@@ -4,7 +4,7 @@
     <tabs>
       <tab idMso="TabHome" >
         <group id="Content"
-               label="Irit2Powerpoint">
+               label="IRIT2POWERPOINT">
           <button id="ImportButton"
                   label="Import"
                   screentip="Import Model"

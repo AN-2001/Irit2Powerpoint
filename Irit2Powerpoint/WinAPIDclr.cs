@@ -62,6 +62,10 @@ namespace Irit2Powerpoint
         [DllImport("user32.dll")]
         public static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
 
+         [DllImport("gdi32.dll")]
+        public static extern int GetDeviceCaps(IntPtr hdc, int index);
+
+
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool InvalidateRect(IntPtr hWnd, IntPtr lpRect, [MarshalAs(UnmanagedType.Bool)] bool bErase);
