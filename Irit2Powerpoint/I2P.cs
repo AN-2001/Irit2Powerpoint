@@ -251,7 +251,9 @@ namespace Irit2Powerpoint
         {
             PowerPoint.Shape Dummy;
             int x, y, w, h, WinLeft, WinTop, WinWidth, WinHeight;
-            float SlideWidth, SlideHeight, LetterBoxOffset, AspectScale;
+            float SlideWidth, SlideHeight,
+                  LetterBoxOffsetX, LetterBoxOffsetY,
+                  AspectScale;
             string Path, Key;
             GlRenderer.RenderSettings RenderSettings;
             ITDParser.ImportSettings ImportSettings;
@@ -275,7 +277,8 @@ namespace Irit2Powerpoint
 
                 /* Calculate the letter box size using the aspect ratios. */
 
-                LetterBoxOffset = (WinWidth - SlideWidth * AspectScale) / 2.0f;
+                LetterBoxOffsetX = (WinWidth - SlideWidth * AspectScale) / 2.0f;
+                LetterBoxOffsetY = (WinHeight - SlideHeight * AspectScale) / 2.0f;
 
                 /* Include the zoom factor when calculating positions. */
                 ZoomFactor = Wn.View.Zoom / 100f;
@@ -288,7 +291,8 @@ namespace Irit2Powerpoint
 
 
                 /* Account for black boxes when the aspect ratio isn't hte same. */
-                x = (int)(x + LetterBoxOffset);
+                x = (int)(x + LetterBoxOffsetX);
+                y = (int)(y + LetterBoxOffsetY);
 
                 GlWindow.SetPosition(x, y, WinLeft, WinTop);
                 GlWindow.SetSize(w, h);

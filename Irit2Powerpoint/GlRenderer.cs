@@ -479,18 +479,21 @@ namespace Irit2Powerpoint
         public GlRenderer(IntPtr hWnd)
         {
 
+            GraphicsMode Mode;
             Info = OpenTK.Platform.Utilities.CreateWindowsWindowInfo(hWnd);
-            Context = new GraphicsContext(GraphicsMode.Default,
-                            Info, 3, 5, GraphicsContextFlags.Default);
+            Mode = new GraphicsMode(32, 24, 0, 4);
+
+            Context = new GraphicsContext(Mode,
+                            Info, 3, 5, GraphicsContextFlags.Default | GraphicsContextFlags.ForwardCompatible);
             Context.MakeCurrent(Info);
             Context.LoadAll();
 
-            string str = GL.GetString(StringName.Version);
 
             TransCtx = new TransformContext();
             SettingsCtx = new SettingsContext();
 
             GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.Multisample);
 
             ShaderSources.PolyProg = InitShader(ShaderSources.POLY_VERT,
                                                 ShaderSources.POLY_FRAG);
