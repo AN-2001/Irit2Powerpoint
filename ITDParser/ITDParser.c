@@ -32,7 +32,7 @@ static int GetColor(IPAttributeStruct* Attr, double* r, double* g, double* b);
 static void BuildArgv(const char* String, int* Argc, char **Argv);
 
 IRIT_STATIC_DATA const char
-* ConfigStr = "I2P n%- N%- I%-#IsoLines!s F%-PlgnOpti|PlgnFineNess!d!F f%-PllnOpti|PllnFineNess!d!F L%-Normal|Size!F b%-r,g,b|(background)!s c%-r,g,b|(Polyline)!s C%-r,g,b|(Polygon)!s W%-Wiresetup!d L%-x,y,z|(Light)!s p%-Point|Size!F M%- V%- P%- t%- o%- w%-";
+* ConfigStr = "I2P n%- N%- I%-#IsoLines!s F%-PlgnOpti|PlgnFineNess!d!F f%-PllnOpti|PllnFineNess!d!F L%-Normal|Size!F b%-r,g,b|(background)!s c%-r,g,b|(Polyline)!s C%-r,g,b|(Polygon)!s W%-Wiresetup!d L%-x,y,z|(Light)!s p%-Point|Size!F Z%-ZMin|ZMax!F!F M%- V%- P%- t%- o%- w%-";
 IRIT_STATIC_DATA const ParserSettingsStruct
     DefaultSettings = {
 	0, 0, /* VNormal, PNormal */
@@ -54,6 +54,7 @@ IRIT_STATIC_DATA const ParserSettingsStruct
 	40, /* PllnFineness */
 	{1, 1, 1}, /* LightPos */
 	0.05, /* PointSize */
+	10, 100 /* ZMin, ZMax */
     };
 
 ITDPARSER_API MeshStruct* ITDParserParse(const char* Path, const char* Settings)
@@ -81,7 +82,8 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
 	PolylineColourFlag = FALSE,
 	SurfaceWireSetupFlag = FALSE,
 	LightPosFlag = FALSE,
-	PointSizeFlag = FALSE;
+	PointSizeFlag = FALSE,
+	ZMinMaxFlag = FALSE;
     char
 	*IsolineString = NULL,
 	*BackgroundString = NULL,
@@ -110,6 +112,7 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
 	&SurfaceWireSetupFlag, &PSettings->SurfaceWireSetup,
 	&LightPosFlag, &LightPosString,
 	&PointSizeFlag, &PSettings->PointSize,
+	&ZMinMaxFlag, &PSettings->ZMin, &PSettings->ZMax,
 	&PSettings -> DrawSurfaceMesh,
 	&PSettings -> DrawModelsMonolithic,
 	&PSettings -> DrawSurfacePoly,

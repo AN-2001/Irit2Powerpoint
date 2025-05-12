@@ -64,7 +64,7 @@ typedef struct ParserSettingsStruct {
         FlipNormalOrient,
         Wireframe;
     double NormalSize, PlgnFineness, PllnFineness,
-           LightPos[3], PointSize;
+           LightPos[3], PointSize, ZMin, ZMax;
 } ParserSettingsStruct;
 
 typedef struct ParserStruct {
