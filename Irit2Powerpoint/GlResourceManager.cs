@@ -42,8 +42,10 @@ namespace Irit2Powerpoint
             int i;
             string Key;
 
+            Key = BuildResourceKey(Request.Path, Request.ImportSettings);
+
             /* Exit if we already loaded this key. */
-            if (ResourceMap.ContainsKey(Request.Path) || ResultMap.ContainsKey(Request.Path))
+            if (ResourceMap.ContainsKey(Key) || ResultMap.ContainsKey(Key))
                 return true;
 
             for (i = 0; i < TASK_COUNT; i++) {
@@ -62,7 +64,6 @@ namespace Irit2Powerpoint
                             }
 
                             Mutex.WaitOne();
-                            Key = BuildResourceKey(Request.Path, Request.ImportSettings);
                             ResultMap[Key] = Mesh;
                             Mutex.ReleaseMutex();
                         });

@@ -392,54 +392,6 @@ namespace Irit2Powerpoint
             public OpenTK.Vector3 BackgroundColour;
         };
 
-        public static string SerializeRenderSettings(RenderSettings Settings)
-        {
-            StringBuilder
-                sb = new StringBuilder();
-
-            sb.AppendFormat("{0},{1},{2};{3},{4},{5};{6},{7},{8};{9},{10},{11};{12},{13},{14}",
-                            Settings.LightPosition.X, Settings.LightPosition.Y, Settings.LightPosition.Z,
-                            Settings.LightColour.X, Settings.LightColour.Y, Settings.LightColour.Z,
-                            Settings.DefaultSolidColour.X, Settings.DefaultSolidColour.Y, Settings.DefaultSolidColour.Z,
-                            Settings.DefaultCurveColour.X, Settings.DefaultCurveColour.Y, Settings.DefaultCurveColour.Z,
-                            Settings.BackgroundColour.X, Settings.BackgroundColour.Y, Settings.BackgroundColour.Z);
-            return sb.ToString();
-        }
-
-        public static RenderSettings DeserializeRenderSettings(string String)
-        {
-            RenderSettings
-                Settings = new RenderSettings();
-            String[] Splitted = String.Split(';');
-
-            try
-            {
-                Settings.LightPosition = VecFromStr(Splitted[0]);
-                Settings.LightColour = VecFromStr(Splitted[1]);
-                Settings.DefaultSolidColour = VecFromStr(Splitted[2]);
-                Settings.DefaultCurveColour = VecFromStr(Splitted[3]);
-                Settings.BackgroundColour = VecFromStr(Splitted[4]);
-            } catch(Exception)
-            {
-                MessageBox.Show("Render Settings string was corrupted, ignoring and using defaults.");
-                Settings = DefaultRenderSettings;
-            }
-
-            return Settings;
-        }
-
-        private static OpenTK.Vector3 VecFromStr(string String)
-        {
-            OpenTK.Vector3
-                Vec = new OpenTK.Vector3();
-            String[] Splitted = String.Split(',');
-
-            Vec.X = float.Parse(Splitted[0]);
-            Vec.Y = float.Parse(Splitted[1]);
-            Vec.Z = float.Parse(Splitted[2]);
-            return Vec;
-        }
-
         private GraphicsContext Context;
         private OpenTK.Platform.IWindowInfo Info;
         private GlResource ActiveResource;

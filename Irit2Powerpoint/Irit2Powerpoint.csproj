@@ -176,12 +176,6 @@
     <Compile Include="Resources\ImportSettings.Designer.cs">
       <DependentUpon>ImportSettings.cs</DependentUpon>
     </Compile>
-    <Compile Include="Resources\RenderSettings.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Resources\RenderSettings.Designer.cs">
-      <DependentUpon>RenderSettings.cs</DependentUpon>
-    </Compile>
     <Compile Include="WinAPIDclr.cs" />
     <Compile Include="WinAPIDef.cs" />
     <Compile Include="WinAPIWrapper.cs" />
@@ -217,9 +211,6 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\ImportSettings.resx">
       <DependentUpon>ImportSettings.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\RenderSettings.resx">
-      <DependentUpon>RenderSettings.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Ribbon.xml" />
   </ItemGroup>

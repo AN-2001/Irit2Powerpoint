@@ -75,29 +75,6 @@ namespace Irit2Powerpoint
                 AddIn.SetCurrentImportSettings(SettingsForm.PickedSettings);
         }
 
-        public void OnRenderButton(Office.IRibbonControl Control)
-        {
-            I2P AddIn = Globals.I2P;
-            GlRenderer.RenderSettings
-                Settings = AddIn.GetRenderSettingsFromActiveSlide();
-            Resources.RenderSettings
-                SettingsForm = new Resources.RenderSettings(Settings);
-
-            if (SettingsForm.ShowDialog() == DialogResult.OK)
-                AddIn.SetRenderSettingsInActiveSlide(SettingsForm.PickedSettings);
-        }
-
-        public bool OnGetRenderEnabled(Office.IRibbonControl Control)
-        {
-            I2P AddIn = Globals.I2P;
-            return AddIn.ActiveSlideContainsDummy();
-        }
-
-        public void Refresh()
-        {
-            this.ribbon.InvalidateControl("RenderSettingsButton");
-        }
-
         #endregion
 
         

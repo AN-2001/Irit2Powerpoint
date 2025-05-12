@@ -10,9 +10,6 @@ using System.Diagnostics;
 
 namespace Irit2Powerpoint
 {
-
-
-
     public partial class I2P
     {
         private const string __PATH_KEY__ = "_I2P_PATH_";
@@ -23,7 +20,6 @@ namespace Irit2Powerpoint
         private GlResourceManager ResourceManager;
         private Ribbon RibbonControl;
         private string CurrentImportSettings;
-        private Timer RibbonUpdateTimer;
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
@@ -41,15 +37,6 @@ namespace Irit2Powerpoint
 
             /* Reuse the same GLWindow accross different slides. */
             GlWindow = new WindowWrapper();
-            RibbonUpdateTimer = new Timer();
-            RibbonUpdateTimer.Interval = 100;
-            RibbonUpdateTimer.Tick += OnRibbonTimer;
-            RibbonUpdateTimer.Start();
-        }
-
-        public void OnRibbonTimer(Object obj, EventArgs Args)
-        {
-            RibbonControl.Refresh();
         }
 
         public string GetCurrentImportSettings()
@@ -76,18 +63,9 @@ namespace Irit2Powerpoint
 
         public GlRenderer.RenderSettings GetRenderSettingsFromActiveSlide()
         {
-            PowerPoint.Shape Dummy;
-            if( GetDummyFromSlide(Application.ActiveWindow.View.Slide, out Dummy)) 
-                return GlRenderer.DeserializeRenderSettings(Dummy.Tags[__RENDER_SETTINGS_KEY__]);
             return GlRenderer.DefaultRenderSettings;
         }
 
-        public void SetRenderSettingsInActiveSlide(GlRenderer.RenderSettings Settings)
-        {
-            PowerPoint.Shape Dummy;
-            if (GetDummyFromSlide(Application.ActiveWindow.View.Slide, out Dummy)) 
-                Dummy.Tags.Add(__RENDER_SETTINGS_KEY__, GlRenderer.SerializeRenderSettings(Settings));
-        }
         private List<LoadRequest> GetLoadRequestsInUse()
         {
             List<LoadRequest> Requests = new List<LoadRequest>();
@@ -183,7 +161,6 @@ namespace Irit2Powerpoint
             Dummy.Tags.Add(__DUMMY_KEY__ , "true");
             Dummy.Tags.Add(__PATH_KEY__, Path);
             Dummy.Tags.Add(__IMPORT_SETTINGS_KEY__, ImportSettings);
-            Dummy.Tags.Add(__RENDER_SETTINGS_KEY__, GlRenderer.SerializeRenderSettings(RenderSettings));
             Dummy.Fill.ForeColor.RGB = Color.FromArgb(100, 100, 100).ToArgb();
 
             Request = new LoadRequest();
@@ -299,7 +276,7 @@ namespace Irit2Powerpoint
                 GlWindow.SetVisibility(true);
 
                 Path = Dummy.Tags[__PATH_KEY__];
-                RenderSettings = GlRenderer.DeserializeRenderSettings(Dummy.Tags[__RENDER_SETTINGS_KEY__]);
+                RenderSettings = GlRenderer.DefaultRenderSettings;
                 ImportSettings = Dummy.Tags[__IMPORT_SETTINGS_KEY__];
                 Key = ResourceManager.BuildResourceKey(Path, ImportSettings);
                 GlWindow.GetRenderer().SetActiveModel(Key, RenderSettings);
@@ -313,7 +290,6 @@ namespace Irit2Powerpoint
         {
             GlWindow.Destroy();
             ResourceManager.Destroy();
-            RibbonUpdateTimer.Stop();
         }
 
         protected override Microsoft.Office.Core.IRibbonExtensibility CreateRibbonExtensibilityObject()
