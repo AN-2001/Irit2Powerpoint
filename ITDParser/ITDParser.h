@@ -50,11 +50,13 @@ typedef struct ParserCommandsSturct {
 
 typedef struct ParserSettingsStruct {
     int DrawVNormal, DrawPNormal,
-        Isolines[3],
-        Background[3],
-        OverridePolylineCol, PolylineCol[3],
-        OverridePolygonCol, PolygonCol[3],
-        PolygonOptiApprox,
+        Isolines[3];
+    double Background[3];
+    int OverridePolylineCol;
+    double PolylineCol[3];
+    int OverridePolygonCol;
+    double PolygonCol[3];
+    int PolygonOptiApprox,
         PolylineOptiApprox,
         DrawSurfacePoly,
         DrawSurfaceMesh,

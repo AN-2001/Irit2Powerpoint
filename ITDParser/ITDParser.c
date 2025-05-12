@@ -32,14 +32,14 @@ static int GetColor(IPAttributeStruct* Attr, double* r, double* g, double* b);
 static void BuildArgv(const char* String, int* Argc, char **Argv);
 
 IRIT_STATIC_DATA const char
-* ConfigStr = "I2P n%- N%- I%-#IsoLines!s F%-PlgnOpti|PlgnFineNess!d!F f%-PllnOpti|PllnFineNess!d!F L%-Normal|Size!F b%-r,g,b|(background)!s c%-r,g,b|(Polyline)!s C%-r,g,b|(Polygon)!s W%-Wiresetup!d L%-x,y,z|(Light)!s p%-Point|Size!F Z%-ZMin|ZMax!F!F M%- V%- P%- t%- o%- w%-";
+* ConfigStr = "I2P n%- N%- I%-#IsoLines!s F%-PlgnOpti|PlgnFineNess!d!F f%-PllnOpti|PllnFineNess!d!F L%-Normal|Size!F b%-r,g,b|(background)!s c%-Override?|r,g,b|(Polyline)!d!s C%-Override?|r,g,b|(Polygon)!d!s W%-Wiresetup!d L%-x,y,z|(Light)!s p%-Point|Size!F Z%-ZMin|ZMax!F!F M%- V%- P%- t%- o%- w%-";
 IRIT_STATIC_DATA const ParserSettingsStruct
     DefaultSettings = {
 	0, 0, /* VNormal, PNormal */
 	{10, 10, 10}, /* Isolines */
 	{0, 0, 0}, /* Background Colour */
-	FALSE, {0, 0, 0}, /* OverridePolylineCol - Polyline Colour */
-	FALSE, {0, 0, 0}, /* OverridePolygonCol - Polygon Colour */
+	FALSE, {1, 1, 0}, /* OverridePolylineCol - Polyline Colour */
+	FALSE, {1, 0, 0}, /* OverridePolygonCol - Polygon Colour */
 	FALSE, /* PolygonOptiApprox */
 	SYMB_CRV_APPROX_CURVATURE, /* PolylineOptiApprox */
 	FALSE, /* DrawSurfacePoly */
@@ -107,8 +107,8 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
 	&PolylineFinenessFlag, &PSettings->PolylineOptiApprox, &PSettings->PllnFineness,
 	&NormalSizeFlag, &PSettings->NormalSize,
 	&BackgroundColourFlag, &BackgroundString,
-	&PolylineColourFlag, &PolylineString,
-	&PolygonColourFlag, &PolygonString,
+	&PolylineColourFlag, &PSettings -> OverridePolylineCol, &PolylineString,
+	&PolygonColourFlag, &PSettings -> OverridePolygonCol, &PolygonString,
 	&SurfaceWireSetupFlag, &PSettings->SurfaceWireSetup,
 	&LightPosFlag, &LightPosString,
 	&PointSizeFlag, &PSettings->PointSize,
@@ -126,42 +126,35 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
 	PSettings -> SurfaceWireSetup = 0;
 
     if (BackgroundColourFlag) {
-	if (BackgroundString &&
-	    (sscanf(BackgroundString, "%d,%d,%d", &PSettings -> Background[0],
-	     &PSettings -> Background[1],
-	     &PSettings -> Background[2]) != 3) &&
-	    (sscanf(BackgroundString, "%d %d %d", &PSettings -> Background[0],
-		&PSettings -> Background[1],
-		&PSettings -> Background[2]) != 3)) {
+	int r, g, b;
+	if (BackgroundString && (sscanf(BackgroundString, "%d,%d,%d", &r, &g, &b) != 3)) {
 	    return;
 	}
+	PSettings -> Background[0] = r / 255.0;
+	PSettings -> Background[1] = g / 255.0;
+	PSettings -> Background[2] = b / 255.0;
     }
 
     if (PolylineColourFlag) {
-	PSettings -> OverridePolylineCol = TRUE;
-	if (PolylineString &&
-	    ((sscanf(PolylineString, "%d,%d,%d", &PSettings -> PolylineCol[0],
-	     &PSettings -> PolylineCol[1],
-	     &PSettings -> PolylineCol[2])) != 3) &&
-	    (sscanf(PolylineString, "%d %d %d", &PSettings -> PolylineCol[0],
-		&PSettings -> PolylineCol[1],
-		&PSettings -> PolylineCol[2]) != 3)) {
+	int r, g, b;
+	if (PolylineString && (sscanf(PolylineString, "%d,%d,%d", &r, &g, &b) != 3)) {
 	    return;
 	}
+	PSettings -> PolylineCol[0] = r / 255.0;
+	PSettings -> PolylineCol[1] = g / 255.0;
+	PSettings -> PolylineCol[2] = b / 255.0;
     }
 
     if (PolygonColourFlag) {
-	PSettings -> OverridePolygonCol = TRUE;
-	if (PolygonString &&
-	    (sscanf(PolygonString, "%d,%d,%d", &PSettings -> PolygonCol[0],
-	    &PSettings -> PolygonCol[1],
-	    &PSettings -> PolygonCol[2]) != 3) &&
-	    (sscanf(PolygonString, "%d %d %d", &PSettings -> PolygonCol[0],
-		&PSettings -> PolygonCol[1],
-		&PSettings -> PolygonCol[2]) != 3)) {
+	int r, g, b;
+	if (PolygonString && (sscanf(PolygonString, "%d,%d,%d", &r, &g, &b) != 3)) {
 	    return;
 	}
+	PSettings -> PolygonCol[0] = r / 255.0;
+	PSettings -> PolygonCol[1] = g / 255.0;
+	PSettings -> PolygonCol[2] = b / 255.0;
     }
+
 
     if (IsolineFlag) {
 	if (IsolineString &&
@@ -259,13 +252,23 @@ static void ParserHandlePoly(ParserStruct* Parser, IPObjectStruct* PObj)
     IrtRType x, y, z, pnx, pny, pnz, nx, ny, nz;
     VertexStruct Vert;
 
-    __r = 1.0; __g = 0; __b = 0;
+    if (IP_IS_POLYGON_OBJ(PObj)) {
+	__r = Parser -> Settings.PolygonCol[0];
+	__g = Parser -> Settings.PolygonCol[1];
+	__b = Parser -> Settings.PolygonCol[2];
+    } else {
+	__r = Parser -> Settings.PolylineCol[0];
+	__g = Parser -> Settings.PolylineCol[1];
+	__b = Parser -> Settings.PolylineCol[2];
+    }
+
     GetColor(PObj -> Attr, &__r, &__g, &__b);
 
     PolyIter = PObj->U.Pl;
     while (PolyIter) {
 	_r = __r; _g = __g; _b = __b;
 	GetColor(PolyIter -> Attr, &_r, &_g, &_b);
+
 	VertIter = PolyIter->PVertex;
 	pnx = pny = pnz = 0;
 	if (IP_HAS_PLANE_POLY(PolyIter)) {
@@ -277,6 +280,7 @@ static void ParserHandlePoly(ParserStruct* Parser, IPObjectStruct* PObj)
 	}
 
 	do {
+
 	    r = _r; g = _g; b = _b;
 	    GetColor(VertIter -> Attr, &r, &g, &b);
 
@@ -319,6 +323,12 @@ static void ParserSubmitLineVertex(ParserStruct* Parser, VertexStruct v)
     if (!Parser)
 	return;
 
+    if (Parser -> Settings.OverridePolylineCol) {
+	v.r = Parser -> Settings.PolylineCol[0];
+	v.g = Parser -> Settings.PolylineCol[1];
+	v.b = Parser -> Settings.PolylineCol[2];
+    } 
+
     Last = Parser->LineCommands;
     if (Last && Last->VertexCount < 2) {
 	Last->Vertices[Last->VertexCount++] = v;
@@ -341,6 +351,12 @@ static void ParserSubmitTriangleVertex(ParserStruct* Parser, VertexStruct v)
     ParserCommandsStruct* Last, * New, ** Curr;
     if (!Parser)
 	return;
+
+    if (Parser -> Settings.OverridePolygonCol) {
+	v.r = Parser -> Settings.PolygonCol[0];
+	v.g = Parser -> Settings.PolygonCol[1];
+	v.b = Parser -> Settings.PolygonCol[2];
+    } 
 
     Last = Parser->TriCommands;
     if (Last && Last->VertexCount < 3) {
