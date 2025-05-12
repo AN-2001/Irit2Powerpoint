@@ -21,7 +21,8 @@ typedef enum {
     IP_ATTR_STR,
     IP_ATTR_OBJ,
     IP_ATTR_PTR,
-    IP_ATTR_REFPTR
+    IP_ATTR_REFPTR,
+    IP_ATTR_SIZED_PTR
 } IPAttributeType;
 
 #define IP_ATTR_BAD_INT		-2147182588
@@ -78,6 +79,10 @@ typedef struct IPAttributeStruct {
 	struct IPObjectStruct *PObj;
 	VoidPtr Ptr;
 	VoidPtr RefPtr;
+	struct {
+	    void *SPtr;
+	    int Size;
+	} SizedPtr;
     } U;
     IPAttrNumType _AttribNum;           /* Used in string based attributes. */
     IPAttrIDType _AttribID;                  /* Used in Attribute ID attrs. */

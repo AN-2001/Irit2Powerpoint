@@ -3,8 +3,10 @@
 #include "inc_irit/allocate.h"
 #include "inc_irit/iritprsr.h"
 #include "ITDParser.h"
+#include "objectProcessor.h"
 
 extern DWORD TLSIndex;
+extern HANDLE gMutex;
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
@@ -14,10 +16,8 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
-	IritPrsrSetPolyListCirc(TRUE);
-	IritPrsrSetFlattenObjects(FALSE);
-	IritPrsrFlattenInvisibleObjects(FALSE);
         TLSIndex = TlsAlloc();
+        gMutex = CreateMutex(NULL, FALSE, NULL);
 
         break;
     case DLL_THREAD_ATTACH:
@@ -25,6 +25,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
         break;
     case DLL_PROCESS_DETACH:
         TlsFree(TLSIndex);
+        CloseHandle(gMutex);
         break;
     }
     return TRUE;

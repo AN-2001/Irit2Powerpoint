@@ -161,6 +161,15 @@ typedef enum {
     IRIT_USER_IMP_TV_LIDINOID,
 } IritUserImplicitTVTileType;
 
+typedef enum {
+    USER_PACK_TILE_INCLUDE_FULL_IN,
+    USER_PACK_TILE_INCLUDE_PART_IN,
+    USER_PACK_TILE_INCLUDE_CENTROID,
+    USER_PACK_TILE_INCLUDE_ALL,
+    USER_PACK_TILE_INCLUDE_FULL_SUBOBJ_IN,
+    USER_PACK_TILE_INCLUDE_FULL_GEOM_IN
+} IritUserPackTileInclusionType;
+
 #define USER_MICRO2_TILE_MAX_BIFURCATION_TOPOLOGY 4
 
 #define USER_PACK_TRANS_VEC1_ATTR_NAME	    IRIT_ATTR_CREATE_ID(vec1)
@@ -192,11 +201,12 @@ typedef struct UserMicroPreProcessTileCBStruct {
     /* Domain of local deformation func.in global (orig.) deformation func. */
     CagdRType DefMapDmnMin[CAGD_MAX_PT_SIZE],
               DefMapDmnMax[CAGD_MAX_PT_SIZE];  
-    /* Base index of this tile in the grid of tiles. */
+    /* Base index of this tile in the grid of tiles, per Bezier macroshape. */
     int TileIdxs[CAGD_MAX_PT_SIZE]; 
     /* Number of tiles to place in all directions in each Bezier            */
-    /* patch/global (following GlobalPlacement) of deformation map.         */
-    int NumOfTiles[CAGD_MAX_PT_SIZE]; 
+    /* macroshape (following GlobalPlacement) of deformation map.           */
+    int NumOfTiles[CAGD_MAX_PT_SIZE];
+    int BzrElmntIdxs[CAGD_MAX_PT_SIZE]; /* Glbl Bezier macroshape interval. */
     int NumBranchesUV[2]; /* 1 + Number of C0 discontinuities in u and v    */
 			  /* directions of trivariate tiles.		    */
     IrtHmgnMatType Mat;/* Mapping of [0, 1]^3 to tile position in def. mat. */
@@ -216,7 +226,7 @@ typedef struct UserMicroPostProcessTileCBStruct {
     int NumOfTiles[CAGD_MAX_PT_SIZE];
     int NumBranchesUV[2]; /* 1 + Number of C0 discontinuities in u and v    */
 			  /* directions of trivariate tiles.		    */
-    IrtHmgnMatType Mat;  /* Mapping of [0, 1]^3 to tile position in defmat. */
+    IrtHmgnMatType Mat;/* Mapping of [0, 1]^3 to tile position in def. mat. */
     void *CBFuncData;  /* Input data pointer given by UserMicroParamStruct. */
 } UserMicroPostProcessTileCBStruct;
 
@@ -240,7 +250,8 @@ typedef struct UserMicroTileBndryPrmStruct {           /* Static tile info. */
     CagdBType Circular;/* TRUE for circular cross section, FALSE for square.*/
     CagdRType Bndry[4];  /* >0 for all four corners in lexicographic order, */
             /* if on boundary deform. TV, to create skin of that thickness. */
-    CagdRType BndryShape;  /* Between zero (flat & smooth) and one (bulky). */
+    CagdRType BndryShape;/* Between zero (C^0 flat) & one (smooth & bulky). */
+    CagdRType CntrShape;    /* Between zero (C^0) & one (round and smooth). */
     CagdPType FaceCenter;/* [-1, 1]^3 to shift center location of this face.*/
     CagdRType HelixParams[3];/* Helical edge as (NumLoops, MjrRad, MnrRad). */
 						      /* (0, 0) to disable. */
@@ -282,7 +293,7 @@ typedef struct UserMicroRegularParamStruct {
     /* vector construction scheme of (n, d1, d2, d3, ...) of displacements. */
     CagdBType ApprxTrimCrvsInShell; /* TRUE to piecewise-linear-approximate */
     /* global boundary crvs of tiles in E3, FALSE for precise composition.  */
-    /* Tolerance of approximation controlled by IritTrimSetTrimCrvLinearApprox. */
+    /* Tolerance of approx. controlled by IritTrimSetTrimCrvLinearApprox.   */
     CagdRType C0DiscontWScale;           /* W scale of C^0 discont. tiling. */
     CagdRType MaxPolyEdgeLen; /* For poly tiles, max edge length in tile to */
 		     /* allow (longer edges are split), or zero to disable. */
@@ -364,6 +375,14 @@ typedef struct IritUserMicroAuxeticTileBndryPrmStruct {
     int _FaceIdx;       /* The index of the face (0 to 5 for UMin to WMax). */
 } IritUserMicroAuxeticTileBndryPrmStruct;
 
+typedef struct IritUserSemRegTileDualityStruct {
+    CagdRType JointScaleIn;   /* Scale to apply to primal shape for inside. */
+    CagdRType JointScaleOut; /* Scale to apply to primal shape for outside. */
+    CagdRType ArmsScale;/* Applied scale to arms swept out of primal shape. */
+    int FitUnitCube;  /* TRUE to fit all arms to the unit cube [0, 1]^3, or */
+		     /* FALSE to fit the boundaries of the primal geometry. */
+} IritUserSemRegTileDualityStruct;
+
 /* Tile skin types. */
 typedef enum {
     IRIT_USER_MICRO_TILE_SKIN_NONE = 0,
@@ -376,6 +395,7 @@ typedef struct IritUserMicroTileSkinParamStruct {
     IritUserMicroTileSkinType Type;
     CagdRType CavityDepth;  /* In tile's dimensions. 0.1 is a good default. */
     CagdRType CavityHoleSize;/* In tile's dimensions. 0.1 is a good default.*/
+    CagdRType _AvgSkinThickness;                        /* Used internally. */
 } IritUserMicroTileSkinParamStruct;
 
 /* Used by the C^0 discont. tiles to hold the respective refinement matrix. */
@@ -634,6 +654,7 @@ typedef enum {
     USER_ERR_YRANGE_EMPTY,
     USER_ERR_ZRANGE_EMPTY,
     USER_ERR_WRONG_OFFSET,
+    USER_ERR_EXPECTED_PRIMAL_TILE,
 
     USER_ERR_NC_INVALID_PARAM,
     USER_ERR_NC_INVALID_INTER,
@@ -710,6 +731,26 @@ typedef enum {
     USER_CA_OPER_OUTPUT,
     USER_CA_OPER_FREE,
 } UserCAOpType;
+
+typedef enum {
+    USER_CA3D_SPLIT_NONE = 0x0000,
+    USER_CA3D_SPLIT_INFLECTION_PTS = 0x0001,
+    USER_CA3D_SPLIT_MAX_CRVTR_PTS =  0x0002,
+    USER_CA3D_SPLIT_C1DISCONT_PTS =  0x0004,
+    USER_CA3D_SPLIT_REAL_C1DISCONT_PTS = 0x0008
+} UserCA3DSplitType;
+
+typedef enum {
+    USER_CA3D_OPER_NONE,
+    USER_CA3D_OPER_CREATE,
+    USER_CA3D_OPER_COPY,
+    USER_CA3D_OPER_SPLIT_CRV,
+    USER_CA3D_OPER_MIN_DISTS,
+    USER_CA3D_OPER_FORCE_SAME_ENDS,
+    USER_CA3D_OPER_REPORT,
+    USER_CA3D_OPER_OUTPUT,
+    USER_CA3D_OPER_FREE,
+} UserCA3DOpType;
 
 /* Type of kinematic point constraints. */
 typedef enum {
@@ -801,6 +842,27 @@ typedef struct IritUserCrvArngmntStruct {
 
     UserCAGenInfoStruct GI;				 /* Used internally. */
 } IritUserCrvArngmntStruct;
+
+typedef struct UserCA3DMinDistPtStruct {
+    struct UserCA3DMinDistPtStruct *Pnext;
+    CagdRType t1, t2; /* Parameters of minimal distance between two curves. */
+    CagdPType Pt1, Pt2;     /* Locations of minimal distance on two curves. */
+    CagdPType MidPt;		     /* A middle point between Pt1 and Pt2. */
+    CagdRType MinDist;		       /* The distance between Pt1 and Pt2. */
+    CagdRType _t;				        /* Used internally. */
+    CagdPType _Pt;				        /* Used internally. */
+    int _Swapped;				        /* Used internally. */
+} UserCA3DMinDistPtStruct;
+
+typedef struct IritUserCrvArngmnt3DStruct {
+    CagdCrvStruct **Crvs;                  /* A vector of all input curves. */
+    struct UserCA3DMinDistPtStruct ***MinDists;
+    /* 2D array of min. dists., for crvs i, j. */
+    IrtRType MinDistTol; /* Tolerance to consider min. dist. 'interesting'. */
+    int _NumCrvs;		/* Number of curves in this 3D arrangement. */
+    int _MinDistsValid; /* TRUE if min. dists. computed for this crvs' set. */
+    struct IPObjectStruct *Output;               /* CA output is kept here. */
+} IritUserCrvArngmnt3DStruct;
 
 /* Structure which represent a kinematic point. */
 typedef struct UserKnmtcsPtStruct {
@@ -1116,6 +1178,12 @@ typedef void (*UserTrussBeamInfoCleanFuncType)(const UserTrussNodeDefPtr,
 					       int NumNodes,
 					       void *PrepData);
 
+typedef struct UserHeteroTilePackPropertiesStruct {
+    TrivTVStruct *TVHeteroProps; /* TV to control color/scale heterogeneity. */
+    IritUserSemRegTileDualityStruct TileDualityProps;/* Dual tile properties.*/
+    int VertexLineDual;  /* TRUE for vertex-line-dual, FALSE face-line-dual. */
+} UserHeteroTilePackPropertiesStruct;
+
 typedef struct UserTrussTolerancesStruct {
     /* The tolerance for considering two end points the same in the curve   */
     /* arrangement (in the trimming of the beams and spheres).              */
@@ -1259,11 +1327,15 @@ typedef struct IritUserMicroGenAMSupportParamStruct {
 	TipLength, /* Length factor for the tip, relative to the tile size. */
 	ModelMinSlope,    /* Min angle (degs) from Z axis to offer support. */
         TileBaseEdgeScale,		  /* Scaling factor for base edges. */
-	MultiResCntrScale; /* Scaling factor to thicken the center part of  */
+	MultiResCntrScale, /* Scaling factor to thicken the center part of  */
 			   /*		   tiles of lower resolution tiles. */
+	ToolPathLayerHeight;	  /* Height of each layer in the tool path. */
     int TileHaveVertBars,		      /* Add vertical bars to tile. */
         MultiResTiling, /* Apply multi-resolution tiling as a post process. */
 	SupportClosestPt,        /* Support closest point from tiles first. */
+	OutputType, /* 0 for returns TV, 1 for regular slicing path, 2 for  */ 
+		    /* spiral path, 3 for regular slicing and TV, and 4 for */
+						     /* spiral path and TV. */
 	_LongTipsError,					/* Used internally. */
 	_IntersectTipsError,				/* Used internally. */
 	_ShortTipsError,				/* Used internally. */
@@ -1271,6 +1343,30 @@ typedef struct IritUserMicroGenAMSupportParamStruct {
 	_BzrOnlyTVs;					/* Used internally. */
     TrivTVStruct *PrmThicknessTV;      /* Optional TV to control thickness. */
 } IritUserMicroGenAMSupportParamStruct;
+
+typedef struct UserMicroSupportTopoInfoStruct {
+    IPObjectStruct *Tile;
+    GMBBBboxStruct BBox;
+    int TopTile;	      /* TRUE if no tile above it, FALSE otherwise. */
+    int BotTile;	      /* TRUE if no tile below it, FALSE otherwise. */
+    int ActiveArms[8];      /* TRUE if arm is inactive, 0 to 3 for up arms, */
+						   /* 4 to 7 for down arms. */
+    IrtPtType Tile4TopPos[4];      /* Four points on top of this tile that  */
+			   /* can provide support to the 3D printed object. */
+    IrtPtType Tile4RayUpPos[4];/* Four points that rays up from Tile4TopPos */
+			   /* met the 3D printed object.  Infinity to none. */
+    IrtVecType Tile4RayUpNrml[4];    /* Four mesh normals at Tile4RayUpPos. */
+    IrtPtType Tile4BotPos[4];   /* Four points on bottom of this tile that  */
+			   /* can provide support to the 3D printed object. */
+    IrtPtType Tile4RayDwnPos[4];/* Four pts that rays down from Tile4BotPos */
+			   /* met the 3D printed object.  Infinity to none. */
+    IrtVecType Tile4RayDwnNrml[4];  /* Four mesh normals at Tile4RayDwnPos. */
+    int Stride; /* Number of tile units along each direction. Positive if   */
+		/* this is the (0,0,0)-cell of Stride x Stride x Stride.    */
+		/* Negative for non-origin cells.			    */
+    CagdRType PrmCntrThickness;		/* For parametric center thickness. */
+    CagdRType PrmCrnrThickness[8];	/* For parametric corner thickness. */
+} UserMicroSupportTopoInfoStruct;
 
 /****************************************************************************/
 
@@ -1362,6 +1458,16 @@ IPObjectStruct *IritUserMicroBendingTile(const CagdRType FlexWidthHeight[2],
 					 CagdBType Merged,
 					 char ** const Error);
 IPObjectStruct *IritUserMicroDiagTile1(
+			    CagdRType CntrSize,
+			    CagdRType CntrVertScl,
+			    const CagdRType CrnrSizes[8],
+			    CagdRType CrnrVertScl,
+			    const CagdRType *VertBars,
+			    int RefineVertRods2x2,
+			    CagdRType SmoothFactor,
+			    const IritUserMicroTileSkinParamStruct *SkinsInfo,
+			    char ** const Error);
+IPObjectStruct *IritUserMicroDiagTile2(
 			    CagdRType CntrSize,
 			    CagdRType CntrVertScl,
 			    const CagdRType CrnrSizes[8],
@@ -1515,20 +1621,31 @@ IPObjectStruct *IritUserMJMicroFieldTiles(const IPObjectStruct *Tiles,
 
 /* Tile packing in some domain module: */
 struct UserTilePackInfoStruct *IritUserPackTileCreateTileObject(
-						 const IPObjectStruct *TileObj,
-						 const int *StepsMin,
-						 const int *StepsMax,
-						 int Dim);
+		         const IPObjectStruct *TileObj, 
+		         const int *StepsMin,
+		         const int *StepsMax,
+		         int Dim,
+		         const GMBBBboxStruct *TilingDomain,
+		         IritUserPackTileInclusionType TileInclusion,
+		         CagdRType SkewFactor,
+			 CagdBType MergeNeighbors,
+		         UserHeteroTilePackPropertiesStruct *HeteroProperties,
+			 int MarkBndries);
 IPObjectStruct *IritUserPackTileCreateRectangularTile(
 						 const IPObjectStruct *TileObj,
 						 CagdBType Normalize);
 void IritUserPackTileFreeTileObject(struct UserTilePackInfoStruct *Tile);
 IPObjectStruct *IritUserPackTilesInDomain(
-				   struct UserTilePackInfoStruct *PackTileInfo,
-				   const GMBBBboxStruct *TilingDomain,
-				   int TileInclusion,
-				   CagdRType SkewFactor,
-				   CagdBType MergeNeighbors);
+			          struct UserTilePackInfoStruct *PackTileInfo,
+			          const GMBBBboxStruct *TilingDomain);
+IPObjectStruct *IritUserTilePolyLineDual(const IPObjectStruct *PObj,
+					 int VertexLineDual);
+IPObjectStruct *IritUserTilePolyObjectLineDual(
+			      struct UserTilePackInfoStruct *PackTileInfo,
+			      const IPObjectStruct *PObj,
+			      int VertexLineDual,
+			      const IritUserSemRegTileDualityStruct *DualPrms,
+			      const TrivTVStruct *TVHeterProps);
 IPObjectStruct *IritUserPackTilesFilterRect(const IPObjectStruct *TiledDomain, 
 					    const GMBBBboxStruct *Domain);
 void IritUserTileGetSteps(const struct UserTilePackInfoStruct *PackTileInfo,
@@ -1733,8 +1850,12 @@ IPObjectStruct *IritUserMicroGenRegImplctOffsetTiles
 IPObjectStruct *IritUserMicroGenAMSupport(
 			  const	IPObjectStruct *PlObj,
 			  const	IritUserMicroGenAMSupportParamStruct *Params);
-IPObjectStruct *IritUserMicroGenAMSupportZSpiralPath(
-			   const IritUserMicroGenAMSupportParamStruct *Params);
+IPObjectStruct *IritUserMicroGenAMSupportTPath(
+			  const IPObjectStruct *Spikes,
+			  const IPObjectStruct *Model,
+			  const int MSTopoSizes[3],
+    			  const UserMicroSupportTopoInfoStruct ***MSTopo,
+			  const IritUserMicroGenAMSupportParamStruct *Params);
 
 /* Surface-Primitive Geometry (rays, points, etc.) interactions. */
 VoidPtr IritUserIntrSrfHierarchyPreprocessSrf(const CagdSrfStruct *Srf,
@@ -2417,7 +2538,7 @@ IrtRType IritUserFEEvalRHSC(UserFECElementStruct *C,
 			    CagdCrvStruct *Crv1,
 			    CagdCrvStruct *Crv2);
 
-/* Curve arrangment. */
+/* Curve arrangement. */
 
 IritUserCrvArngmntStruct *IritUserCrvArngmnt(
 					   UserCAOpType Operation,
@@ -2481,6 +2602,32 @@ IritUserCrvArngmntStruct *IritUserCrvArngmntCopy(
 					  const IritUserCrvArngmntStruct *CA);
 int IritUserCrvArngmntFree(IritUserCrvArngmntStruct *CA);
 
+/* 3D Curve arrangement. */
+
+IritUserCrvArngmnt3DStruct *IritUserCrvArngmnt3D(
+				             UserCAOpType Operation,
+				             IritUserCrvArngmnt3DStruct *CA3D,
+				             const void *Params[]);
+IritUserCrvArngmnt3DStruct *IritUserCrvArngmnt3DCreate(
+						  const IPObjectStruct *PCrvs,
+						  CagdRType MinDistTol);
+IritUserCrvArngmnt3DStruct *IritUserCrvArngmnt3DCopy(
+				      const IritUserCrvArngmnt3DStruct *CA3D);
+int IritUserCrvArngmnt3DFree(IritUserCrvArngmnt3DStruct *CA3D);
+CagdCrvStruct *IritUserCrvArngmnt3DFetchCrvs(
+				      const IritUserCrvArngmnt3DStruct *CA3D);
+CagdCrvStruct *IritUserCrvArngmnt3DProcessSpecialPts(
+						    CagdCrvStruct *Crvs,
+						    CagdRType Tolerance,
+						    UserCASplitType CrvSplit);
+void IritUserCrvArngmnt3DEvalMinDist(IritUserCrvArngmnt3DStruct *CA3D);
+IritUserCrvArngmnt3DStruct *IritUserCrvArngmnt3DSplitMinDist(
+					    IritUserCrvArngmnt3DStruct *CA3D);
+void IritUseCrvArngmnt3DForceSameSimilarPt(IritUserCrvArngmnt3DStruct *CA3D);
+void IritUserCrvArngmnt3DReport(const IritUserCrvArngmnt3DStruct *CA3D,
+				int DumpCurves,
+				int DumpMinDistPts);
+
 /* 5-axis patch accessibility analysis. */
 
 struct UserPatchAccessInfoStruct *IritUserPatchAccessPrep(
@@ -2492,7 +2639,8 @@ void IritUserPatchAccessSetDir(struct UserPatchAccessInfoStruct *Patches,
 			       const IrtRType *Dir,
 			       IrtRType	AccessAngle,
 			       IrtRType	ExtraRadius);
-int IritUserPatchAccessGetNumOfSrf(const struct UserPatchAccessInfoStruct *Patches);
+int IritUserPatchAccessGetNumOfSrf(
+			      const struct UserPatchAccessInfoStruct *Patches);
 const CagdSrfStruct *IritUserPatchAccessGetSrfs(
 			       const struct UserPatchAccessInfoStruct *Patches,
 			       int SrfId);

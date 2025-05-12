@@ -247,11 +247,11 @@ typedef struct VMdlParamsStruct {
 } VMdlParamsStruct;
 
 typedef void (*IritVMdlVModelBoolOpCBFuncType)(const VMdlParamsStruct *Params,
-					   const VMdlVModelStruct *VMdl1,
-					   const VMdlVModelStruct *VMdl2,
-					   VMdlVModelStruct *ResVMdl,
-					   VMdlBoolOpType BoolOp,
-					   void *AuxData);
+					       const VMdlVModelStruct *VMdl1,
+					       const VMdlVModelStruct *VMdl2,
+					       VMdlVModelStruct *ResVMdl,
+					       VMdlBoolOpType BoolOp,
+					       void *AuxData);
 
 /* V-model blending of fields structures/typedefs. */
 

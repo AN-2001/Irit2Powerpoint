@@ -184,6 +184,7 @@ typedef enum {			 /* Possible error code during data parsing. */
     IP_ERR_CNVRT_INVALID_GEOM_TO_MV,
     IP_ERR_CNVRT_INVALID_COERCE,
     IP_ERR_CANNOT_MERGE_LIST,
+    IP_ERR_EMPTY_OBJ,
 
     IP_WRN_OBJ_NAME_TRUNC = 1000,
 
@@ -606,7 +607,6 @@ typedef struct IPSTLSaveDfltFileParamsStruct {
     int BinarySTL;       /* TRUE for a binary STL, FALSE for text STL file. */
     int EndianSwap;        /* TRUE to swap little/big endian byres in data. */
     int NormalFlip;	      /* True to flip normal (reverse vertex list). */
-    int RegularTriangles;/* TRUE to apply regularization so no T junctions. */
     int MultiObjSplit;  /*  0 to save everything as one large file, 1 to    */
 	/* save every IRIT object as a separate STL object, 2 to save       */
         /* every IRIT object as a separate STL object in a separated file.  */
@@ -666,6 +666,7 @@ typedef struct IPMSHSaveDfltFileParamsStruct {
 
 typedef enum IPInpElementEnum {
     IP_INP_ELEMENT_C3D8 = 8,
+    IP_INP_ELEMENT_C3D20 = 20,
     IP_INP_ELEMENT_TETRAHEDRAL = 4,
     IP_INP_ELEMENT_HEXAHEDRAL = 8,
 } IPInpElementEnum;
@@ -1006,6 +1007,7 @@ IPObjectStruct *IritPrsrGetDataFromFilehandles2(FILE **Files,
 						int Messages,
 						int MoreMessages);
 IPObjectStruct *IritPrsrGetObjects(int Handler);
+IPObjectStruct *IritPrsrGetObjects2(const char *FileName);
 IPObjectStruct *IritPrsrResolveInstances(IPObjectStruct *PObjects);
 IPStreamFormatType IritPrsrSenseFileType(const char *FileName);
 int IritPrsrSenseBinaryFile(const char *FileName);
@@ -1092,7 +1094,8 @@ IPObjectStruct *IritPrsrLinkedListToObjList(const IPObjectStruct *LnkList);
 void *IritPrsrListObjToLinkedList(const IPObjectStruct *LObjs);
 IPObjectStruct *IritPrsrListObjToLinkedList2(const IPObjectStruct *LObjs);
 void *IritPrsrHierarchyObjToLinkedList(const IPObjectStruct *HObj,
-				       IPObjStructType ObjType);
+				       IPObjStructType ObjType,
+				       int CopyAttrs);
 int IritPrsrHierarchyObjToVector(const IPObjectStruct *HObj,
 				 IPObjStructType ObjType,
 				 void ***Vec,
@@ -1164,6 +1167,7 @@ CagdPointType IritPrsrCoercePtsListTo(IPObjectStruct *PtObjList,
 				      CagdPointType Type);
 IPObjectStruct *IritPrsrCoerceObjectPtTypeTo(const IPObjectStruct *PObj,
 					     int NewType);
+int IritPrsrCoerceIsBzrOrBsp(const IPObjectStruct *PObj);
 IPObjectStruct *IritPrsrCoerceObjectTo(const IPObjectStruct *PObj,
 				       int NewType);
 
@@ -1223,8 +1227,9 @@ int IritPrsrCnvEstimateBndryVrtxPlaneNrml(const IPPolyVrtxArrayStruct *PVIdx,
 				         IrtVecType PlaneNrml);
 IPPolyVrtxArrayStruct *IritPrsrCnvrtIritPolyToPolyVrtxArray(
 						  const IPObjectStruct *PObj,
-						  int	CalcPPolys,
-						  int	AttribMask);
+						  int CalcPPolys,
+						  int AttribMask);
+IPObjectStruct *IritPrsrPolyPolyDual(const IPObjectStruct *PObj);
 
 /* Special objects' read and write functions. These functions are used to   */
 /* read and write objects of other libraries to and from data files.        */

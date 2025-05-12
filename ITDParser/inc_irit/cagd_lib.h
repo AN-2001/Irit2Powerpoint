@@ -1415,7 +1415,8 @@ void IritCagdScale(CagdRType **Points,
 void IritCagdScaleCenter(CagdRType **Points,
 			 int Len,
 			 int MaxCoord,
-			 const CagdRType *Scale);
+			 const CagdRType *Scale,
+			 const CagdRType *ScaleCenter);
 void IritCagdMatTransCenter(CagdRType **Points,
 			    int	Len,
 			    int	MaxCoord,
@@ -1575,13 +1576,17 @@ CagdSrfStruct *IritCagdSrfMatTransform(const CagdSrfStruct *Srf,
 CagdSrfStruct *IritCagdSrfListMatTransform(const CagdSrfStruct *Srfs,
 					   CagdMType Mat);
 void IritCagdCrvScale(CagdCrvStruct *Crv, const CagdRType *Scale);
-void IritCagdCrvScaleCenter(CagdCrvStruct *Crv, const CagdRType *Scale);
+void IritCagdCrvScaleCenter(CagdCrvStruct *Crv, 
+			    const CagdRType *Scale,
+			    const CagdRType *ScaleCenter);
 void IritCagdCrvMatTransCenter(CagdCrvStruct *Crv, IrtHmgnMatType Mat);
 void IritCagdCrvTransform(CagdCrvStruct *Crv,
 			  const	CagdRType *Translate,
 			  CagdRType Scale);
 void IritCagdSrfScale(CagdSrfStruct *Srf, const CagdRType *Scale);
-void IritCagdSrfScaleCenter(CagdSrfStruct *Srf, const CagdRType *Scale);
+void IritCagdSrfScaleCenter(CagdSrfStruct *Srf,
+			    const CagdRType *Scale,
+			    const CagdRType *ScaleCenter);
 void IritCagdSrfMatTransCenter(CagdSrfStruct *Srf, IrtHmgnMatType Mat);
 void IritCagdSrfTransform(CagdSrfStruct *Srf,
 			  const	CagdRType *Translate,
@@ -1623,6 +1628,9 @@ CagdRType *IritCagdCrvEvalMalloc(const CagdCrvStruct *Crv, CagdRType t);
 void IritCagdCrvEvalEndPtsE3(const CagdCrvStruct *Crv,
 			     CagdPType Start,
 			     CagdPType End);
+void IritCagdCrvSetEndPt(CagdCrvStruct *Crv,
+			 CagdBType Beginning,
+			 const CagdRType *EndPt);
 CagdCrvStruct *IritCagdCrvDerive(const CagdCrvStruct *Crv);
 CagdCrvStruct *IritCagdCrvDeriveScalar(const CagdCrvStruct *Crv);
 void IritCagdCrvScalarCrvSlopeBounds(const CagdCrvStruct *Crv,
@@ -2731,6 +2739,10 @@ CagdRType *IritCagdBspKnotContinuityMergeTwo(const CagdRType *KnotVector1,
 CagdRType *IritCagdBspKnotDoubleKnots(const CagdRType *KnotVector, 
 				      int *Len,
 				      int Order);
+CagdRType *IritCagdBspKnotNDupKnots(const CagdRType *KnotVector,
+				    int *Len,
+				    int Order,
+				    int NDup);
 CagdRType *IritCagdBspKnotAverage(const CagdRType *KnotVector,
 				  int Len,
 				  int Ave);

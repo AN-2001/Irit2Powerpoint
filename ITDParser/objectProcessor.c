@@ -1,5 +1,6 @@
 #include "objectProcessor.h"
 #include "inc_irit/irit_sm.h"
+#include "inc_irit/grap_lib.h"
 #include "inc_irit/iritprsr.h"
 #include "inc_irit/allocate.h"
 #include "inc_irit/ip_cnvrt.h"
@@ -10,377 +11,456 @@
 
 
 extern DWORD TLSIndex;
+extern HANDLE gMutex;
 
+static void ProcessObjectList(IPObjectStruct *PObj);
+static void ApplyGrapSettings(ParserSettingsStruct Settings);
 static IPObjectStruct *TriangulateObject(IPObjectStruct *PObj);
-static IPObjectStruct *LoadFromFileAux(const char *FileName);
+static void ProcessMatrix(IPObjectStruct *PObj);
+static void ProcessPoint(IPObjectStruct *PObj);
+static void ProcessLightSource(IritGrapLightType Pos, IrtVecType Colour);
+static IPPolygonStruct *PolyStripToTriangles(IPPolygonStruct *Strip);
+static IPObjectStruct *PolyStripToPolyObj(IPObjectStruct *PolyStripObj);
 
-IPObjectStruct *LoadFromFile(const char *FileName, ImportSettings ImportSettings)
+void LoadFromFile(ParserStruct *Parser, const char *FileName)
 {
-    IPObjectStruct *Loaded, *Tris;
+    IPObjectStruct *Loaded, *Processed, *Tris;
 
-    TlsSetValue(TLSIndex, &ImportSettings);
 
-    Loaded = LoadFromFileAux(FileName);
+    
+    WaitForSingleObject(gMutex, INFINITE); 
+    IritPrsrSetPolyListCirc(TRUE);
+    IritPrsrSetFlattenObjects(FALSE);
+    IritPrsrSetPropagateAttrs(FALSE);
+    IritPrsrFlattenInvisibleObjects(FALSE);
+    IritGrapDSetDrawPolyFunc( ProcessPolygon );
+    ReleaseMutex(gMutex);
+
+    Loaded = IritPrsrGetObjects2(FileName);
     Loaded = IritPrsrResolveInstances(Loaded);
 
-    Loaded = IritPrsrFlattenForrest(Loaded, TRUE);
+    TlsSetValue(TLSIndex, NULL);
+    
+    WaitForSingleObject(gMutex, INFINITE); 
+    ApplyGrapSettings(Parser -> Settings);
+    ProcessObjectList(Loaded);
+    ReleaseMutex(gMutex);
 
-    Tris = TriangulateObject(Loaded);
+    Processed = (IPObjectStruct*)TlsGetValue(TLSIndex);
+
+    Parser -> PObj = TriangulateObject(Processed);
+
     IritPrsrFreeObjectList(Loaded);
-
-    return Tris;
+    IritPrsrFreeObjectList(Processed);
 }
 
-
-static IPObjectStruct *LoadFromFileAux(const char *FileName)
-{
-    if (FileName != NULL) {
-        int Handler, Compressed,
-	    GCode = FALSE,
-	    Iges = FALSE,
-	    Obj = FALSE,
-	    Stl = FALSE,
-	    Vtu = FALSE;
-        char FullFileName[IRIT_LINE_LEN_VLONG];
-	const char
-	    *FType = IritPrsrGetDataFileType(FileName, &Compressed);
-
-	strcpy(FullFileName, FileName);
-
-	if (stricmp(FType, "igs") == 0 || stricmp(FType, "iges") == 0) {
-	    /* Iges data file is requested. */
-	    if (Compressed) {
-		return NULL;
-	    }
-	    Iges = TRUE;
-	}
-	else if (stricmp(FType, "stl") == 0) {
-	    /* STL data file is requested. */
-	    if (Compressed) {
-		return NULL;
-	    }
-	    Stl = TRUE;
-	}
-	else if (stricmp(FType, "vtu") == 0) {
-	    /* STL data file is requested. */
-	    if (Compressed) {
-		return NULL;
-	    }
-	    Vtu = TRUE;
-	}
-	else if (stricmp(FType, "obj") == 0) {
-	    /* STL data file is requested. */
-	    if (Compressed) {
-		return NULL;
-	    }
-	    Obj = TRUE;
-	}
-	else if (stricmp(FType, "nc") == 0 ||
-		 stricmp(FType, "cnc") == 0 ||
-		 stricmp(FType, "gcode") == 0) {
-	    /* CNC G-code data file is requested. */
-	    if (Compressed) {
-		return NULL;
-	    }
-	    GCode = TRUE;
-	}
-	else if (stricmp(FType, IRIT_TEXT_DATA_FILE) != 0 &&
-		 stricmp(FType, IRIT_BINARY_DATA_FILE) != 0 &&
-                 stricmp(FType, IRIT_COMPRESSED_DATA_FILE) != 0 &&
-		 stricmp(FType, IRIT_MATRIX_DATA_FILE) != 0) {
-	    strcat(FullFileName, ".");
-	    strcat(FullFileName, IRIT_TEXT_DATA_FILE);
-	}
-
-	if (Iges) {
-	    IPIgesLoadDfltFileParamsStruct Params;
-	    
-	    Params = IritPrsrIgesLoadDfltParams;
-	    Params.DumpAll = FALSE;
-	    Params.InverseProjCrvOnSrfs = TRUE;
-	    Params.Messages = 1;
-	    return IritPrsrIgesLoadFile(FullFileName, &Params);
-	}
-	else if (Stl) {
-	    IPObjectStruct *PObj;
-	    IPSTLLoadDfltFileParamsStruct Params;
-
-	    Params = IritPrsrSTLLoadDfltParams;
-	    if ((PObj = IritPrsrSTLLoadFile(FullFileName, &Params)) == NULL ||
-		PObj -> U.Pl == NULL) {
-		if (PObj != NULL)
-		    IritPrsrFreeObject(PObj);
-
-		/* Maybe a binary STL or vice versa - try the other option. */
-		Params.BinarySTL = !Params.BinarySTL;  /* Flip text/binary. */
-
-		if ((PObj = IritPrsrSTLLoadFile(FullFileName,
-						&Params)) != NULL) {
-		}
-	    }
-	    return PObj;
-	}
-	else if (Vtu) {
-	    IPObjectStruct *PObj = NULL;
-	    IritPrsrVTKDataStruct
-	        *VTUData = IritPrsrVTULoadFile(FullFileName);
-
-	    if (VTUData != NULL) {
-		IritPrsrVTUFetchDataParamStruct VTUFetchParams;
-
-		IRIT_ZAP_MEM(&VTUFetchParams,
-			     sizeof(IritPrsrVTUFetchDataParamStruct));
-		VTUFetchParams.FetchTetras = FALSE;
-		VTUFetchParams.FetchTris = TRUE;
-		VTUFetchParams.Messages = TRUE;
-		VTUFetchParams.SplitLabels = TRUE;
-	        PObj = IritPrsrVTU2IritGeom(VTUData, &VTUFetchParams);
-
-		IritPrsrVTUFree(VTUData);
-	    }
-
-	    return PObj;
-	}
-	else if (Obj) {
-	    IPOBJLoadDfltFileParamsStruct Params;
-
-	    Params = IritPrsrOBJLoadDfltParams;
-	    Params.WarningMsgs = TRUE;
-	    Params.WhiteDiffuseTexture = TRUE;
-	    Params.IgnoreFullTransp = TRUE;
-	    Params.ForceSmoothing = TRUE;
-	    return IritPrsrOBJLoadFile(FullFileName, &Params);
-	}
-	else if (GCode) {
-	    IPGcodeLoadDfltFileParamsStruct Params;
-
-	    Params = IritPrsrGcodeLoadDfltParams;
-	    return IritPrsrNCGCodeLoadFile(FullFileName, &Params);
-	}
-	else {
-	    if ((Handler = IritPrsrOpenDataFile(FullFileName, TRUE,
-						FALSE)) >= 0) {
-	        IPObjectStruct
-		    *PObj = IritPrsrGetObjects(Handler);
-
-		IritPrsrCloseStream(Handler, TRUE);
-
-		if (PObj == NULL) {
-		    const char *ErrorMsg;
-
-		    if (IritPrsrHasError(&ErrorMsg)) {
-		    }
-		}
-		else {
-		    PObj -> RefCount = 0;
-		    return PObj;
-		}
-	    }
-	}
-    }
-
-    return NULL;
-}
 static IPObjectStruct *TriangulateObject(IPObjectStruct *PObj)
 {
     IPObjectStruct *Triangulated, *Tmp;
 
     Triangulated = NULL;
     for (; PObj; PObj = PObj -> Pnext) {
-	if (IP_IS_POLY_OBJ(PObj)) {
-	    if (IP_IS_POLYGON_OBJ(PObj)) {
-		Tmp = IritGeomConvertPolysToTriangles2(PObj);
-		IP_SET_OBJ_NAME2(Tmp, IP_GET_OBJ_NAME(PObj));
-		IritPrsrCopyObjectAuxInfo(Tmp, PObj);
-		IRIT_LIST_PUSH(Tmp, Triangulated);
-	    } else if (IP_IS_POLYLINE_OBJ(PObj)) {
-		Tmp = IritPrsrCopyObject(NULL, PObj, TRUE);
-		IRIT_LIST_PUSH(Tmp, Triangulated);
-	    }
-	} else if (IP_IS_MAT_OBJ(PObj)) {
-	    Tmp = IritPrsrCopyObject(NULL, PObj, TRUE);
+	if (IP_IS_POLY_OBJ(PObj) && IP_IS_POLYGON_OBJ(PObj)) {
+	    Tmp = IritGeomConvertPolysToTriangles2(PObj);
+	    IritPrsrCopyObjectAuxInfo(Tmp, PObj);
+	    IRIT_LIST_PUSH(Tmp, Triangulated);
+	} else {
+	    Tmp = IritPrsrCopyObject2(NULL, PObj, FALSE, TRUE);
 	    IRIT_LIST_PUSH(Tmp, Triangulated);
 	}
     }
     return Triangulated;
 }
 
-IPObjectStruct *IritPrsrProcessFreeForm(IPFreeFormStruct *FreeForms)
+static void ApplyGrapSettings(ParserSettingsStruct Settings)
 {
-    IPObjectStruct *Object;
-    IPPolygonStruct *Poly;
-    CagdSrf2PlsInfoStrct TessInfo;
-
-    ImportSettings 
-	Settings = *(ImportSettings*)TlsGetValue(TLSIndex);
-
-    for (Object = FreeForms -> CrvObjs;
-         Object != NULL;
-         Object = Object -> Pnext) {
-        CagdCrvStruct *Curves, *Curve;
-
-        Curves = Object -> U.Crvs;
-        Object -> U.Pl = NULL;
-        Object -> ObjType = IP_OBJ_POLY;
-        IP_SET_POLYLINE_OBJ(Object);
-        for (Curve = Curves; Curve != NULL; Curve = Curve -> Pnext) {
-            Poly = IritPrsrCurve2Polylines(Curve,
-                                     Settings.PolylineFineness,
-                                     Settings.PolylineOptimal);
-            Object -> U.Pl = IritPrsrAppendPolyLists(Poly, Object -> U.Pl);
-        }
-        IritCagdCrvFreeList(Curves);
+    IritGrapGlblState.DrawVNormal = Settings.DrawVNormal;
+    IritGrapGlblState.DrawPNormal = Settings.DrawPNormal;
+    IritGrapGlblState.NumOfIsolines[0] = Settings.Isolines[0];
+    IritGrapGlblState.NumOfIsolines[1] = Settings.Isolines[1];
+    IritGrapGlblState.NumOfIsolines[2] = Settings.Isolines[2];
+    IritGrapGlblState.PolygonOptiApprox = Settings.PolygonOptiApprox;
+    IritGrapGlblState.PolylineOptiApprox = Settings.PolylineOptiApprox;
+    IritGrapGlblState.DrawSurfacePoly = Settings.DrawSurfacePoly;
+    IritGrapGlblState.DrawSurfaceMesh = Settings.DrawSurfaceMesh;
+    IritGrapGlblState.DrawModelsMonolithic = Settings.DrawModelsMonolithic;
+    IritGrapGlblState.DrawSurfaceOrient = Settings.DrawSurfaceOrient;
+    IritGrapGlblState.FlipNormalOrient = Settings.FlipNormalOrient;
+    IritGrapGlblState.NormalSize = Settings.NormalSize;
+    IritGrapGlblState.PlgnFineness = Settings.PlgnFineness;
+    IritGrapGlblState.PllnFineness = Settings.PllnFineness;
+    IritGrapGlblState.PointSize = Settings.PointSize;
+    if (Settings.SurfaceWireSetup) {
+        IritGrapGlblState.DrawSurfaceWire = Settings.SurfaceWireSetup & 0x01;
+        IritGrapGlblState.DrawSurfaceBndry = Settings.SurfaceWireSetup & 0x02;
+        IritGrapGlblState.DrawSurfaceSilh = Settings.SurfaceWireSetup & 0x04;
+        IritGrapGlblState.DrawSurfaceSketch = Settings.SurfaceWireSetup & 0x08;
+        IritGrapGlblState.DrawSurfaceRflctLns = Settings.SurfaceWireSetup & 0x10;
+        IritGrapGlblState.DrawSurfaceKnotLns = Settings.SurfaceWireSetup & 0x20;
     }
 
-    for (Object = FreeForms -> SrfObjs;
-         Object != NULL;
-         Object = Object -> Pnext) {
-        IrtRType RelativeFineNess;
-        CagdSrfStruct *Surfaces, *Surface;
+}
 
-        RelativeFineNess = IritMiscAttrIDGetObjectRealAttrib(Object,
-						     IRIT_ATTR_CREATE_ID(resolution));
-        if (IP_ATTR_IS_BAD_REAL(RelativeFineNess))
-            RelativeFineNess = 1.0;
+static void ProcessObjectList(IPObjectStruct *PObj)
+{
+    IPObjectStruct *Tmp, *Processed;
+    const CagdRType *R;
+    IrtPtType Pt;
+    IPObjectStruct *PTmp;
+    int i;
 
-        IritPrsrTSrf2PlysInitTessInfo2(&TessInfo, FALSE,
-			         RelativeFineNess * Settings.PolygonFineness,
-			         TRUE, TRUE, Settings.PolygonOptimal, NULL);
+    for (; PObj; PObj = PObj -> Pnext) {
+	switch (PObj -> ObjType) {
+	    case IP_OBJ_MATRIX:
+		ProcessMatrix(PObj);
+		break;
+	    case IP_OBJ_POLY:
+		ProcessPolygon(PObj);
+		break;
+	    case IP_OBJ_CTLPT:
+		/* Coerce, in place, a control points to a regular point. */
+		R = PObj->U.CtlPt.Coords;
+		IritCagdCoercePointTo(Pt, CAGD_PT_E3_TYPE,
+		    (CagdRType* const*)&R,
+		    -1, PObj->U.CtlPt.PtType);
+		IRIT_PT_COPY(PObj->U.Pt, Pt);
+		PObj->ObjType = IP_OBJ_POINT;
+	    case IP_OBJ_POINT:
+		if (!IP_ATTR_IS_BAD_INT(IritMiscAttrIDGetObjectIntAttrib(PObj,
+		    IRIT_ATTR_CREATE_ID(light_source)))) {
+		    if (IP_ATTR_IS_BAD_INT(IritMiscAttrIDGetObjectIntAttrib(PObj,
+			IRIT_ATTR_CREATE_ID(activated)))) {
+			const char* p;
+			int i, Red, Green, Blue;
+			IritGrapLightType LightPos;
+			IrtVecType LightColor;
 
-        Surfaces = Object -> U.Srfs;
-        Object -> U.Pl = NULL;
-        Object -> ObjType = IP_OBJ_POLY;
-        IP_SET_POLYGON_OBJ(Object);
-        for (Surface = Surfaces; Surface != NULL; Surface = Surface -> Pnext) {
-            IrtRType t;
+			for (i = 0; i < 3; i++)
+			    LightPos[i] = (float)PObj->U.Pt[i];
+			LightPos[3] = (float)
+			    !((p = IritMiscAttrIDGetObjectStrAttrib(PObj,
+				IRIT_ATTR_CREATE_ID(type))) != NULL &&
+				stricmp(p, "POINT_INFTY"));
 
-            t = IritMiscAttrIDGetObjectRealAttrib(Object,
-					  IRIT_ATTR_CREATE_ID(u_resolution));
-            if (!IP_ATTR_IS_BAD_REAL(t))
-	        IritMiscAttrIDSetRealAttrib(&Surface -> Attr,
-				    IRIT_ATTR_CREATE_ID(u_resolution), t);
-            t = IritMiscAttrIDGetObjectRealAttrib(Object,
-					  IRIT_ATTR_CREATE_ID(v_resolution));
-            if (!IP_ATTR_IS_BAD_REAL(t))
-	        IritMiscAttrIDSetRealAttrib(&Surface -> Attr,
-				    IRIT_ATTR_CREATE_ID(v_resolution), t);
+			if (IritMiscAttrIDGetObjectRGBColor2(PObj, &Red, &Green, &Blue)) {
+			    LightColor[0] = Red / 255.0;
+			    LightColor[1] = Green / 255.0;
+			    LightColor[2] = Blue / 255.0;
+			}
+			else {
+			    LightColor[0] = LightColor[1] = LightColor[2] = 1.0;
+			}
 
-            Poly = IritPrsrSurface2Polygons(Surface, &TessInfo);
-            if (Poly != NULL) {
-                IritPrsrGetLastPoly(Poly) -> Pnext = Object -> U.Pl;
-                Object -> U.Pl = Poly;
-            }
-        }
-        IritMiscAttrIDSetObjectObjAttrib(Object, IRIT_ATTR_CREATE_ID(OrigSrf),
-			         IritPrsrGenSRFObject(Surfaces), FALSE);
-    }
+			ProcessLightSource(LightPos, LightColor);
 
-    /* Converts models, if any, to freeform trimmed surfaces, in place. */
-    IritPrsrProcessModel2TrimSrfs(FreeForms);
+			IritMiscAttrIDSetObjectIntAttrib(PObj,
+			    IRIT_ATTR_CREATE_ID(activated),
+			    TRUE);
+		    }
+		}
+		else
+		    ProcessPoint(PObj);
+		break;
+	    case IP_OBJ_VECTOR:
+		ProcessPoint(PObj);
+		break;
+	    case IP_OBJ_CURVE:
+		if (PObj->U.Crvs == NULL)    /* Can occur in the curve editor. */
+		    break;
+		if (CAGD_IS_POWER_CRV(PObj->U.Crvs)) {
+		    CagdCrvStruct
+			* Crv = IritCagdCnvrtPwr2BzrCrv(PObj->U.Crvs);
 
-    for (Object = FreeForms -> TrimSrfObjs;
-         Object != NULL;
-         Object = Object -> Pnext) {
-        IrtRType RelativeFineNess;
-        TrimSrfStruct *TrimSrfs, *TrimSrf;
+		    IritCagdCrvFree(PObj->U.Crvs);
+		    PObj->U.Crvs = Crv;
+		}
+		if (CAGD_NUM_OF_PT_COORD(PObj->U.Crvs->PType) == 1) {
+		    CagdCrvStruct
+			* Crv = IritCagdCoerceCrvTo(PObj->U.Crvs,
+			    CAGD_IS_RATIONAL_CRV(PObj->U.Crvs) ? CAGD_PT_P2_TYPE
+			    : CAGD_PT_E2_TYPE,
+			    FALSE);
 
-        RelativeFineNess = IritMiscAttrIDGetObjectRealAttrib(Object,
-						     IRIT_ATTR_CREATE_ID(resolution));
-        if (IP_ATTR_IS_BAD_REAL(RelativeFineNess))
-            RelativeFineNess = 1.0;
+		    IritCagdCrvFree(PObj->U.Crvs);
+		    PObj->U.Crvs = Crv;
+		}
 
-        IritPrsrTSrf2PlysInitTessInfo2(&TessInfo, FALSE,
-			         RelativeFineNess * Settings.PolygonFineness,
-			         TRUE, TRUE, Settings.PolygonOptimal, NULL);
+		IritGrapDrawCurve(PObj);
+		break;
+	    case IP_OBJ_TRIMSRF:
+		if (CAGD_IS_POWER_SRF(PObj->U.TrimSrfs->Srf)) {
+		    CagdSrfStruct
+			* Srf = IritCagdCnvrtPwr2BzrSrf(PObj->U.TrimSrfs->Srf);
 
-        TrimSrfs = Object -> U.TrimSrfs;
-        Object -> U.Pl = NULL;
-        Object -> ObjType = IP_OBJ_POLY;
-        IP_SET_POLYGON_OBJ(Object);
-        for (TrimSrf = TrimSrfs; TrimSrf != NULL; TrimSrf = TrimSrf -> Pnext) {
-            IrtRType t;
+		    IritCagdSrfFree(PObj->U.TrimSrfs->Srf);
+		    PObj->U.TrimSrfs->Srf = Srf;
+		}
 
-            t = IritMiscAttrIDGetObjectRealAttrib(Object,
-				          IRIT_ATTR_CREATE_ID(u_resolution));
-            if (!IP_ATTR_IS_BAD_REAL(t))
-                IritMiscAttrIDSetRealAttrib(&TrimSrf -> Attr,
-				    IRIT_ATTR_CREATE_ID(u_resolution), t);
-            t = IritMiscAttrIDGetObjectRealAttrib(Object,
-				          IRIT_ATTR_CREATE_ID(v_resolution));
-            if (!IP_ATTR_IS_BAD_REAL(t))
-                IritMiscAttrIDSetRealAttrib(&TrimSrf -> Attr,
-				    IRIT_ATTR_CREATE_ID(v_resolution), t);
+		if (PObj->U.TrimSrfs->TrimCrvList == NULL) {
+		    CagdSrfStruct
+			* Srf = PObj->U.TrimSrfs->Srf;
 
-            Poly = IritPrsrTrimSrf2Polygons(TrimSrf, &TessInfo);
-            if (Poly != NULL) {
-                IritPrsrGetLastPoly(Poly) -> Pnext = Object -> U.Pl;
-                Object -> U.Pl = Poly;
-            }
-        }
-        IritMiscAttrIDSetObjectObjAttrib(Object, IRIT_ATTR_CREATE_ID(OrigSrf),
-				 IritPrsrGenSRFObject(IritCagdSrfCopy(TrimSrfs -> Srf)),
-				 FALSE);
-        IritTrimSrfFreeList(TrimSrfs);
-    }
+		    if (IritGrapGlblState.MoreInfo)
+			IRIT_INFO_MSG_PRINTF("Trimmed surface \"%s\" with no trimming curves detected\n\tand converted to regular surface\n",
+			    IP_GET_OBJ_NAME(PObj));
 
-    for (Object = FreeForms -> TrivarObjs;
-         Object != NULL;
-         Object = Object -> Pnext) {
-        IrtRType RelativeFineNess;
+		    PObj->U.TrimSrfs->Srf = NULL;
+		    IritTrimSrfFree(PObj->U.TrimSrfs);
+		    PObj->U.Srfs = Srf;
+		    PObj->ObjType = IP_OBJ_SURFACE;
+		}
+		else {
+		    IritGrapDrawTrimSrf(PObj);
+		    break;
+		}
+	    case IP_OBJ_SURFACE:
+		if (PObj->U.Srfs == NULL)  /* Can occur in the surface editor. */
+		    break;
+		if (CAGD_IS_POWER_SRF(PObj->U.Srfs)) {
+		    CagdSrfStruct
+			* Srf = IritCagdCnvrtPwr2BzrSrf(PObj->U.Srfs);
 
-        RelativeFineNess = IritMiscAttrIDGetObjectRealAttrib(Object,
-					      IRIT_ATTR_CREATE_ID(resolution));
-        if (IP_ATTR_IS_BAD_REAL(RelativeFineNess))
-            RelativeFineNess = 1.0;
+		    IritCagdSrfFree(PObj->U.Srfs);
+		    PObj->U.Srfs = Srf;
+		}
+		if (CAGD_NUM_OF_PT_COORD(PObj->U.Srfs->PType) == 1) {
+		    CagdSrfStruct
+			* Srf = IritCagdCoerceSrfTo(PObj->U.Srfs,
+			    CAGD_IS_RATIONAL_SRF(PObj->U.Srfs) ? CAGD_PT_P2_TYPE
+			    : CAGD_PT_E2_TYPE,
+			    FALSE);
 
-        IritPrsrTSrf2PlysInitTessInfo2(&TessInfo, FALSE,
-			         RelativeFineNess * Settings.PolygonFineness,
-			         TRUE, TRUE, Settings.PolygonOptimal, NULL);
+		    IritCagdSrfFree(PObj->U.Srfs);
+		    PObj->U.Srfs = Srf;
+		}
 
-	TrivTVStruct *Trivar,
-	    *Trivars = Object -> U.Trivars;
+		IritGrapDrawSurface(PObj);
+		break;
+	    case IP_OBJ_TRIVAR:
+		IritGrapDrawTrivar(PObj);
+		break;
+	    case IP_OBJ_STRING:
+		// IritGrapDrawString(PObj); /* Crashes for some reason? */
+		break;
+	    case IP_OBJ_MULTIVAR:
+		if (PObj->U.MultiVars->Dim < 4) { /* Curve, Surface, Trivar. */
+		    if ((PTmp = IritMiscAttrIDGetObjectObjAttrib(PObj,
+			IRIT_ATTR_CREATE_ID(_coerced))) == NULL) {
+			MvarMVStruct
+			    * MV = PObj->U.MultiVars;
 
-	Object -> U.Pl = NULL;
-	Object -> ObjType = IP_OBJ_POLY;
-	IP_SET_POLYGON_OBJ(Object);
-	for (Trivar = Trivars; Trivar != NULL; Trivar = Trivar -> Pnext) {
-	    Poly = IritPrsrTrivar2Polygons(Trivar, &TessInfo);
-	    if (Poly != NULL) {
-		IritPrsrGetLastPoly(Poly) -> Pnext = Object -> U.Pl;
-		Object -> U.Pl = Poly;
-	    }
+			switch (MV->Dim) {
+			case 1:
+			    PTmp = IritPrsrGenCRVObject(
+				IritMvarCnvrtMVToCrv(MV));
+
+			    if (CAGD_IS_POWER_CRV(PTmp->U.Crvs)) {
+				CagdCrvStruct
+				    * Crv = IritCagdCnvrtPwr2BzrCrv(
+					PTmp->U.Crvs);
+
+				IritCagdCrvFree(PTmp->U.Crvs);
+				PTmp->U.Crvs = Crv;
+			    }
+			    break;
+			case 2:
+			    PTmp = IritPrsrGenSRFObject(
+				IritMvarCnvrtMVToSrf(MV));
+
+			    if (CAGD_IS_POWER_SRF(PTmp->U.Srfs)) {
+				CagdSrfStruct
+				    * Srf = IritCagdCnvrtPwr2BzrSrf(
+					PTmp->U.Srfs);
+
+				IritCagdSrfFree(PTmp->U.Srfs);
+				PTmp->U.Srfs = Srf;
+			    }
+			    break;
+			case 3:
+			    PTmp = IritPrsrGenTRIVARObject(
+				IritMvarCnvrtMVToTV(MV));
+			    break;
+			}
+			PTmp->Attr = IP_ATTR_COPY_ATTRS(PObj->Attr);
+			IP_SET_OBJ_NAME2(PTmp, IP_GET_OBJ_NAME(PObj));
+			IritGrapUpdateObjectBBox(PTmp);
+
+			IritMiscAttrIDSetObjectObjAttrib(PObj,
+			    IRIT_ATTR_CREATE_ID(_coerced), PTmp, FALSE);
+		    }
+
+		    if (IRIT_GRAP_IS_HIGHLIGHT1_OBJ(PObj))
+			IRIT_GRAP_SET_HIGHLIGHT1_OBJ(PTmp);
+		    else
+			IRIT_GRAP_RST_HIGHLIGHT1_OBJ(PTmp);
+		    if (IRIT_GRAP_IS_HIGHLIGHT2_OBJ(PObj))
+			IRIT_GRAP_SET_HIGHLIGHT2_OBJ(PTmp);
+		    else
+			IRIT_GRAP_RST_HIGHLIGHT2_OBJ(PTmp);
+
+		    ProcessObjectList(PTmp);
+		}
+		break;
+	    case IP_OBJ_MODEL:
+		IritGrapDrawModel(PObj, ProcessObjectList);
+		break;
+	    case IP_OBJ_VMODEL:
+		IritGrapDrawVModel(PObj, ProcessObjectList);
+		break;
+	    case IP_OBJ_TRISRF:
+		if (TRNG_IS_GREGORY_TRISRF(PObj->U.TriSrfs)) {
+		    TrngTriangSrfStruct
+			* TriSrf = IritTrngCnvrtGregory2BzrTriSrf(
+			    PObj->U.TriSrfs);
+
+		    IritTrngTriSrfFree(PObj->U.TriSrfs);
+		    PObj->U.TriSrfs = TriSrf;
+		}
+		IritGrapDrawTriangSrf(PObj);
+		break;
+	    case IP_OBJ_LIST_OBJ:
+		for (i = 0; i < IritPrsrListObjectLength(PObj); i++) {
+		    Tmp = IritPrsrListObjectGet(PObj, i);
+		    ProcessObjectList(Tmp);
+		}
+		break;
+	    default:
+		break;
 	}
-	IritTrivTVFreeList(Trivars);
+
+    }
+}
+
+void ProcessPolygon(IPObjectStruct *PObj)
+{
+    IPObjectStruct *Processed;
+    IPObjectStruct *Cpy;
+
+    if (IP_IS_POLYSTRIP_OBJ(PObj))
+	Cpy = PolyStripToPolyObj(PObj);
+    else {
+	Cpy = IritPrsrCopyObject2(NULL, PObj, FALSE, TRUE);
+	Cpy -> Tags = PObj -> Tags;
     }
 
-    for (Object = FreeForms -> TriSrfObjs;
-         Object != NULL;
-         Object = Object -> Pnext) {
-        IrtRType RelativeFineNess;
-        TrngTriangSrfStruct *TriSrfs, *TriSrf;
+    Processed = (IPObjectStruct*)TlsGetValue(TLSIndex);
 
-        RelativeFineNess = IritMiscAttrIDGetObjectRealAttrib(Object,
-					     IRIT_ATTR_CREATE_ID(resolution));
-        if (IP_ATTR_IS_BAD_REAL(RelativeFineNess))
-            RelativeFineNess = 1.0;
+    IRIT_LIST_PUSH(Cpy, Processed);
+    TlsSetValue(TLSIndex, Processed);
+}
 
-        IritPrsrTSrf2PlysInitTessInfo2(&TessInfo, FALSE,
-			         RelativeFineNess * Settings.PolygonFineness,
-			         TRUE, TRUE, Settings.PolygonOptimal, NULL);
+static void ProcessMatrix(IPObjectStruct *PObj)
+{
+    IPObjectStruct *Processed;
+    IPObjectStruct *Cpy;
 
-        TriSrfs = Object -> U.TriSrfs;
-        Object -> U.Pl = NULL;
-        Object -> ObjType = IP_OBJ_POLY;
-        IP_SET_POLYGON_OBJ(Object);
-        for (TriSrf = TriSrfs; TriSrf != NULL; TriSrf = TriSrf -> Pnext) {
-            Poly = IritPrsrTriSrf2Polygons(TriSrf, &TessInfo);
-            if (Poly != NULL) {
-                IritPrsrGetLastPoly(Poly) -> Pnext = Object -> U.Pl;
-                Object -> U.Pl = Poly;
-            }
-        }
-        IritTrngTriSrfFreeList(TriSrfs);
+    Processed = (IPObjectStruct*)TlsGetValue(TLSIndex);
+    Cpy = IritPrsrCopyObject2(NULL, PObj, FALSE, TRUE);
+    IRIT_LIST_PUSH(Cpy, Processed);
+    TlsSetValue(TLSIndex, Processed);
+
+}
+
+static void ProcessPoint(IPObjectStruct *PObj)
+{
+    IPObjectStruct *Processed;
+    IPObjectStruct *Cpy;
+    IPPolygonStruct *Poly;
+    IPVertexStruct *Vert;
+
+
+    Vert = IritPrsrAllocVertex2(NULL);
+    Vert -> Coord[0] = PObj -> U.Pt[0];
+    Vert -> Coord[1] = PObj -> U.Pt[1];
+    Vert -> Coord[2] = PObj -> U.Pt[2];
+
+    IP_ATTR_COPY_ATTRS(Vert -> Attr, PObj -> Attr);
+
+    Poly = IritPrsrAllocPolygon(0, Vert, NULL);
+    IP_ATTR_COPY_ATTRS(Poly -> Attr, PObj -> Attr);
+
+    Cpy = IritPrsrGenPOINTLISTObject(Poly);
+    IritPrsrCopyObjectAuxInfo(Cpy, PObj);
+    IP_SET_POINTLIST_OBJ(Cpy);
+
+    Processed = (IPObjectStruct*)TlsGetValue(TLSIndex);
+    IRIT_LIST_PUSH(Cpy, Processed);
+    TlsSetValue(TLSIndex, Processed);
+}
+
+static IPPolygonStruct *PolyStripToTriangles(IPPolygonStruct *Strip)
+{
+    IPPolygonStruct  *Tmp,
+	*Ret = NULL;
+    IPVertexStruct *Prev, *PPrev, *Iter, *Tmp0, *Tmp1, *Tmp2;
+    int 
+	Parity = 0;
+    if (!Strip)
+	return NULL;
+
+    Prev = PPrev = NULL;
+    Iter = Strip -> PVertex;
+    if (!Iter)
+	return NULL;
+    do {
+	if (Iter && PPrev && Prev) {
+	    Tmp0 = IritPrsrCopyVertex(Parity ? Prev : PPrev);
+	    Tmp1 = IritPrsrCopyVertex(Parity ? PPrev : Prev);
+
+	    Tmp2 = IritPrsrCopyVertex(Iter);
+	    
+	    Tmp0 -> Pnext = Tmp1;
+	    Tmp1 -> Pnext = Tmp2;
+	    Tmp2 -> Pnext = Tmp0;
+	    
+	    Tmp = IritPrsrAllocPolygon(0, Tmp0, NULL);
+	    Tmp -> Attr = IP_ATTR_COPY_ATTRS(Strip -> Attr);
+	    Parity = 1 - Parity;
+
+	    IRIT_LIST_PUSH(Tmp, Ret);
+	}
+
+	PPrev = Prev;
+	Prev = Iter;
+	Iter = Iter -> Pnext;
+    } while (Iter && Iter != Strip -> PVertex);
+
+    return Ret;
+}
+
+static IPObjectStruct *PolyStripToPolyObj(IPObjectStruct *PolyStripObj)
+{
+    IPObjectStruct *Ret;
+    IPPolygonStruct  *Iter, *Tmp0, *Tmp1,
+	*Polys = NULL;
+
+    if (!PolyStripObj)
+	return NULL;
+    if (IP_IS_POLYGON_OBJ(PolyStripObj))
+	return PolyStripObj;
+    
+    Iter = PolyStripObj -> U.Pl;
+    Tmp0 = Tmp1 = NULL;
+
+    for (;Iter; Iter = Iter -> Pnext) {
+	Tmp1 = Tmp0 = PolyStripToTriangles(Iter);
+	if (!Tmp0)
+	    continue;
+	for(;Tmp0 && Tmp0 -> Pnext; Tmp0 = Tmp0 -> Pnext);
+	Tmp0 -> Pnext = Polys;
+	Polys = Tmp1;
     }
 
-    return IritPrsrConcatFreeForm(FreeForms);
+    if (!Polys)
+	return NULL;
+
+    Ret = IritPrsrGenPOLYObject(Polys);
+    IritPrsrCopyObjectAuxInfo(Ret, PolyStripObj);
+    IP_SET_POLYGON_OBJ(Ret);
+    return Ret;
+}
+
+static void ProcessLightSource(IritGrapLightType Pos, IrtVecType Colour)
+{
+
 }

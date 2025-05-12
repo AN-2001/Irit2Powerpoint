@@ -160,12 +160,6 @@
     <Compile Include="exceptions.cs" />
     <Compile Include="GlResource.cs" />
     <Compile Include="GlResourceManager.cs" />
-    <Compile Include="ImportSettingsForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="ImportSettingsForm.Designer.cs">
-      <DependentUpon>ImportSettingsForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="ITDParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
@@ -191,9 +185,6 @@
     <Compile Include="WinAPIDclr.cs" />
     <Compile Include="WinAPIDef.cs" />
     <Compile Include="WinAPIWrapper.cs" />
-    <EmbeddedResource Include="ImportSettingsForm.resx">
-      <DependentUpon>ImportSettingsForm.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <SubType>Designer</SubType>

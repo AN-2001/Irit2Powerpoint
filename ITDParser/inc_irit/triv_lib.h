@@ -528,6 +528,9 @@ CagdSrfStruct *IritTrivSrfFromTV(const TrivTVStruct *TV,
 				 CagdRType t,
 				 TrivTVDirType Dir,
 				 int OrientBoundary);
+CagdSrfStruct *IritTrivBndrySrfFromTV(const TrivTVStruct *TV,
+				      TrivTVBndryType TVBndry,  
+				      int OrientBndry);
 CagdSrfStruct **IritTrivBndrySrfsFromTVToData(const TrivTVStruct *TV,
 					      int OrientBoundary,
 					      int FilterSimilar,
@@ -651,7 +654,8 @@ TrivTVStruct *IritTrivMergeTVTV(const TrivTVStruct *CTV1,
 int IritTrivUpdateBndrySrfinTV(TrivTVStruct *TV,
 			       const CagdSrfStruct *Srf,
 			       TrivTVBndryType TVBndry);
-int IritTrivMakeTVsCompatibleDomain(const TrivTVStruct *TV1, TrivTVStruct **TV2);
+int IritTrivMakeTVsCompatibleDomain(const TrivTVStruct *TV1,
+				    TrivTVStruct **TV2);
 CagdBType IritTrivMakeTVsCompatible(TrivTVStruct **TV1,
 				    TrivTVStruct **TV2,
 				    CagdBType SameUOrder,

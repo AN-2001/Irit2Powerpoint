@@ -150,7 +150,7 @@ enum {
     IRIT_E2T_DERIV_NO_ABS_DERIV_ERROR
 };
 
-#define IRIT_MISC_IF_SEC_FROM_LAST_CALL(MiliSecs) \
+#define IRIT_MISC_IF_MSECS_FROM_LAST_CALL(MiliSecs) \
     IRIT_STATIC_DATA IrtRType \
 	PrevTime = -MiliSecs - 1.0; \
  \
@@ -423,6 +423,10 @@ void IritMiscMatGnrlMultVecbyMat2(IrtVecGnrlType VecRes,
 				  IrtVecGnrlType Vec,
 				  IrtGnrlMatType Mat,
 				  int n);
+int IritMiscMatGnrlSolveLinSys(IrtGnrlMatType M,
+			       IrtVecGnrlType x,
+			       const IrtVecGnrlType B,
+			       int n);
 int IritMiscMatGnrlInverseMatrix(IrtGnrlMatType M,
 				 IrtGnrlMatType InvM,
 				 int n);

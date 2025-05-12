@@ -294,6 +294,7 @@ typedef enum {
     IRIT_ATTR_CREATE_ID(critic_ar),
     IRIT_ATTR_CREATE_ID(crv_resolution),
     IRIT_ATTR_CREATE_ID(CrvArng),
+    IRIT_ATTR_CREATE_ID(CrvArng3D),
     IRIT_ATTR_CREATE_ID(CrvSourceID),
     IRIT_ATTR_CREATE_ID(CtlPt),
     IRIT_ATTR_CREATE_ID(ctype),
@@ -683,6 +684,7 @@ typedef enum {
     IRIT_ATTR_CREATE_ID(texture),
     IRIT_ATTR_CREATE_ID(TextWordCnt),
     IRIT_ATTR_CREATE_ID(TileBndryType),
+    IRIT_ATTR_CREATE_ID(TileID),
     IRIT_ATTR_CREATE_ID(TileNeighbors),
     IRIT_ATTR_CREATE_ID(TileTopo),
     IRIT_ATTR_CREATE_ID(TJunc),
@@ -821,10 +823,10 @@ void IritMiscAttrIDSetIntAttrib(struct IPAttributeStruct **Attrs,
 				 IPAttrIDType AttribID,
 				 int Data);
 int IritMiscAttrIDGetIntAttrib(const struct IPAttributeStruct *Attrs,
-			 IPAttrIDType AttribID);
+			       IPAttrIDType AttribID);
 void IritMiscAttrIDSetPtrAttrib(struct IPAttributeStruct **Attrs,
-			IPAttrIDType AttribID,
-			VoidPtr Data);
+				IPAttrIDType AttribID,
+				VoidPtr Data);
 VoidPtr IritMiscAttrIDGetPtrAttrib(const struct IPAttributeStruct *Attrs,
 				   IPAttrIDType AttribID);
 void IritMiscAttrIDSetRefPtrAttrib(struct IPAttributeStruct **Attrs,
@@ -832,6 +834,12 @@ void IritMiscAttrIDSetRefPtrAttrib(struct IPAttributeStruct **Attrs,
 				   VoidPtr Data);
 VoidPtr IritMiscAttrIDGetRefPtrAttrib(const struct IPAttributeStruct *Attrs,
 				      IPAttrIDType AttribID);
+void IritMiscAttrIDSetSizedPtrAttrib(struct IPAttributeStruct **Attrs,
+				     IPAttrIDType AttribID,
+				     VoidPtr Data,
+				     int Size);
+VoidPtr IritMiscAttrIDGetSizedPtrAttrib(const struct IPAttributeStruct *Attrs,
+					IPAttrIDType AttribID);
 void IritMiscAttrIDSetRealAttrib(struct IPAttributeStruct **Attrs,
 				 IPAttrIDType AttribID,
 				 IrtRType Data);

@@ -259,10 +259,10 @@ int IritTrimSrfSetStateTrimCrvsManagement(int TrimmingFitOrder);
 TrimSrfStruct *IritTrimSrfSubdivAtParam(const TrimSrfStruct *TrimSrf,
 					CagdRType t,
 					CagdSrfDirType Dir);
-TrimSrfStruct *TrimSrfSubdivAtInnerLoops(TrimSrfStruct *TSrf);
-TrimCrvStruct *TrimSrfSubdivTrimCrvsAtInnerLoops(const TrimCrvStruct *TCrvs);
-CagdSrfDirType TrimSrfSubdivValAtInnerLoop(const TrimCrvStruct *TCrvs,
-					   CagdRType *SubdivVal);
+TrimSrfStruct *IritTrimSrfSubdivAtInnerLoops(TrimSrfStruct *TSrf);
+TrimCrvStruct *IritTrimSrfSubdivTrimCrvsAtInnerLoops(const TrimCrvStruct *TCrvs);
+CagdSrfDirType IritTrimSrfSubdivValAtInnerLoop(const TrimCrvStruct *TCrvs,
+					       CagdRType *SubdivVal);
 
 TrimSrfStruct *IritTrimCnvrtBsp2BzrSrf(const TrimSrfStruct *TrimSrf);
 TrimSrfStruct *IritTrimSrfCnvrt2BzrTrimSrf(const TrimSrfStruct *TrimSrf);
@@ -271,9 +271,9 @@ CagdSrfStruct *IritTrimSrfCnvrt2BzrRglrSrf2(const TrimSrfStruct *TSrf,
 					    int	ComposeE3,
 					    int	OnlyBzrSrfs,
 					    CagdRType Eps);
-CagdSrfStruct *TrimSrfCnvrt2TensorProdSrf(const TrimSrfStruct *TSrf,
-					  int ComposeE3,
-					  CagdRType Eps);
+CagdSrfStruct *IritTrimSrfCnvrt2TensorProdSrf(const TrimSrfStruct *TSrf,
+					      int ComposeE3,
+					      CagdRType Eps);
 
 int IritTrimSrfSubdivTrimmingCrvs(const TrimCrvStruct *TrimCrvs,
 				  CagdRType t,
@@ -302,24 +302,27 @@ void IritTrimSrfDomain(const TrimSrfStruct *TrimSrf,
 		       CagdRType *UMax,
 		       CagdRType *VMin,
 		       CagdRType *VMax);
-#define TrimSrfSetDomain IritTrimAffineTransTrimSrf
+#define IritTrimSrfSetDomain IritTrimAffineTransTrimSrf
 
-int TrimCrvSegBBox(const TrimCrvSegStruct *TCrvSeg,
-		   int UV,
-		   CagdBBoxStruct *BBox);
-int TrimCrvSegListBBox(const TrimCrvSegStruct *TCrvSegs,
+int IritTrimCrvSegBBox(const TrimCrvSegStruct *TCrvSeg,
 		       int UV,
 		       CagdBBoxStruct *BBox);
+int IritTrimCrvSegListBBox(const TrimCrvSegStruct *TCrvSegs,
+		           int UV,
+		           CagdBBoxStruct *BBox);
 
-int TrimCrvBBox(const TrimCrvStruct *TCrv, int UV, CagdBBoxStruct *BBox);
-int TrimCrvListBBox(const TrimCrvStruct *TCrvs, int UV, CagdBBoxStruct *BBox);
+int IritTrimCrvBBox(const TrimCrvStruct *TCrv, int UV, CagdBBoxStruct *BBox);
+int IritTrimCrvListBBox(const TrimCrvStruct *TCrvs,
+			int UV,
+			CagdBBoxStruct *BBox);
 
-CagdBBoxStruct *TrimSrfBBox(const TrimSrfStruct *TSrf, CagdBBoxStruct *BBox);
-CagdBBoxStruct *TrimSrfListBBox(const TrimSrfStruct *TSrfs,
+CagdBBoxStruct *IritTrimSrfBBox(const TrimSrfStruct *TSrf,
 				CagdBBoxStruct *BBox);
+CagdBBoxStruct *IritTrimSrfListBBox(const TrimSrfStruct *TSrfs,
+				    CagdBBoxStruct *BBox);
 
-int TrimSrfNumOfTrimLoops(const TrimSrfStruct *TSrf);
-int TrimSrfNumOfTrimCrvSegs(const TrimSrfStruct *TSrf);
+int IritTrimSrfNumOfTrimLoops(const TrimSrfStruct *TSrf);
+int IritTrimSrfNumOfTrimCrvSegs(const TrimSrfStruct *TSrf);
 
 void IritTrimSrfEvalToData(const TrimSrfStruct *TrimSrf,
 			   CagdRType u,
@@ -346,7 +349,7 @@ TrimIsoInterStruct **IritTrimIntersectCrvsIsoVals(const CagdCrvStruct *UVCrvs,
 CagdCrvStruct *IritTrimCrvAgainstTrimCrvs(CagdCrvStruct *UVCrv,
 					  const	TrimSrfStruct *TrimSrf,
 					  CagdRType Eps);
-CagdCrvStruct *TrimSrf2KnotCurves(TrimSrfStruct *TrimSrf);
+CagdCrvStruct *IritTrimSrf2KnotCurves(TrimSrfStruct *TrimSrf);
 CagdPolylineStruct *IritTrimSrf2Polylines(TrimSrfStruct *TrimSrf,
 					  int NumOfIsocurves[2],
 					  CagdRType TolSamples,
@@ -360,13 +363,13 @@ void IritTrimMatch2ndCrvLenSpeedAs1stCrv(CagdCrvStruct **Crv1,
 					 CagdCrvStruct **Crv2,
 					 const CagdSrfStruct *Srf1,
 					 const CagdSrfStruct *Srf2);
-void TrimCrvSegReverse(TrimCrvSegStruct *TSeg);
-TrimCrvSegStruct *TrimCrvSegListReverse(TrimCrvSegStruct *TSegs);
-TrimCrvSegStruct *TrimOrderTrimCrvSegsInLoop(TrimCrvSegStruct *TSegs);
+void IritTrimCrvSegReverse(TrimCrvSegStruct *TSeg);
+TrimCrvSegStruct *IritTrimCrvSegListReverse(TrimCrvSegStruct *TSegs);
+TrimCrvSegStruct *IritTrimOrderTrimCrvSegsInLoop(TrimCrvSegStruct *TSegs);
 int IritTrimEnsureNoSingleTrimCrvLoops(TrimCrvStruct **TrimLoops);
 CagdBType IritTrimOrientTrimingCrvs(TrimSrfStruct *TSrf);
 CagdBType IritTrimClassifyTrimmingLoops(TrimCrvStruct **TrimLoops);
-CagdBType TrimClassifyTrimLoopOrient(const TrimCrvSegStruct *TSegs);
+CagdBType IritTrimClassifyTrimLoopOrient(const TrimCrvSegStruct *TSegs);
 void IritTrimCrvFreeListWithSubTrims(TrimCrvStruct *TrimCrv);
 void IritTrimCrvFreeWithSubTrims(TrimCrvStruct *TrimCrv);
 CagdBType IritTrimClassifyTrimCurveOrient(const CagdCrvStruct *UVCrv);
@@ -424,7 +427,7 @@ void IritTrimFatalError(IritTrimFatalErrorType ErrID);
 #ifdef DEBUG
 
 void IritTrimDbg(const void *Obj);
-void TrimDbg1(const void *Obj);
+void IritTrimDbg1(const void *Obj);
 
 void IritTrimDbgTCrvs(const TrimCrvStruct *TrimCrv);
 void IritTrimDbgTCrvSegs(const TrimCrvSegStruct *TrimSegs);
@@ -459,10 +462,10 @@ TrimUntrimResultStruct *IritTrimUntrimTrimSrf(
 					 CagdQuadSrfWeightFuncType WeightFunc,
 					 CagdBType Compose,
 					 int ApproxOrder);
-CagdBType TrimUntrimSetLineSweepOutputCrvPairs(CagdBType NewValue);
+CagdBType IritTrimUntrimSetLineSweepOutputCrvPairs(CagdBType NewValue);
 struct IPObjectStruct *IritTrimUntrimmingResultToObj(
 				      const TrimUntrimResultStruct *Untrimmed);
-void TrimUntrimmingResultFree(TrimUntrimResultStruct *Untrim);
+void IritTrimUntrimmingResultFree(TrimUntrimResultStruct *Untrim);
 void IritTrimUntrimmingResultFreeList(TrimUntrimResultStruct *Untrim);
 
 #if defined(__cplusplus) || defined(c_plusplus)

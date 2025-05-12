@@ -20,100 +20,39 @@ namespace Irit2Powerpoint
             public double u, v;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        public struct ImportSettings
-        {
-            public int PolygonFineness;
-            public int PolylineFineness;
-            public int IsolinesSamples;
-            public int PolygonOptimal;
-            public int PolylineOptimal;
-            public int FlipNormals;
-        };
-
-        public static string SerializeImportSettings(ImportSettings Settings)
-        {
-            StringBuilder
-                sb = new StringBuilder();
-
-            sb.AppendFormat("{0};{1};{2};{3};{4};{5}",
-                Settings.PolygonFineness, Settings.PolylineFineness,
-                Settings.IsolinesSamples, Settings.PolygonOptimal,
-                Settings.PolylineOptimal, Settings.FlipNormals);
-            return sb.ToString();
-        }
-
-        public static ImportSettings DeserializeImportSettings(string String)
-        {
-            ImportSettings
-                Settings = new ImportSettings();
-            string[] Splitted = String.Split(';');
-
-            try
-            {
-                Settings.PolygonFineness = int.Parse(Splitted[0]);
-                Settings.PolylineFineness = int.Parse(Splitted[1]);
-                Settings.IsolinesSamples = int.Parse(Splitted[2]);
-                Settings.PolygonOptimal = int.Parse(Splitted[3]);
-                Settings.PolylineOptimal = int.Parse(Splitted[4]);
-                Settings.FlipNormals = int.Parse(Splitted[5]);
-            } catch(Exception)
-            {
-                MessageBox.Show("Import settings string was corrupted, using default.");
-                Settings = DefaultImportSettings;
-            }
-
-            return Settings;
-        }
-
         public static int VERTEX_STRUCT_SIZE = Marshal.SizeOf(typeof(VertexStruct));
-        public static ImportSettings DefaultImportSettings = new ImportSettings()
-        {
-            PolygonFineness = 64,
-            PolylineFineness = 32,
-            IsolinesSamples = 0,
-            PolygonOptimal = 0,
-            PolylineOptimal = 0,
-            FlipNormals = 0,
-        };
 
         [StructLayout(LayoutKind.Sequential)]
         public struct ITDMesh
         {
             public VertexStruct[] Vertecies; /* All the vertecies that this ITD file uses. */
-            public int[] PolygonMeshSizes, /* The number of polygon meshes is the length of this array. */
-                         PolylineMeshSizes; /* The number of polyline meshes is the length of this array. */
+            public int VertexCutoffOffset;
             public double[] ViewMat, ProjMat; /* 4x4 matrices in row major form. */
             public double[] Min, Max;
-            public bool PerVertexColor;
         }
 
         [StructLayout(LayoutKind.Sequential)]
         private struct MeshStruct
         {
             public IntPtr Vertices;
-            public IntPtr PolygonMeshSizes, PolylineMeshSizes;
             public IntPtr ViewMatrix, ProjMatrix;
             public double MinX, MinY, MinZ,
                           MaxX, MaxY, MaxZ;
-            public int TotalVertices, TotalPolygonMeshes, TotalPolylineMeshes;
-            public int PerVertexColour;
+            public int TotalVertices, VertexCutoffOffset;
         }
 
         [DllImport("ITDParser.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr ITDParserParse([MarshalAs(UnmanagedType.LPStr)] StringBuilder Str, ImportSettings Settings);
+        private static extern IntPtr ITDParserParse(string Path, string ImportSettings);
 
         [DllImport("ITDParser.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr ITDParserFree(IntPtr Struct);
 
-        public static ITDMesh Parse(string Path, ImportSettings Settings)
+        public static ITDMesh Parse(string Path, string Settings)
         {
             ITDMesh Mesh;
             MeshStruct Struct;
-            StringBuilder 
-                PathAsBuilder = new StringBuilder(Path);
             IntPtr /* Call C API to parse ITD file. */
-                Ret = ITDParserParse(PathAsBuilder, Settings);
+                Ret = ITDParserParse(Path, Settings);
             if (Ret == IntPtr.Zero)
                 throw new ParseException($"Error parsing ITD file at {Path}");
 
@@ -137,12 +76,10 @@ namespace Irit2Powerpoint
             Ret.Min = new double[3];
             Ret.Max = new double[3];
 
-            Ret.PerVertexColor = Mesh.PerVertexColour == 1;
+            Ret.VertexCutoffOffset = Mesh.VertexCutoffOffset;
             Ret.Min[0] = Mesh.MinX; Ret.Min[1] = Mesh.MinY; Ret.Min[2] = Mesh.MinZ;
             Ret.Max[0] = Mesh.MaxX; Ret.Max[1] = Mesh.MaxY; Ret.Max[2] = Mesh.MaxZ;
 
-            Ret.PolygonMeshSizes = new int[Mesh.TotalPolygonMeshes];
-            Ret.PolylineMeshSizes = new int[Mesh.TotalPolylineMeshes];
             Ret.Vertecies = new VertexStruct[Mesh.TotalVertices];
 
             if (Mesh.ViewMatrix != IntPtr.Zero)
@@ -157,10 +94,6 @@ namespace Irit2Powerpoint
                 Marshal.Copy(Mesh.ProjMatrix, Ret.ProjMat, 0, 16);
             }
 
-            if (Mesh.TotalPolygonMeshes > 0)
-                Marshal.Copy(Mesh.PolygonMeshSizes, Ret.PolygonMeshSizes, 0, Mesh.TotalPolygonMeshes);
-            if (Mesh.TotalPolylineMeshes > 0)
-                Marshal.Copy(Mesh.PolylineMeshSizes, Ret.PolylineMeshSizes, 0, Mesh.TotalPolylineMeshes);
             /* Structs have to copied like this sadly... */
             for (i = 0; i < Mesh.TotalVertices; i++)
                 Ret.Vertecies[i] =

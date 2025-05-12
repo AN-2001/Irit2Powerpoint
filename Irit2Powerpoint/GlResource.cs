@@ -46,7 +46,6 @@ namespace Irit2Powerpoint
             int 
                 NumVertices = Mesh.Vertecies.Length;
 
-            PerVertexColour = Mesh.PerVertexColor;
             GenMateices(Mesh.ViewMat, Mesh.ProjMat);
             GenRecords(Mesh);
 
@@ -130,11 +129,11 @@ namespace Irit2Powerpoint
             int TotalSize, Offset;
 
             Offset = 0;
-            TotalSize = Mesh.PolygonMeshSizes.Sum();
+            TotalSize = Mesh.VertexCutoffOffset;
             this.PolygonRecord = new GlMeshRecord(Offset, TotalSize);
 
             Offset = TotalSize;
-            TotalSize = Mesh.PolylineMeshSizes.Sum();
+            TotalSize = Mesh.Vertecies.Length - Offset;
             this.PolylineRecord = new GlMeshRecord(Offset, TotalSize);
         }
 

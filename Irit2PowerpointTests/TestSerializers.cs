@@ -8,22 +8,6 @@ namespace Irit2PowerpointTests
     [TestClass]
     public class TestSerializers
     {
-        [TestMethod]
-        public void TestImportSettings()
-        {
-            ITDParser.ImportSettings Settings = new ITDParser.ImportSettings();
-            ITDParser.ImportSettings After;
-
-            Settings.PolygonFineness = 1;
-            Settings.PolylineFineness = 2;
-            Settings.IsolinesSamples = 3;
-            Settings.PolygonOptimal = 4;
-            Settings.PolylineOptimal = 5;
-            Settings.FlipNormals = 6;
-
-            After = ITDParser.DeserializeImportSettings(ITDParser.SerializeImportSettings(Settings));
-            Assert.AreEqual(Settings, After);
-        }
 
         [TestMethod]
         public void TestRenderSettings()

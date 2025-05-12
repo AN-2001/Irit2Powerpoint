@@ -2409,6 +2409,7 @@ CagdCrvStruct *IritMvarProjCrvOnSrf(const CagdCrvStruct *Crv,
 				    CagdRType NumericTol,
 				    void *SrfPrepHandle,
 				    CagdBType GenUVCrv);
+MvarPolylineStruct *IritMvarMapTUV2UV(MvarPolylineStruct *MVPlls);
 MvarPolylineStruct *IritMvarProjCrvOnSrf1(const CagdCrvStruct *Crv1,
 					  const CagdSrfStruct *Srf2,
 					  int Axes,
@@ -2764,7 +2765,8 @@ MvarPtStruct *IritMvarCrvCrvMinimalDist(const CagdCrvStruct *Crv1,
 					const CagdCrvStruct *Crv2,
 					CagdRType *MinDist,
 					CagdBType ComputeAntipodals,
-					CagdRType Eps);
+					CagdRType Eps,
+					CagdRType OutEps);
 MvarPtStruct *IritMvarCrvSrfMinimalDist(const CagdSrfStruct *Srf1,
 					const CagdCrvStruct *Crv2,
 					CagdRType *MinDist);

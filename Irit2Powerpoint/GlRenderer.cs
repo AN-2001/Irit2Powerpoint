@@ -33,7 +33,6 @@ namespace Irit2Powerpoint
             vec3 LightCol;
             vec3 DfltSolidClr;
             vec3 DfltCrvClr;
-            int PerVertexColour;
         };
     
         out vec3 Norm;
@@ -71,18 +70,15 @@ namespace Irit2Powerpoint
             vec3 LightCol;
             vec3 DfltSolidClr;
             vec3 DfltCrvClr;
-            int PerVertexColour;
         };
 
         void main()
         {
             vec3 Colour = VertColour;
-            if (PerVertexColour == 0)
-                Colour = DfltSolidClr;
 
             vec3 CameraPos = (Inverse * vec4(vec3(0.f), 1.f)).xyz;
             vec3 DiffuseCoeff = Colour;
-            vec3 AmbientCoeff = Colour * 0.1f;
+            vec3 AmbientCoeff = Colour * 0.25f;
             vec3 SpecularCoeff = vec3(1.f);
             float SpecularPower = 4.f;
 
@@ -122,7 +118,6 @@ namespace Irit2Powerpoint
             vec3 LightCol;
             vec3 DfltSolidClr;
             vec3 DfltCrvClr;
-            int PerVertexColour;
         };
         
         out vec3 Col;
@@ -147,14 +142,11 @@ namespace Irit2Powerpoint
             vec3 LightCol;
             vec3 DfltSolidClr;
             vec3 DfltCrvClr;
-            int PerVertexColour;
         };
 
         void main()
         {
             vec3 Colour = Col;
-            if (PerVertexColour == 0)
-                Colour = DfltCrvClr;
             FragColor = vec4(Colour, 1.0f);
         }";
     }
@@ -180,7 +172,6 @@ namespace Irit2Powerpoint
         public OpenTK.Vector3 DfltSolidClr;
         public float a3;
         public OpenTK.Vector3 DfltCrvClr;
-        public int PerVertexColour;
         public static readonly int
             Size = OpenTK.BlittableValueType<SettingsBlock>.Stride;
     }
@@ -357,7 +348,6 @@ namespace Irit2Powerpoint
     public class SettingsContext : BaseContext
     {
         GlRenderer.RenderSettings Settings;
-        bool PerVertexColour;
 
         public SettingsContext() : base(ShaderSources.SETTINGS_BLOCK_NAME, SettingsBlock.Size, 1)
         {
@@ -371,12 +361,6 @@ namespace Irit2Powerpoint
             NeedUpdate = true;
         }
 
-        public void UpdatePerVertexColor(bool Val)
-        {
-            PerVertexColour = Val;
-            NeedUpdate = true;
-        }
-
         override public void PerformSync()
         {
             if (!NeedUpdate)
@@ -387,14 +371,12 @@ namespace Irit2Powerpoint
             Block.LightCol = Settings.LightColour;
             Block.DfltSolidClr = Settings.DefaultSolidColour;
             Block.DfltCrvClr = Settings.DefaultCurveColour;
-            Block.PerVertexColour = PerVertexColour ? 1 : 0;
             PerformSyncImpl(Block);
         }
 
         public override void Reset()
         {
             Settings = GlRenderer.DefaultRenderSettings;
-            PerVertexColour = false;
         }
 
     }
@@ -469,7 +451,7 @@ namespace Irit2Powerpoint
         public SettingsContext SettingsCtx;
         public static RenderSettings DefaultRenderSettings = new RenderSettings()
         {
-            LightPosition = new OpenTK.Vector3(10.0f, 10.0f, -10.0f),
+            LightPosition = new OpenTK.Vector3(0.0f, 10.0f, 0.0f),
             LightColour = new OpenTK.Vector3(1.0f, 1.0f, 1.0f),
             DefaultSolidColour = new OpenTK.Vector3(0.7f, 0.4f, 0.2f),
             DefaultCurveColour = new OpenTK.Vector3(0.9f, 0.75f, 0.2f),
@@ -503,7 +485,6 @@ namespace Irit2Powerpoint
             SettingsCtx.InitSync(ShaderSources.CrvProg);
 
             SettingsCtx.UpdateSettings(DefaultRenderSettings);
-            SettingsCtx.UpdatePerVertexColor(false);
             Loaded = false;
             LastPath = null;
             Time = DateTime.Now;
@@ -592,15 +573,21 @@ namespace Irit2Powerpoint
             {
                 GL.BindVertexArray(ActiveResource.VAO);
 
-                GL.UseProgram(ShaderSources.PolyProg);
-                GL.DrawArrays(PrimitiveType.Triangles,
-                              ActiveResource.PolygonRecord.Offset,
-                              ActiveResource.PolygonRecord.NumElements);
+                if (ActiveResource.PolygonRecord.NumElements > 0)
+                {
+                    GL.UseProgram(ShaderSources.PolyProg);
+                    GL.DrawArrays(PrimitiveType.Triangles,
+                                  ActiveResource.PolygonRecord.Offset,
+                                  ActiveResource.PolygonRecord.NumElements);
+                }
 
-                GL.UseProgram(ShaderSources.CrvProg);
-                GL.DrawArrays(PrimitiveType.LineStrip,
-                              ActiveResource.PolylineRecord.Offset,
-                              ActiveResource.PolylineRecord.NumElements);
+                if (ActiveResource.PolylineRecord.NumElements > 0)
+                {
+                    GL.UseProgram(ShaderSources.CrvProg);
+                    GL.DrawArrays(PrimitiveType.Lines,
+                                  ActiveResource.PolylineRecord.Offset,
+                                  ActiveResource.PolylineRecord.NumElements);
+                }
             }
 
             ErrorCode code = GL.GetError();
@@ -622,7 +609,6 @@ namespace Irit2Powerpoint
                 TransCtx.Reset();
                 SettingsCtx.Reset();
 
-                SettingsCtx.UpdatePerVertexColor(ActiveResource.PerVertexColour);
                 SettingsCtx.UpdateSettings(Settings);
                 if (this.ActiveResource.ContainsView) {
                     TransCtx.SetActiveModelView(this.ActiveResource.ViewMat);

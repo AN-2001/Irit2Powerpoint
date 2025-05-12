@@ -11,7 +11,7 @@ namespace Irit2Powerpoint
     public struct LoadRequest
     {
         public string Path;
-        public ITDParser.ImportSettings ImportSettings;
+        public string ImportSettings;
     };
 
     public class GlResourceManager
@@ -32,14 +32,9 @@ namespace Irit2Powerpoint
             LoadQueue = new Queue<LoadRequest>();
         }
 
-        public string BuildResourceKey(string Path, ITDParser.ImportSettings Settings)
+        public string BuildResourceKey(string Path, string ImportSettings)
         {
-            return BuildResourceKey(Path, ITDParser.SerializeImportSettings(Settings));
-        }
-
-        public string BuildResourceKey(string Path, string SettingsAsString)
-        {
-            return Path + SettingsAsString;
+            return Path + ImportSettings;
         }
 
         private bool QueueImpl(LoadRequest Request)

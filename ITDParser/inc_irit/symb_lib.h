@@ -132,7 +132,7 @@ typedef struct SymbArcStruct {
 } SymbArcStruct;
 
 #if defined(_WIN64) || defined(LINUX386)
-#define SYMB_MAX_CRV_SUBDIV_LEN  100000        /* No subdiv. of larger crvs. */
+#define SYMB_MAX_CRV_SUBDIV_LEN   10000        /* No subdiv. of larger crvs. */
 #else
 #define SYMB_MAX_CRV_SUBDIV_LEN    5000        /* No subdiv. of larger crvs. */
 #endif /* _WIN64 || LINUX386 */

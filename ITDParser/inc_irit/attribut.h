@@ -213,6 +213,12 @@ void IritMiscAttrIDSetObjectRefPtrAttrib(const IPObjectStruct *PObj,
 					 VoidPtr Data);
 VoidPtr IritMiscAttrIDGetObjectRefPtrAttrib(const IPObjectStruct *PObj,
 					    IPAttrIDType ID);
+void IritMiscAttrIDSetObjectSizedPtrAttrib(const IPObjectStruct *PObj,
+					   IPAttrIDType ID,
+					   VoidPtr Data,
+					   int Size);
+VoidPtr IritMiscAttrIDGetObjectSizedPtrAttrib(const IPObjectStruct *PObj,
+					      IPAttrIDType ID);
 void IritMiscAttrIDSetObjectRealAttrib(const IPObjectStruct *PObj,
 				       IPAttrIDType ID,
 				       IrtRType	Data);

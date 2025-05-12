@@ -2,6 +2,7 @@
 
 #include "inc_irit/irit_sm.h"
 #include "inc_irit/iritprsr.h"
+#include "ITDParser.h"
 
-
-IPObjectStruct *LoadFromFile(const char *FileName);
+void LoadFromFile(ParserStruct *Parser, const char *FileName);
+void ProcessPolygon(IPObjectStruct *PObj);

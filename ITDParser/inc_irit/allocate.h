@@ -88,6 +88,8 @@ void IritPrsrListObjectAppend(IPObjectStruct *PObjList,
 			      IPObjectStruct *PObjItem);
 void IritPrsrListObjectAppendList(IPObjectStruct *PObj,
 				  IPObjectStruct *PObjNew);
+IPObjectStruct *IritPrsrListObjectRemove(IPObjectStruct *PObj, 
+					 int Index);
 IPObjectStruct *IritPrsrListObjectDelete(IPObjectStruct *PObj, 
 					 int Index,
 					 int FreeItem);

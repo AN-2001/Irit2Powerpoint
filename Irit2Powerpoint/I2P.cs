@@ -22,7 +22,7 @@ namespace Irit2Powerpoint
         private WindowWrapper GlWindow;
         private GlResourceManager ResourceManager;
         private Ribbon RibbonControl;
-        private ITDParser.ImportSettings CurrentImportSettings;
+        private string CurrentImportSettings;
         private Timer RibbonUpdateTimer;
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
@@ -37,7 +37,7 @@ namespace Irit2Powerpoint
             this.Application.AfterPresentationOpen += OnPresentation;
 
             ResourceManager = new GlResourceManager();
-            CurrentImportSettings = ITDParser.DefaultImportSettings;
+            CurrentImportSettings = null;
 
             /* Reuse the same GLWindow accross different slides. */
             GlWindow = new WindowWrapper();
@@ -52,12 +52,12 @@ namespace Irit2Powerpoint
             RibbonControl.Refresh();
         }
 
-        public ITDParser.ImportSettings GetCurrentImportSettings()
+        public string GetCurrentImportSettings()
         {
             return CurrentImportSettings;
         }
 
-        public void SetCurrentImportSettings(ITDParser.ImportSettings ImportSettings)
+        public void SetCurrentImportSettings(string ImportSettings)
         {
             CurrentImportSettings = ImportSettings;
         }
@@ -101,7 +101,7 @@ namespace Irit2Powerpoint
                                 out Dummy))
                 {
                     Request.Path = Dummy.Tags[__PATH_KEY__];
-                    Request.ImportSettings = ITDParser.DeserializeImportSettings(Dummy.Tags[__IMPORT_SETTINGS_KEY__]);
+                    Request.ImportSettings = Dummy.Tags[__IMPORT_SETTINGS_KEY__];
                     Requests.Add(Request);
                 }
             }
@@ -163,12 +163,12 @@ namespace Irit2Powerpoint
             PowerPoint.Slide
                 Slide = Application.ActiveWindow.View.Slide;
 
-            ITDParser.ImportSettings ImportSettings = CurrentImportSettings;
+            string ImportSettings = CurrentImportSettings;
             GlRenderer.RenderSettings RenderSettings = GlRenderer.DefaultRenderSettings;
            
             if (GetDummyFromSlide(Slide, out Dummy)) {
                 Dummy.Tags.Add( __PATH_KEY__ , Path);
-                Dummy.Tags.Add(__IMPORT_SETTINGS_KEY__, ITDParser.SerializeImportSettings(ImportSettings));
+                Dummy.Tags.Add(__IMPORT_SETTINGS_KEY__, ImportSettings);
                 Request = new LoadRequest();
                 Request.Path = Path;
                 Request.ImportSettings = ImportSettings;
@@ -182,7 +182,7 @@ namespace Irit2Powerpoint
             Dummy.TextFrame.TextRange.Font.Bold = MsoTriState.msoTrue;
             Dummy.Tags.Add(__DUMMY_KEY__ , "true");
             Dummy.Tags.Add(__PATH_KEY__, Path);
-            Dummy.Tags.Add(__IMPORT_SETTINGS_KEY__, ITDParser.SerializeImportSettings(ImportSettings));
+            Dummy.Tags.Add(__IMPORT_SETTINGS_KEY__, ImportSettings);
             Dummy.Tags.Add(__RENDER_SETTINGS_KEY__, GlRenderer.SerializeRenderSettings(RenderSettings));
             Dummy.Fill.ForeColor.RGB = Color.FromArgb(100, 100, 100).ToArgb();
 
@@ -256,7 +256,7 @@ namespace Irit2Powerpoint
                   AspectScale;
             string Path, Key;
             GlRenderer.RenderSettings RenderSettings;
-            ITDParser.ImportSettings ImportSettings;
+            string ImportSettings;
             float ZoomFactor;
 
             /* Check for the dummy and if it exists determine the size/position of the  */
@@ -300,7 +300,7 @@ namespace Irit2Powerpoint
 
                 Path = Dummy.Tags[__PATH_KEY__];
                 RenderSettings = GlRenderer.DeserializeRenderSettings(Dummy.Tags[__RENDER_SETTINGS_KEY__]);
-                ImportSettings = ITDParser.DeserializeImportSettings(Dummy.Tags[__IMPORT_SETTINGS_KEY__]);
+                ImportSettings = Dummy.Tags[__IMPORT_SETTINGS_KEY__];
                 Key = ResourceManager.BuildResourceKey(Path, ImportSettings);
                 GlWindow.GetRenderer().SetActiveModel(Key, RenderSettings);
             } else

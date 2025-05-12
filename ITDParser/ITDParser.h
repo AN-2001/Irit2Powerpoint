@@ -9,7 +9,6 @@
 #define ITDPARSER_API __declspec(dllimport)
 #endif
 
-
 typedef ITDPARSER_API struct VertexStruct {
     double x, y, z;
     double nx, ny, nz;
@@ -17,30 +16,67 @@ typedef ITDPARSER_API struct VertexStruct {
     double u, v;
 } VertexStruct;
 
-typedef ITDPARSER_API struct ImportSettings
-{
-    int PolygonFineness;
-    int PolylineFineness;
-    int IsolinesSamples;
-    int PolygonOptimal;
-    int PolylineOptimal;
-    int FlipNormals;
-} ImportSettings;
-
 typedef ITDPARSER_API struct MeshStruct {
     VertexStruct *Vertices;
-    int *PolygonMeshSizes, 
-        *PolylineMeshSizes;
     double *ViewMatrix, *ProjMatrix, 
             MinX, MinY, MinZ,
             MaxX, MaxY, MaxZ;
     int TotalVertices,
-        TotalPolygonMeshes,
-        TotalPolylineMeshes;
-    int PerVertexColour;
+        VerticesCutoffOffset; /* Cutoff offset between polygons and polylines. */
 } MeshStruct;
 
-DWORD TLSIndex;
+typedef struct ParserCommandsSturct {
+    struct ParserCommandsSturct *Next;
+    VertexStruct Vertices[3]; /* We can have 3 vertices at most. */
+    double nx, ny, nz;
+    int VertexCount;
+} ParserCommandsStruct;
 
-ITDPARSER_API MeshStruct *ITDParserParse(const char *Path, ImportSettings Settings);
+
+   // if (IritMiscGetArgs( Argc, Argv, ConfigStr,
+   //     		 &IritGrapGlblState.DrawVNormal, &IritGrapGlblState.DrawPNormal,
+   //     		 &IsoLineFlag, &IsolinesStr,
+   //     		 &_, &IritGrapGlblState.PolygonOptiApprox, &IritGrapGlblState.PlgnFineness,
+   //     		 &_, &IritGrapGlblState.PolylineOptiApprox, &IritGrapGlblState.PllnFineness,
+   //     		 &_, &IritGrapGlblState.NormalSize,
+   //     		 &IritGrapGlblState.DrawSurfaceMesh,
+   //     		 &IritGrapGlblState.DrawModelsMonolithic,
+   //     		 &IritGrapGlblState.DrawSurfacePoly,
+   //     		 &IritGrapGlblState.DrawSurfaceOrient,
+   //     		 &IritGrapGlblState.FlipNormalOrient, NULL)) {
+   //     FreeArgv(Argv, Argc);
+   //     return NULL;
+   // }
+
+typedef struct ParserSettingsStruct {
+    int DrawVNormal, DrawPNormal,
+        Isolines[3],
+        Background[3],
+        OverridePolylineCol, PolylineCol[3],
+        OverridePolygonCol, PolygonCol[3],
+        PolygonOptiApprox,
+        PolylineOptiApprox,
+        DrawSurfacePoly,
+        DrawSurfaceMesh,
+        DrawModelsMonolithic,
+        DrawSurfaceOrient,
+        SurfaceWireSetup,
+        FlipNormalOrient,
+        Wireframe;
+    double NormalSize, PlgnFineness, PllnFineness,
+           LightPos[3], PointSize;
+} ParserSettingsStruct;
+
+typedef struct ParserStruct {
+    ParserCommandsStruct *LineCommands, *TriCommands;
+    IPObjectStruct *PObj;
+    ParserSettingsStruct Settings;
+    double *ViewMatrix, *ProjMatrix;
+    int NumTriangles, NumLines;
+} ParserStruct;
+
+DWORD TLSIndex;
+HANDLE gMutex;
+
+ITDPARSER_API MeshStruct *ITDParserParse(const char *Path, const char *Settings);
 ITDPARSER_API void ITDParserFree(MeshStruct *Mesh);

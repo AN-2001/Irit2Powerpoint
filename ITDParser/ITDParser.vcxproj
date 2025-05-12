@@ -139,8 +139,8 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(ProjectDir)libs_irit_release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>IritExt64.lib;IritGrap64.lib;IritRndr64.lib;IritUser64.lib;IritBool64.lib;IritPrsr64.lib;IritVMdl64.lib;IritMdl64.lib;IritMvar64.lib;IritTrim64.lib;IritTriv64.lib;IritTrng64.lib;IritSymb64.lib;IritCagd64.lib;IritGeom64.lib;IritMisc64.lib;IritXtra64.lib;libpng64.lib;libgif64.lib;zlib64.lib;comctl32.lib;wsock32.lib;setargv.obj;ws2_32.lib;mswsock.lib;opengl32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs_irit;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>IritExtD64.lib;IritGrapD64.lib;IritRndrD64.lib;IritUserD64.lib;IritBoolD64.lib;IritPrsrD64.lib;IritVMdlD64.lib;IritMdlD64.lib;IritMvarD64.lib;IritTrimD64.lib;IritTrivD64.lib;IritTrngD64.lib;IritSymbD64.lib;IritCagdD64.lib;IritGeomD64.lib;IritMiscD64.lib;IritXtraD64.lib;libpngD64.lib;libgifD64.lib;zlibD64.lib;comctl32.lib;wsock32.lib;setargv.obj;ws2_32.lib;mswsock.lib;opengl32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>

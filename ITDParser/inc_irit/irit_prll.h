@@ -26,8 +26,9 @@ IRIT_GLOBAL_DATA_HEADER int
     #ifdef DEBUG
 	#define DEBUG_STATE_MODIFIED_REPORT_PRLL
         #define IRIT_PARALLEL_NOT_REENTRANT_CODE_ALERT()  { \
-	    fprintf(stderr, "Warning: [%s:%d] invocation of non reentrant code\n", \
-	            __FILE__, __LINE__); \
+	    IRIT_MISC_IF_MSECS_FROM_LAST_CALL(1000) \
+	        fprintf(stderr, "Warning: [%s:%d] invocation of non reentrant code\n", \
+	                __FILE__, __LINE__); \
         }
     #else
         #define IRIT_PARALLEL_NOT_REENTRANT_CODE_ALERT()
