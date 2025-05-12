@@ -17,13 +17,6 @@
                   supertip="Specify the import settings."           
                   onAction="OnSettingsButton"/>
 
-          <button id="RenderSettingsButton"
-                  label="Render Settings"
-                  screentip="Render Settings"
-                  supertip="Specify the render settings for the currently loaded model"
-                  onAction="OnRenderButton"
-                  getEnabled="OnGetRenderEnabled"/>
-
         </group>
       </tab>
     </tabs>
