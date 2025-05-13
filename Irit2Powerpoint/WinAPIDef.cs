@@ -43,6 +43,7 @@ namespace Irit2Powerpoint
         public const uint WM_KEYDOWN = 0x0100;
         public const uint WM_KEYUP = 0x0101;
         public const uint WM_PAINT = 0x000F;
+        public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
 
 
 

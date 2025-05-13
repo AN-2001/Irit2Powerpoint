@@ -142,7 +142,6 @@ namespace Irit2Powerpoint
                 Slide = Application.ActiveWindow.View.Slide;
 
             string ImportSettings = CurrentImportSettings;
-            GlRenderer.RenderSettings RenderSettings = GlRenderer.DefaultRenderSettings;
            
             if (GetDummyFromSlide(Slide, out Dummy)) {
                 Dummy.Tags.Add( __PATH_KEY__ , Path);

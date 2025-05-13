@@ -3,6 +3,8 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Diagnostics;
+using OpenTK;
+using OpenTK.Graphics;
 
 
 namespace Irit2Powerpoint
@@ -11,37 +13,29 @@ namespace Irit2Powerpoint
     using static WinAPIDclr;
 
     /* Wraps a WINAPI window and handles its events. */
-    class WindowWrapper 
+    class WindowWrapper : OpenTK.GameWindow
     {
         #region InnerDefs
-        private IntPtr hWnd;
-        private WinProc Proc;
+        private WinProc Proc, PrevProc;
         private GlRenderer Renderer;
-        private int x, y, w, h;
-        public WindowWrapper()
-        {
-            Proc = new WinProc(WindowProc);
-            x = y = 0;
-            w = 200;
-            h = 100;
 
-            // Create the window, only this class works for some reason.
-            this.hWnd = CreateWindowEx(WS_EX_TOPMOST | WS_EX_TOOLWINDOW,
-                                       "#32770", "",
-                                       WS_VISIBLE | WS_POPUP, // Style
-                                       x, y, // position
-                                       w, h, // Size
-                                       IntPtr.Zero,
-                                       IntPtr.Zero,
-                                       GetModuleHandle(null), IntPtr.Zero);
-            if (this.hWnd == IntPtr.Zero)
-                MessageBox.Show("Failed to create window. Error code: " + Marshal.GetLastWin32Error());
+        public WindowWrapper() : base(1, 1, new GraphicsMode(32, 24, 0, 16), "I2P")
+        {
+
+            IntPtr hWnd;
+            this.WindowBorder = WindowBorder.Hidden;
+
+            hWnd = this.WindowInfo.Handle;
+            IntPtr PrevProcPtr = GetWindowLongPtr(hWnd, GWL_WNDPROC);
+            PrevProc = (WinProc)Marshal.GetDelegateForFunctionPointer(PrevProcPtr, typeof(WinProc));
+            Proc = new WinProc(WindowProc);
 
             // Swap out the winproc function.
             SetWindowLongPtr(hWnd, GWL_WNDPROC, Proc);
+            SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
-            ShowWindow(this.hWnd, SW_HIDE);
-            Renderer = new GlRenderer(this.hWnd);
+            this.Visible = false;
+            Renderer = new GlRenderer(this.Context);
         }
         #endregion
 
@@ -130,26 +124,20 @@ namespace Irit2Powerpoint
         #region InnerFunctions
         public void SetPosition(int x, int y, int WinLeft, int WinTop)
         {
-            this.x = x;
-            this.y = y;
-            SetWindowPos(hWnd, IntPtr.Zero, WinLeft + x, WinTop + y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE);
-            InvalidateRect(this.hWnd, IntPtr.Zero, true);
+            X = x;
+            Y = y;
         }
 
         public void SetSize(int w, int h)
         {
-            this.w = w;
-            this.h = h;
-
-            SetWindowPos(hWnd, IntPtr.Zero, 0, 0, w, h, SWP_NOMOVE | SWP_NOACTIVATE);
+            Width = w;
+            Height = h;
             Renderer.UpdateViewport(w, h);
-            InvalidateRect(this.hWnd, IntPtr.Zero, true);
         }
 
         public void SetVisibility(bool Visib)
         {
-            ShowWindow(this.hWnd, Visib ? SW_SHOW : SW_HIDE);
-            InvalidateRect(this.hWnd, IntPtr.Zero, true);
+            Visible = Visib;
         }
         private IntPtr WindowProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam)
         {
@@ -163,7 +151,7 @@ namespace Irit2Powerpoint
             {
                 case WM_MOUSEMOVE:
                     OnMouseMove(LOWORD(lParam), HiWORD(lParam));
-                    InvalidateRect(this.hWnd, IntPtr.Zero, true);
+                    this.Renderer.Render();
                     break;
                 case WM_LBUTTONDOWN:
                     MouseState = MouseState.MOUSE_DOWN;
@@ -190,7 +178,7 @@ namespace Irit2Powerpoint
                     MouseButton = MouseButton.MOUSE_BUTTON_MIDDLE;
                 MOUSE_BUTTON_EVENT:
                     OnMousePress(MouseButton, MouseState);
-                    InvalidateRect(this.hWnd, IntPtr.Zero, true);
+                    this.Renderer.Render();
                     break;
                 case WM_KEYDOWN:
                     KeyState = KeyState.KEY_DOWN;
@@ -201,19 +189,18 @@ namespace Irit2Powerpoint
                 KEY_EVENT:
                     Key = (char)wParam;
                     OnKey(Key, KeyState);
-                    InvalidateRect(this.hWnd, IntPtr.Zero, true);
+                    this.Renderer.Render();
                     break;
                 case WM_PAINT:
                     this.Renderer.Render();
-                    ValidateRect(this.hWnd, IntPtr.Zero);
                     break;
                 case WM_MOUSEWHEEL:
                     mouseWheel = (short)( ((long)wParam >> 16) & 0xFFFF);
                     OnMouseWheel(mouseWheel);
-                    InvalidateRect(this.hWnd, IntPtr.Zero, true);
+                    this.Renderer.Render();
                     break;
             }
-            return DefWindowProc(hWnd, uMsg, wParam, lParam);
+            return PrevProc(hWnd, uMsg, wParam, lParam);
         }
 
         public GlRenderer GetRenderer()

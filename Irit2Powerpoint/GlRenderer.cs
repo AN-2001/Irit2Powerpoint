@@ -392,7 +392,7 @@ namespace Irit2Powerpoint
             public OpenTK.Vector3 BackgroundColour;
         };
 
-        private GraphicsContext Context;
+        private IGraphicsContext Context;
         private OpenTK.Platform.IWindowInfo Info;
         private GlResource ActiveResource;
         private RenderSettings ActiveSettings;
@@ -410,18 +410,18 @@ namespace Irit2Powerpoint
             BackgroundColour = new OpenTK.Vector3(0.2f, 0.2f, 0.2f),
         };
 
-        public GlRenderer(IntPtr hWnd)
+        public GlRenderer(IGraphicsContext Context)
         {
 
-            GraphicsMode Mode;
-            Info = OpenTK.Platform.Utilities.CreateWindowsWindowInfo(hWnd);
-            Mode = new GraphicsMode(32, 24, 0, 4);
+            // GraphicsMode Mode;
+            // Info = OpenTK.Platform.Utilities.CreateWindowsWindowInfo(hWnd);
+            // Mode = new GraphicsMode(32, 24, 0, 4);
 
-            Context = new GraphicsContext(Mode,
-                            Info, 3, 5, GraphicsContextFlags.Default | GraphicsContextFlags.ForwardCompatible);
-            Context.MakeCurrent(Info);
-            Context.LoadAll();
-
+            // Context = new GraphicsContext(Mode,
+            //                 Info, 3, 5, GraphicsContextFlags.Default | GraphicsContextFlags.ForwardCompatible);
+            // Context.MakeCurrent(Info);
+            // Context.LoadAll();
+            this.Context = Context;
 
             TransCtx = new TransformContext();
             SettingsCtx = new SettingsContext();

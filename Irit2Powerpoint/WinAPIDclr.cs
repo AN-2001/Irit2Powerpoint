@@ -48,6 +48,9 @@ namespace Irit2Powerpoint
         public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        public static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
         public static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, WinProc newWndProc);
 
         [DllImport("user32.dll", SetLastError = true)]
