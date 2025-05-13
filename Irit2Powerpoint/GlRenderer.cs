@@ -393,7 +393,6 @@ namespace Irit2Powerpoint
         };
 
         private IGraphicsContext Context;
-        private OpenTK.Platform.IWindowInfo Info;
         private GlResource ActiveResource;
         private RenderSettings ActiveSettings;
         private bool Loaded;

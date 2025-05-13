@@ -29,7 +29,7 @@ static void ParserSubmitPointVertex(ParserStruct* Parser, VertexStruct v);
 static MeshStruct* ParserFinalize(ParserStruct* Parser);
 static void GetUV(IPVertexStruct* Vert, double* u, double* v);
 static int GetColor(IPAttributeStruct* Attr, double* r, double* g, double* b);
-static void BuildArgv(const char* String, int* Argc, char **Argv);
+static void BuildArgv(char* String, int* Argc, char **Argv);
 
 IRIT_STATIC_DATA const char
 * ConfigStr = "I2P n%- N%- I%-#IsoLines!s F%-PlgnOpti|PlgnFineNess!d!F f%-PllnOpti|PllnFineNess!d!F L%-Normal|Size!F b%-r,g,b|(background)!s c%-Override?|r,g,b|(Polyline)!d!s C%-Override?|r,g,b|(Polygon)!d!s W%-Wiresetup!d L%-x,y,z|(Light)!s p%-Point|Size!F Z%-ZMin|ZMax!F!F M%- V%- P%- t%- o%- w%-";
@@ -60,9 +60,12 @@ IRIT_STATIC_DATA const ParserSettingsStruct
 ITDPARSER_API MeshStruct* ITDParserParse(const char* Path, const char* Settings)
 {
     ParserStruct Parser;
+    char *SettingsCpy;
 
     memset(&Parser, 0, sizeof(Parser));
-    ParserHandleArgs(&Parser, Settings);
+    SettingsCpy = _strdup(Settings);
+    ParserHandleArgs(&Parser, SettingsCpy);
+    free(SettingsCpy);
     LoadFromFile(&Parser, Path);
 
     ParserTraverseObjects(&Parser);
@@ -96,7 +99,7 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
     int Argc;
 
     Argc = 0;
-    memset(Argv, NULL, sizeof(Argv));
+    memset(Argv, 0, sizeof(Argv));
     BuildArgv(Settings, &Argc, Argv);
 
     memcpy(PSettings, &DefaultSettings, sizeof(DefaultSettings));
@@ -175,10 +178,10 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
 
     if (LightPosFlag) {
 	if (LightPosString &&
-	    (sscanf(LightPosString, "%f,%f,%f", &PSettings -> LightPos[0],
+	    (sscanf(LightPosString, "%lf,%lf,%lf", &PSettings -> LightPos[0],
 	     &PSettings -> LightPos[1],
 	     &PSettings -> LightPos[2]) != 3) &&
-	    (sscanf(LightPosString, "%f %f %f", &PSettings -> LightPos[0],
+	    (sscanf(LightPosString, "%lf %lf %lf", &PSettings -> LightPos[0],
 		&PSettings -> LightPos[1],
 		&PSettings -> LightPos[2]) != 3)) {
 	    return;
@@ -512,7 +515,7 @@ static MeshStruct* ParserFinalize(ParserStruct* Parser)
     return Ret;
 }
 
-static void BuildArgv(const char* String, int* Argc, char **Argv)
+static void BuildArgv(char* String, int* Argc, char **Argv)
 {
     char 
 	*Context = NULL,

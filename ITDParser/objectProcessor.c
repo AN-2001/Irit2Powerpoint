@@ -24,9 +24,7 @@ static IPObjectStruct *PolyStripToPolyObj(IPObjectStruct *PolyStripObj);
 
 void LoadFromFile(ParserStruct *Parser, const char *FileName)
 {
-    IPObjectStruct *Loaded, *Processed, *Tris;
-
-
+    IPObjectStruct *Loaded, *Processed;
     
     WaitForSingleObject(gMutex, INFINITE); 
     IritPrsrSetPolyListCirc(TRUE);
@@ -103,7 +101,7 @@ static void ApplyGrapSettings(ParserSettingsStruct Settings)
 
 static void ProcessObjectList(IPObjectStruct *PObj)
 {
-    IPObjectStruct *Tmp, *Processed;
+    IPObjectStruct *Tmp;
     const CagdRType *R;
     IrtPtType Pt;
     IPObjectStruct *PTmp;
@@ -374,10 +372,10 @@ static void ProcessPoint(IPObjectStruct *PObj)
     Vert -> Coord[1] = PObj -> U.Pt[1];
     Vert -> Coord[2] = PObj -> U.Pt[2];
 
-    IP_ATTR_COPY_ATTRS(Vert -> Attr, PObj -> Attr);
+    Vert -> Attr = IP_ATTR_COPY_ATTRS(PObj -> Attr);
 
     Poly = IritPrsrAllocPolygon(0, Vert, NULL);
-    IP_ATTR_COPY_ATTRS(Poly -> Attr, PObj -> Attr);
+    Poly -> Attr = IP_ATTR_COPY_ATTRS(PObj -> Attr);
 
     Cpy = IritPrsrGenPOINTLISTObject(Poly);
     IritPrsrCopyObjectAuxInfo(Cpy, PObj);
