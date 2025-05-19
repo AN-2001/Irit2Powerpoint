@@ -28,22 +28,22 @@
     <AssemblyName>Irit2Powerpoint</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <DefineConstants>VSTO40</DefineConstants>
+    <IsWebBootstrapper>False</IsWebBootstrapper>
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <PublishUrl>publish\</PublishUrl>
     <InstallUrl />
     <TargetCulture>en</TargetCulture>
-    <ApplicationVersion>1.0.0.0</ApplicationVersion>
+    <ApplicationVersion>1.0.0.4</ApplicationVersion>
     <AutoIncrementApplicationRevision>true</AutoIncrementApplicationRevision>
     <UpdateEnabled>true</UpdateEnabled>
     <UpdateInterval>7</UpdateInterval>
     <UpdateIntervalUnits>days</UpdateIntervalUnits>
-    <IsWebBootstrapper>False</IsWebBootstrapper>
     <ProductName>Irit2Powerpoint</ProductName>
     <PublisherName>CGGC</PublisherName>
     <SupportUrl />
     <FriendlyName>Irit2Powerpoint</FriendlyName>
     <OfficeApplicationDescription />
-    <LoadBehavior>16</LoadBehavior>
+    <LoadBehavior>3</LoadBehavior>
   </PropertyGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.8">
@@ -260,11 +260,11 @@
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <LangVersion>7.3</LangVersion>
-    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>..\x64\Release\</OutputPath>
-    <DefineConstants>VSTO40;TRACE</DefineConstants>
+    <DefineConstants>TRACE;VSTO40</DefineConstants>
     <Optimize>false</Optimize>
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>x64</PlatformTarget>
@@ -280,14 +280,13 @@
     <VisualStudio>
       <FlavorProperties GUID="{BAA0C2D2-18E2-41B9-852F-F413020CAA33}">
         <ProjectProperties HostName="PowerPoint" HostPackage="{29A7B9D7-A7F1-4328-8EF0-6B2D1A56B2C1}" OfficeVersion="15.0" VstxVersion="4.0" ApplicationType="PowerPoint" Language="cs" TemplatesPath="" DebugInfoExeName="#Software\Microsoft\Office\16.0\PowerPoint\InstallRoot\Path#powerpnt.exe" AddItemTemplatesGuid="{51063C3A-E220-4D12-8922-BDA915ACD783}" />
-        <Host Name="PowerPoint" GeneratedCodeNamespace="Irit2Powerpoint" IconIndex="0">
-          <HostItem Name="ThisAddIn" Code="I2P.cs" CanonicalName="AddIn" CanActivate="false" IconIndex="1" Blueprint="I2P.Designer.xml" GeneratedCode="I2P.Designer.cs" />
+        <Host Name="PowerPoint" GeneratedCodeNamespace="Irit2Powerpoint" PublishedHash="69C324AB27932AA2FBF2B7EA72250886FF164DE6" IconIndex="0">
+          <HostItem Name="ThisAddIn" Code="I2P.cs" CanonicalName="AddIn" PublishedHash="31E4FE2F60C3DFD7DBC0DD2E3374E0E621B55CA2" CanActivate="false" IconIndex="1" Blueprint="I2P.Designer.xml" GeneratedCode="I2P.Designer.cs" />
         </Host>
       </FlavorProperties>
     </VisualStudio>
   </ProjectExtensions>
   <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent>xcopy /Y /D "$(TargetDir)ITDParser.dll" "$(ProjectDir)"</PostBuildEvent>
   </PropertyGroup>
 </Project>

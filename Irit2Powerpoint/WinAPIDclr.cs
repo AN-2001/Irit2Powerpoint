@@ -3,6 +3,8 @@ using System.Runtime.InteropServices;
 
 namespace Irit2Powerpoint
 {
+    using static WinAPIDef;
+
     public class WinAPIDclr
     {
         [DllImport("user32.dll", SetLastError = true)]
@@ -53,6 +55,9 @@ namespace Irit2Powerpoint
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         public static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, WinProc newWndProc);
 
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        public static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr newWndProc);
+
         [DllImport("user32.dll", SetLastError = true)]
         public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
@@ -67,6 +72,24 @@ namespace Irit2Powerpoint
 
          [DllImport("gdi32.dll")]
         public static extern int GetDeviceCaps(IntPtr hdc, int index);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
+
+         [DllImport("user32.dll")]
+        public static extern IntPtr GetDC(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        public static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
+
+        [DllImport("gdi32.dll")]
+        public static extern uint SetPixel(IntPtr hdc, int x, int y, uint colorRef);
+
+        [DllImport("user32.dll")]
+        public static extern bool GetCursorPos(out POINT lpPoint);
+
+        [DllImport("user32.dll")]
+        public static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
 
 
         [DllImport("user32.dll")]

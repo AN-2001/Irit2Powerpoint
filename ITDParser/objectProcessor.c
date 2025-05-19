@@ -88,14 +88,13 @@ static void ApplyGrapSettings(ParserSettingsStruct Settings)
     IritGrapGlblState.PlgnFineness = Settings.PlgnFineness;
     IritGrapGlblState.PllnFineness = Settings.PllnFineness;
     IritGrapGlblState.PointSize = Settings.PointSize;
-    if (Settings.SurfaceWireSetup) {
-        IritGrapGlblState.DrawSurfaceWire = Settings.SurfaceWireSetup & 0x01;
-        IritGrapGlblState.DrawSurfaceBndry = Settings.SurfaceWireSetup & 0x02;
-        IritGrapGlblState.DrawSurfaceSilh = Settings.SurfaceWireSetup & 0x04;
-        IritGrapGlblState.DrawSurfaceSketch = Settings.SurfaceWireSetup & 0x08;
-        IritGrapGlblState.DrawSurfaceRflctLns = Settings.SurfaceWireSetup & 0x10;
-        IritGrapGlblState.DrawSurfaceKnotLns = Settings.SurfaceWireSetup & 0x20;
-    }
+
+    IritGrapGlblState.DrawSurfaceWire = Settings.SurfaceWireSetup & 0x01;
+    IritGrapGlblState.DrawSurfaceBndry = Settings.SurfaceWireSetup & 0x02;
+    IritGrapGlblState.DrawSurfaceSilh = Settings.SurfaceWireSetup & 0x04;
+    IritGrapGlblState.DrawSurfaceSketch = Settings.SurfaceWireSetup & 0x08;
+    IritGrapGlblState.DrawSurfaceRflctLns = Settings.SurfaceWireSetup & 0x10;
+    IritGrapGlblState.DrawSurfaceKnotLns = Settings.SurfaceWireSetup & 0x20;
 
 }
 

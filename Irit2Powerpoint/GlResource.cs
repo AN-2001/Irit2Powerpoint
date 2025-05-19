@@ -27,6 +27,7 @@ namespace Irit2Powerpoint
         public OpenTK.Matrix4 ProjMat;
         public OpenTK.Vector3 BBoxMin;
         public OpenTK.Vector3 BBoxMax;
+        public OpenTK.Vector3 LightPos;
         public bool PerVertexColour;
         public bool ContainsView;
         public bool ContainsProj;
@@ -51,6 +52,7 @@ namespace Irit2Powerpoint
 
             BBoxMin = new OpenTK.Vector3((float)Mesh.Min[0], (float)Mesh.Min[1], (float)Mesh.Min[2]);
             BBoxMax = new OpenTK.Vector3((float)Mesh.Max[0], (float)Mesh.Max[1], (float)Mesh.Max[2]);
+            LightPos = new OpenTK.Vector3((float)Mesh.LightPos[0], (float)Mesh.LightPos[1], (float)Mesh.LightPos[2]);
             GL.GenVertexArrays(1, out this.VAO);
             GL.GenBuffers(1, out this.VBO);
 

@@ -29,22 +29,36 @@ namespace Irit2Powerpoint.Resources
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ImportSettings));
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
-            this.Cancel = new System.Windows.Forms.Button();
             this.textBox1 = new System.Windows.Forms.TextBox();
+            this.Cancel = new System.Windows.Forms.Button();
             this.OK = new System.Windows.Forms.Button();
+            this.label1 = new System.Windows.Forms.Label();
             this.flowLayoutPanel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // flowLayoutPanel1
             // 
             this.flowLayoutPanel1.Controls.Add(this.textBox1);
+            this.flowLayoutPanel1.Controls.Add(this.label1);
             this.flowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.flowLayoutPanel1.Location = new System.Drawing.Point(12, 2);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
             this.flowLayoutPanel1.Padding = new System.Windows.Forms.Padding(10, 10, 0, 0);
             this.flowLayoutPanel1.Size = new System.Drawing.Size(594, 200);
             this.flowLayoutPanel1.TabIndex = 0;
+            // 
+            // textBox1
+            // 
+            this.textBox1.AcceptsReturn = true;
+            this.textBox1.AllowDrop = true;
+            this.textBox1.Location = new System.Drawing.Point(13, 13);
+            this.textBox1.Multiline = true;
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(551, 89);
+            this.textBox1.TabIndex = 1;
+            this.textBox1.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
             // 
             // Cancel
             // 
@@ -56,17 +70,6 @@ namespace Irit2Powerpoint.Resources
             this.Cancel.Text = "Cancel";
             this.Cancel.UseVisualStyleBackColor = true;
             // 
-            // textBox1
-            // 
-            this.textBox1.AcceptsReturn = true;
-            this.textBox1.AllowDrop = true;
-            this.textBox1.Location = new System.Drawing.Point(13, 13);
-            this.textBox1.Multiline = true;
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(551, 166);
-            this.textBox1.TabIndex = 1;
-            this.textBox1.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
-            // 
             // OK
             // 
             this.OK.Location = new System.Drawing.Point(25, 208);
@@ -76,6 +79,17 @@ namespace Irit2Powerpoint.Resources
             this.OK.Text = "OK";
             this.OK.UseVisualStyleBackColor = true;
             this.OK.Click += new System.EventHandler(this.OK_Click);
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(13, 105);
+            this.label1.MaximumSize = new System.Drawing.Size(551, 0);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(551, 60);
+            this.label1.TabIndex = 2;
+            this.label1.Text = resources.GetString("label1.Text");
+            this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
             // ImportSettings
             // 
@@ -106,5 +120,6 @@ namespace Irit2Powerpoint.Resources
         private System.Windows.Forms.Button Cancel;
         private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.Button OK;
+        private System.Windows.Forms.Label label1;
     }
 }

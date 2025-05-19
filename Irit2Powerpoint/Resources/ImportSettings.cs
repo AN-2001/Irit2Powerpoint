@@ -30,5 +30,10 @@ namespace Irit2Powerpoint.Resources
                 self = (TextBox)sender;
             PickedSettings = self.Text;
         }
+
+        private void label1_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

@@ -32,12 +32,11 @@ static int GetColor(IPAttributeStruct* Attr, double* r, double* g, double* b);
 static void BuildArgv(char* String, int* Argc, char **Argv);
 
 IRIT_STATIC_DATA const char
-* ConfigStr = "I2P n%- N%- I%-#IsoLines!s F%-PlgnOpti|PlgnFineNess!d!F f%-PllnOpti|PllnFineNess!d!F L%-Normal|Size!F b%-r,g,b|(background)!s c%-Override?|r,g,b|(Polyline)!d!s C%-Override?|r,g,b|(Polygon)!d!s W%-Wiresetup!d L%-x,y,z|(Light)!s p%-Point|Size!F Z%-ZMin|ZMax!F!F M%- V%- P%- t%- o%- w%-";
+* ConfigStr = "I2P n%- N%- I%-#IsoLines!s F%-PlgnOpti|PlgnFineNess!d!F f%-PllnOpti|PllnFineNess!d!F L%-Normal|Size!F c%-Override?|r,g,b|(Polyline)!d!s C%-Override?|r,g,b|(Polygon)!d!s W%-Wiresetup!d l%-x,y,z|(Light)!s p%-Point|Size!F M%- V%- P%- t%- o%- w%-";
 IRIT_STATIC_DATA const ParserSettingsStruct
     DefaultSettings = {
 	0, 0, /* VNormal, PNormal */
 	{10, 10, 10}, /* Isolines */
-	{0, 0, 0}, /* Background Colour */
 	FALSE, {1, 1, 0}, /* OverridePolylineCol - Polyline Colour */
 	FALSE, {1, 0, 0}, /* OverridePolygonCol - Polygon Colour */
 	FALSE, /* PolygonOptiApprox */
@@ -52,9 +51,8 @@ IRIT_STATIC_DATA const ParserSettingsStruct
 	1, /* NormalSize */
 	40, /* PlgnFineness */
 	40, /* PllnFineness */
-	{1, 1, 1}, /* LightPos */
-	0.05, /* PointSize */
-	10, 100 /* ZMin, ZMax */
+	{-10, 10, -10}, /* LightPos */
+	0.05 /* PointSize */
     };
 
 ITDPARSER_API MeshStruct* ITDParserParse(const char* Path, const char* Settings)
@@ -66,6 +64,7 @@ ITDPARSER_API MeshStruct* ITDParserParse(const char* Path, const char* Settings)
     SettingsCpy = _strdup(Settings);
     ParserHandleArgs(&Parser, SettingsCpy);
     free(SettingsCpy);
+
     LoadFromFile(&Parser, Path);
 
     ParserTraverseObjects(&Parser);
@@ -80,16 +79,13 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
 	PolygonFinenessFlag = FALSE,
 	PolylineFinenessFlag = FALSE,
 	NormalSizeFlag = FALSE,
-	BackgroundColourFlag = FALSE,
 	PolygonColourFlag = FALSE,
 	PolylineColourFlag = FALSE,
 	SurfaceWireSetupFlag = FALSE,
 	LightPosFlag = FALSE,
-	PointSizeFlag = FALSE,
-	ZMinMaxFlag = FALSE;
+	PointSizeFlag = FALSE;
     char
 	*IsolineString = NULL,
-	*BackgroundString = NULL,
 	*PolygonString = NULL,
 	*PolylineString = NULL,
 	*LightPosString = NULL;
@@ -109,13 +105,11 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
 	&PolygonFinenessFlag, &PSettings->PolygonOptiApprox, &PSettings->PlgnFineness,
 	&PolylineFinenessFlag, &PSettings->PolylineOptiApprox, &PSettings->PllnFineness,
 	&NormalSizeFlag, &PSettings->NormalSize,
-	&BackgroundColourFlag, &BackgroundString,
 	&PolylineColourFlag, &PSettings -> OverridePolylineCol, &PolylineString,
 	&PolygonColourFlag, &PSettings -> OverridePolygonCol, &PolygonString,
 	&SurfaceWireSetupFlag, &PSettings->SurfaceWireSetup,
 	&LightPosFlag, &LightPosString,
 	&PointSizeFlag, &PSettings->PointSize,
-	&ZMinMaxFlag, &PSettings->ZMin, &PSettings->ZMax,
 	&PSettings -> DrawSurfaceMesh,
 	&PSettings -> DrawModelsMonolithic,
 	&PSettings -> DrawSurfacePoly,
@@ -127,16 +121,6 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
 
     if (!SurfaceWireSetupFlag)
 	PSettings -> SurfaceWireSetup = 0;
-
-    if (BackgroundColourFlag) {
-	int r, g, b;
-	if (BackgroundString && (sscanf(BackgroundString, "%d,%d,%d", &r, &g, &b) != 3)) {
-	    return;
-	}
-	PSettings -> Background[0] = r / 255.0;
-	PSettings -> Background[1] = g / 255.0;
-	PSettings -> Background[2] = b / 255.0;
-    }
 
     if (PolylineColourFlag) {
 	int r, g, b;
@@ -507,6 +491,10 @@ static MeshStruct* ParserFinalize(ParserStruct* Parser)
     IritGeomBBComputeBboxObjectList(Parser->PObj, &BBox, 0);
     Ret->MinX = BBox.Min[0]; Ret->MinY = BBox.Min[1]; Ret->MinZ = BBox.Min[2];
     Ret->MaxX = BBox.Max[0]; Ret->MaxY = BBox.Max[1]; Ret->MaxZ = BBox.Max[2];
+
+    Ret->lx = Parser -> Settings.LightPos[0];
+    Ret->ly = Parser -> Settings.LightPos[1];
+    Ret->lz = Parser -> Settings.LightPos[2];
 
     Ret -> ViewMatrix = Parser -> ViewMatrix;
     Ret -> ProjMatrix = Parser -> ProjMatrix;

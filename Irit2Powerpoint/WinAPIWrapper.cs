@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Diagnostics;
 using OpenTK;
 using OpenTK.Graphics;
+using OpenTK.Graphics.OpenGL4;
 
 
 namespace Irit2Powerpoint
@@ -18,23 +19,32 @@ namespace Irit2Powerpoint
         #region InnerDefs
         private WinProc Proc, PrevProc;
         private GlRenderer Renderer;
+        private IntPtr hWnd;
+        private Timer RenderTimer;
 
-        public WindowWrapper() : base(1, 1, new GraphicsMode(32, 24, 0, 16), "I2P")
+        public WindowWrapper(IntPtr PowerPoint) : base(1, 1, new GraphicsMode(new ColorFormat(32), 24, 0, 16), "I2P")
         {
-
-            IntPtr hWnd;
             this.WindowBorder = WindowBorder.Hidden;
 
             hWnd = this.WindowInfo.Handle;
             IntPtr PrevProcPtr = GetWindowLongPtr(hWnd, GWL_WNDPROC);
             PrevProc = (WinProc)Marshal.GetDelegateForFunctionPointer(PrevProcPtr, typeof(WinProc));
             Proc = new WinProc(WindowProc);
-
             // Swap out the winproc function.
             SetWindowLongPtr(hWnd, GWL_WNDPROC, Proc);
-            SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
-            this.Visible = false;
+            int prevStyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+            SetWindowLong(hWnd, GWL_EXSTYLE, prevStyle | WS_EX_LAYERED);
+            SetLayeredWindowAttributes(hWnd, (uint)(255 | (255 << 8) | (255 << 16)), 0, 0x1);
+            RenderTimer = new Timer();
+            RenderTimer.Interval = 16;
+            RenderTimer.Tick += (e, v) =>
+            {
+                InvalidateRect(this.hWnd, IntPtr.Zero, true);
+            };
+
+
+            SetVisibility(false);
             Renderer = new GlRenderer(this.Context);
         }
         #endregion
@@ -42,6 +52,22 @@ namespace Irit2Powerpoint
         int LastMouseX, LastMouseY;
         int dx, dy;
         bool IsMoving, IsRotating;
+
+
+        public void funny2(Color Col)
+        {
+            uint
+                r = Col.R,
+                g = Col.G,
+                b = Col.B;
+
+            SetLayeredWindowAttributes(hWnd, (uint)(r | (g << 8) | (b << 16)), 0, 0x1);
+        }
+        public void funny(IntPtr Other)
+        {
+            SetWindowLongPtr(hWnd, -8, Other);
+            SetWindowPos(hWnd, Other, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW );
+        }
 
         /* Called when the window detects mouse movement. */
         public void OnMouseMove(int x, int y)
@@ -124,8 +150,10 @@ namespace Irit2Powerpoint
         #region InnerFunctions
         public void SetPosition(int x, int y, int WinLeft, int WinTop)
         {
-            X = x;
-            Y = y;
+            X = WinLeft + x;
+            Y = WinTop + y;
+
+            InvalidateRect(this.hWnd, IntPtr.Zero, false);
         }
 
         public void SetSize(int w, int h)
@@ -133,11 +161,20 @@ namespace Irit2Powerpoint
             Width = w;
             Height = h;
             Renderer.UpdateViewport(w, h);
+
+            InvalidateRect(this.hWnd, IntPtr.Zero, false);
         }
 
         public void SetVisibility(bool Visib)
         {
             Visible = Visib;
+            
+            if (Visib)
+                RenderTimer.Start();
+             else
+                RenderTimer.Stop();
+
+            InvalidateRect(this.hWnd, IntPtr.Zero, false);
         }
         private IntPtr WindowProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam)
         {
@@ -151,7 +188,7 @@ namespace Irit2Powerpoint
             {
                 case WM_MOUSEMOVE:
                     OnMouseMove(LOWORD(lParam), HiWORD(lParam));
-                    this.Renderer.Render();
+                    InvalidateRect(this.hWnd, IntPtr.Zero, true);
                     break;
                 case WM_LBUTTONDOWN:
                     MouseState = MouseState.MOUSE_DOWN;
@@ -178,7 +215,7 @@ namespace Irit2Powerpoint
                     MouseButton = MouseButton.MOUSE_BUTTON_MIDDLE;
                 MOUSE_BUTTON_EVENT:
                     OnMousePress(MouseButton, MouseState);
-                    this.Renderer.Render();
+                    InvalidateRect(this.hWnd, IntPtr.Zero, true);
                     break;
                 case WM_KEYDOWN:
                     KeyState = KeyState.KEY_DOWN;
@@ -189,15 +226,45 @@ namespace Irit2Powerpoint
                 KEY_EVENT:
                     Key = (char)wParam;
                     OnKey(Key, KeyState);
-                    this.Renderer.Render();
+                    InvalidateRect(this.hWnd, IntPtr.Zero, true);
                     break;
                 case WM_PAINT:
-                    this.Renderer.Render();
-                    break;
+                    {
+                        this.Renderer.Render();
+
+                        IntPtr HDC = GetDC(this.hWnd);
+                        POINT p;
+                        byte r, g, b;
+                        GetCursorPos(out p);
+                        ScreenToClient(this.hWnd, ref p);
+
+                        byte[] Pixels = new byte[9 * 9 * 4];
+                        GL.ReadPixels(p.X - 4, (Height - p.Y) - 4, 9, 9, PixelFormat.Bgra, PixelType.UnsignedByte, Pixels);
+
+                        for (int i = -4; i <= 4; i++)
+                        {
+                            for (int j = -4; j <= 4; j++)
+                            {
+                                b = Pixels[((i + 4) + (j + 4) * 9) * 4 + 0];
+                                g = Pixels[((i + 4) + (j + 4) * 9) * 4 + 1];
+                                r = Pixels[((i + 4) + (j + 4) * 9) * 4 + 2];
+
+                                r = (byte)(0.95 * r);
+                                g = (byte)(0.95 * g);
+                                b = (byte)(0.95 * b);
+
+                                SetPixel(HDC, p.X + i, p.Y - j, (uint)(r + (g << 8) + (b << 16)));
+                            }
+                        }
+                        ReleaseDC(this.hWnd, HDC);
+
+                        ValidateRect(this.hWnd, IntPtr.Zero);
+                        break;
+                    }
                 case WM_MOUSEWHEEL:
                     mouseWheel = (short)( ((long)wParam >> 16) & 0xFFFF);
                     OnMouseWheel(mouseWheel);
-                    this.Renderer.Render();
+                    InvalidateRect(this.hWnd, IntPtr.Zero, true);
                     break;
             }
             return PrevProc(hWnd, uMsg, wParam, lParam);

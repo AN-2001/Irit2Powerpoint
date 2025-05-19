@@ -6,6 +6,7 @@ namespace Irit2Powerpoint
     public class WinAPIDef
     {
         public const int GWL_STYLE = -16;
+        public const int GWL_EXSTYLE = -20;
         public const uint WS_CAPTION = 0x00C00000;     
         public const uint WS_THICKFRAME = 0x00040000;
         public const uint WS_POPUP = 0x80000000;
@@ -19,7 +20,7 @@ namespace Irit2Powerpoint
         public const uint WS_EX_DLGMODALFRAME = 0x00000001;
         public const uint WS_EX_TOPMOST = 0x00000008;
         public const uint WS_EX_TOOLWINDOW = 0x00000080;
-        public const uint WS_EX_LAYERED = 0x00080000;
+        public const int WS_EX_LAYERED = 0x00080000;
         public const int CW_USEDEFAULT = unchecked((int)0x80000000);
         public const uint SWP_NOSIZE = 0x0001;
         public const uint SWP_NOMOVE = 0x0002;
@@ -70,6 +71,13 @@ namespace Irit2Powerpoint
             public int Top;
             public int Right;
             public int Bottom;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct POINT
+        {
+            public int X;
+            public int Y;
         }
 
     }

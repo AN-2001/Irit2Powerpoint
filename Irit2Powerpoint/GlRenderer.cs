@@ -127,7 +127,7 @@ namespace Irit2Powerpoint
             vec3 ViewPos = (ModelView * vec4(Position, 1.f)).xyz;
 
             gl_Position = Projection * vec4(ViewPos, 1.f); 
-            gl_Position.z -= 0.0001f;
+            gl_Position.z += 0.0001f;
             Col = Colour;
         }"; 
 
@@ -302,7 +302,7 @@ namespace Irit2Powerpoint
             float w = (BBMax.X - BBMin.X);
             float h = (BBMax.Y - BBMin.Y);
             float m = Math.Max(w, h);
-            Projection = OpenTK.Matrix4.CreateOrthographic(m * AspectRatio, m, -1000, 1000);
+            Projection = OpenTK.Matrix4.CreateOrthographic(m * AspectRatio, m, 1000, -1000);
             NeedUpdate = true;
         }
 
@@ -353,6 +353,12 @@ namespace Irit2Powerpoint
         {
             Reset();
         }
+        
+        public void SetLight(OpenTK.Vector3 LightPos)
+        {
+            Settings.LightPosition = LightPos;
+            NeedUpdate = true;
+        }
 
         public void UpdateSettings(GlRenderer.RenderSettings Settings)
         {
@@ -402,7 +408,7 @@ namespace Irit2Powerpoint
         public SettingsContext SettingsCtx;
         public static RenderSettings DefaultRenderSettings = new RenderSettings()
         {
-            LightPosition = new OpenTK.Vector3(0.0f, 10.0f, 0.0f),
+            LightPosition = new OpenTK.Vector3(-10.0f, 10.0f, -10.0f),
             LightColour = new OpenTK.Vector3(1.0f, 1.0f, 1.0f),
             DefaultSolidColour = new OpenTK.Vector3(0.7f, 0.4f, 0.2f),
             DefaultCurveColour = new OpenTK.Vector3(0.9f, 0.75f, 0.2f),
@@ -412,26 +418,25 @@ namespace Irit2Powerpoint
         public GlRenderer(IGraphicsContext Context)
         {
 
-            // GraphicsMode Mode;
-            // Info = OpenTK.Platform.Utilities.CreateWindowsWindowInfo(hWnd);
-            // Mode = new GraphicsMode(32, 24, 0, 4);
-
-            // Context = new GraphicsContext(Mode,
-            //                 Info, 3, 5, GraphicsContextFlags.Default | GraphicsContextFlags.ForwardCompatible);
-            // Context.MakeCurrent(Info);
-            // Context.LoadAll();
             this.Context = Context;
 
             TransCtx = new TransformContext();
             SettingsCtx = new SettingsContext();
 
             GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.LineSmooth);
+            GL.Enable(EnableCap.PolygonSmooth);
             GL.Enable(EnableCap.Multisample);
+            GL.DepthFunc(DepthFunction.Greater);
+            GL.ClearDepth(0.0);
 
             ShaderSources.PolyProg = InitShader(ShaderSources.POLY_VERT,
                                                 ShaderSources.POLY_FRAG);
             ShaderSources.CrvProg = InitShader(ShaderSources.CRV_VERT,
                                                ShaderSources.CRV_FRAG);
+
+            TransCtx.InitSync(ShaderSources.PolyProg);
+            TransCtx.InitSync(ShaderSources.CrvProg);
             SettingsCtx.InitSync(ShaderSources.PolyProg);
             SettingsCtx.InitSync(ShaderSources.CrvProg);
 
@@ -465,7 +470,6 @@ namespace Irit2Powerpoint
             GL.DeleteShader(VertexShader);
             GL.DeleteShader(FragmentShader);
 
-            TransCtx.InitSync(Program);
             return Program;
         }
 
@@ -509,7 +513,7 @@ namespace Irit2Powerpoint
             {
                 TimeSpan
                     Span = DateTime.Now - Time;
-                if (Span.TotalSeconds >= 1)
+                if (Span.TotalSeconds >= 0.25)
                 {
                     SetActiveModel(LastPath, ActiveSettings);
                     Time = DateTime.Now;
@@ -517,6 +521,7 @@ namespace Irit2Powerpoint
             }
 
             TransCtx.PerformSync();
+
             SettingsCtx.PerformSync();
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -561,6 +566,8 @@ namespace Irit2Powerpoint
                 SettingsCtx.Reset();
 
                 SettingsCtx.UpdateSettings(Settings);
+
+                SettingsCtx.SetLight(ActiveResource.LightPos);
                 if (this.ActiveResource.ContainsView) {
                     TransCtx.SetActiveModelView(this.ActiveResource.ViewMat);
                     TransCtx.SaveActiveModelView();

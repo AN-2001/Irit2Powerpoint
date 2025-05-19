@@ -33,23 +33,10 @@ namespace Irit2Powerpoint
             this.ribbon = ribbonUI;
         }
 
-        private string GetRelativePath(string AbsPath)
-        {
-            string
-                CurrentDir = Directory.GetCurrentDirectory();
-            Uri
-                BaseUri = new Uri(CurrentDir + Path.DirectorySeparatorChar);
-            Uri
-                DestUri = new Uri(AbsPath);
-            Uri
-                RelUri = BaseUri.MakeRelativeUri(DestUri);
-            return Uri.UnescapeDataString(RelUri.ToString())
-                            .Replace('/', Path.DirectorySeparatorChar);
-        }
-
         public void OnImportButton(Office.IRibbonControl Control)
         {
             I2P AddIn = Globals.I2P;
+            string InputPath;
 
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
@@ -59,7 +46,10 @@ namespace Irit2Powerpoint
 
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    AddIn.InitDummyRect(openFileDialog.FileName);
+                    InputPath = openFileDialog.FileName;
+                    if (!Path.IsPathRooted(InputPath))
+                        InputPath = Path.GetFullPath(InputPath);
+                    AddIn.InitDummyRect(InputPath);
                 }
             }
         }

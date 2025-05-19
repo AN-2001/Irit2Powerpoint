@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ITDParser", "ITDParser\ITDParser.vcxproj", "{45972424-5B6E-4E4C-B9AE-86ED8D0602EF}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Irit2PowerpointInstaller", "Irit2PowerpointInstaller\Irit2PowerpointInstaller.vdproj", "{ACA2A58A-8D44-44A8-AAEA-9233DDC64683}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,12 @@ Global
 		{45972424-5B6E-4E4C-B9AE-86ED8D0602EF}.Release|x64.Build.0 = Release|x64
 		{45972424-5B6E-4E4C-B9AE-86ED8D0602EF}.Release|x86.ActiveCfg = Release|Win32
 		{45972424-5B6E-4E4C-B9AE-86ED8D0602EF}.Release|x86.Build.0 = Release|Win32
+		{ACA2A58A-8D44-44A8-AAEA-9233DDC64683}.Debug|Any CPU.ActiveCfg = Debug
+		{ACA2A58A-8D44-44A8-AAEA-9233DDC64683}.Debug|x64.ActiveCfg = Debug
+		{ACA2A58A-8D44-44A8-AAEA-9233DDC64683}.Debug|x86.ActiveCfg = Debug
+		{ACA2A58A-8D44-44A8-AAEA-9233DDC64683}.Release|Any CPU.ActiveCfg = Release
+		{ACA2A58A-8D44-44A8-AAEA-9233DDC64683}.Release|x64.ActiveCfg = Release
+		{ACA2A58A-8D44-44A8-AAEA-9233DDC64683}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

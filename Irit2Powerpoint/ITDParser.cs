@@ -29,6 +29,7 @@ namespace Irit2Powerpoint
             public int VertexCutoffOffset;
             public double[] ViewMat, ProjMat; /* 4x4 matrices in row major form. */
             public double[] Min, Max;
+            public double[] LightPos;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -37,7 +38,8 @@ namespace Irit2Powerpoint
             public IntPtr Vertices;
             public IntPtr ViewMatrix, ProjMatrix;
             public double MinX, MinY, MinZ,
-                          MaxX, MaxY, MaxZ;
+                          MaxX, MaxY, MaxZ,
+                          lx, ly, lz;
             public int TotalVertices, VertexCutoffOffset;
         }
 
@@ -75,10 +77,13 @@ namespace Irit2Powerpoint
             Ret.ProjMat = null;
             Ret.Min = new double[3];
             Ret.Max = new double[3];
+            Ret.LightPos = new double[3];
 
             Ret.VertexCutoffOffset = Mesh.VertexCutoffOffset;
             Ret.Min[0] = Mesh.MinX; Ret.Min[1] = Mesh.MinY; Ret.Min[2] = Mesh.MinZ;
             Ret.Max[0] = Mesh.MaxX; Ret.Max[1] = Mesh.MaxY; Ret.Max[2] = Mesh.MaxZ;
+
+            Ret.LightPos[0] = Mesh.lx; Ret.LightPos[1] = Mesh.ly; Ret.LightPos[2] = Mesh.lz;
 
             Ret.Vertecies = new VertexStruct[Mesh.TotalVertices];
 

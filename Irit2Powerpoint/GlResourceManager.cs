@@ -34,7 +34,7 @@ namespace Irit2Powerpoint
 
         public string BuildResourceKey(string Path, string ImportSettings)
         {
-            return Path + ImportSettings;
+            return Path + ":" + ImportSettings;
         }
 
         private bool QueueImpl(LoadRequest Request)

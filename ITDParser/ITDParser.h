@@ -20,7 +20,8 @@ typedef ITDPARSER_API struct MeshStruct {
     VertexStruct *Vertices;
     double *ViewMatrix, *ProjMatrix, 
             MinX, MinY, MinZ,
-            MaxX, MaxY, MaxZ;
+            MaxX, MaxY, MaxZ,
+            lx, ly, lz;
     int TotalVertices,
         VerticesCutoffOffset; /* Cutoff offset between polygons and polylines. */
 } MeshStruct;
@@ -32,26 +33,9 @@ typedef struct ParserCommandsSturct {
     int VertexCount;
 } ParserCommandsStruct;
 
-
-   // if (IritMiscGetArgs( Argc, Argv, ConfigStr,
-   //     		 &IritGrapGlblState.DrawVNormal, &IritGrapGlblState.DrawPNormal,
-   //     		 &IsoLineFlag, &IsolinesStr,
-   //     		 &_, &IritGrapGlblState.PolygonOptiApprox, &IritGrapGlblState.PlgnFineness,
-   //     		 &_, &IritGrapGlblState.PolylineOptiApprox, &IritGrapGlblState.PllnFineness,
-   //     		 &_, &IritGrapGlblState.NormalSize,
-   //     		 &IritGrapGlblState.DrawSurfaceMesh,
-   //     		 &IritGrapGlblState.DrawModelsMonolithic,
-   //     		 &IritGrapGlblState.DrawSurfacePoly,
-   //     		 &IritGrapGlblState.DrawSurfaceOrient,
-   //     		 &IritGrapGlblState.FlipNormalOrient, NULL)) {
-   //     FreeArgv(Argv, Argc);
-   //     return NULL;
-   // }
-
 typedef struct ParserSettingsStruct {
     int DrawVNormal, DrawPNormal,
         Isolines[3];
-    double Background[3];
     int OverridePolylineCol;
     double PolylineCol[3];
     int OverridePolygonCol;
@@ -66,7 +50,7 @@ typedef struct ParserSettingsStruct {
         FlipNormalOrient,
         Wireframe;
     double NormalSize, PlgnFineness, PllnFineness,
-           LightPos[3], PointSize, ZMin, ZMax;
+           LightPos[3], PointSize;
 } ParserSettingsStruct;
 
 typedef struct ParserStruct {
