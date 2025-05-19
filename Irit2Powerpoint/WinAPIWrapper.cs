@@ -54,7 +54,7 @@ namespace Irit2Powerpoint
         bool IsMoving, IsRotating;
 
 
-        public void funny2(Color Col)
+        public void MaskColour(Color Col)
         {
             uint
                 r = Col.R,
@@ -63,10 +63,10 @@ namespace Irit2Powerpoint
 
             SetLayeredWindowAttributes(hWnd, (uint)(r | (g << 8) | (b << 16)), 0, 0x1);
         }
-        public void funny(IntPtr Other)
+        public void ChangeOwner(IntPtr Owner)
         {
-            SetWindowLongPtr(hWnd, -8, Other);
-            SetWindowPos(hWnd, Other, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW );
+            SetWindowLongPtr(hWnd, -8, Owner);
+            SetWindowPos(hWnd, Owner, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW );
         }
 
         /* Called when the window detects mouse movement. */
@@ -144,6 +144,7 @@ namespace Irit2Powerpoint
         /* Clean up function. */
         public void Destroy()
         {
+            RenderTimer.Dispose();
             Renderer.Destroy();
         }
 

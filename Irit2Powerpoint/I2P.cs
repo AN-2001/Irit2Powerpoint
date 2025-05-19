@@ -287,7 +287,7 @@ namespace Irit2Powerpoint
             WindowStateTimer.Stop();
             ActiveSlideShowWin = null;
 
-            GlWindow.funny(IntPtr.Zero);
+            GlWindow.ChangeOwner(IntPtr.Zero);
             /* Once a slide show ends hide the GL window. */
             GlWindow.SetVisibility(false);
             SlideAverageColours.Clear();
@@ -314,26 +314,24 @@ namespace Irit2Powerpoint
             }
         }
 
-        Color getAvgColour(PowerPoint.Slide Slide)
+        Color CalculateAverageColour(PowerPoint.Slide Slide)
         {
             string
                 TempDir = Path.GetTempPath(),
                 ImagePath = Path.Combine(TempDir, "slide.bmp");
             int r, g, b;
 
-            Slide.Export(ImagePath, "BMP", 128, 128);
-        
-
+            Slide.Export(ImagePath, "BMP", 64, 64);
             using (Bitmap bmp = new Bitmap(ImagePath))
             {
                 int i, j;
-                int Total = 128 * 128;
+                int Total = bmp.Width * bmp.Height;
 
                 r = g = b = 0;
 
-                for (i = 0; i < 128; i++)
+                for (i = 0; i < bmp.Width; i++)
                 {
-                    for (j = 0; j < 128; j++)
+                    for (j = 0; j < bmp.Height; j++)
                     {
                         Color c = bmp.GetPixel(j, i);
                         r += c.R;
@@ -362,11 +360,12 @@ namespace Irit2Powerpoint
             GlRenderer.RenderSettings RenderSettings;
             string ImportSettings;
             float ZoomFactor;
+            WinAPIDef.RECT Rect;
 
             if (SlideAverageColours.Count == 0)
             {
                 foreach (PowerPoint.Slide Slide in Application.ActivePresentation.Slides)
-                    SlideAverageColours.Add(SlideContainsDummy(Slide) ? getAvgColour(Slide) : Color.Empty);
+                    SlideAverageColours.Add(SlideContainsDummy(Slide) ? CalculateAverageColour(Slide) : Color.Empty);
             }
 
             WindowStateTimer.Stop();
@@ -381,10 +380,12 @@ namespace Irit2Powerpoint
                 SlideWidth = PointToPixelX(Wn.Presentation.PageSetup.SlideWidth, (IntPtr)Wn.HWND);
                 SlideHeight = PointToPixelY(Wn.Presentation.PageSetup.SlideHeight, (IntPtr)Wn.HWND);
 
-                WinLeft = PointToPixelX(Wn.Left, (IntPtr)Wn.HWND);
-                WinTop = PointToPixelY(Wn.Top, (IntPtr)Wn.HWND);
-                WinWidth = PointToPixelX(Wn.Width, (IntPtr)Wn.HWND);
-                WinHeight = PointToPixelY(Wn.Height, (IntPtr)Wn.HWND);
+                WinAPIDclr.GetWindowRect((IntPtr)Wn.HWND, out Rect);
+
+                WinLeft = Rect.Left;// PointToPixelX(Wn.Left, (IntPtr)Wn.HWND);
+                WinTop = Rect.Top;// PointToPixelY(Wn.Top, (IntPtr)Wn.HWND);
+                WinWidth = Rect.Right - Rect.Left;// PointToPixelX(Wn.Width, (IntPtr)Wn.HWND);
+                WinHeight = Rect.Bottom - Rect.Top;//PointToPixelY(Wn.Height, (IntPtr)Wn.HWND);
 
                 AspectScale = Math.Min(WinWidth / SlideWidth, WinHeight / SlideHeight);
 
@@ -408,7 +409,7 @@ namespace Irit2Powerpoint
                 x = (int)(x + LetterBoxOffsetX);
                 y = (int)(y + LetterBoxOffsetY);
 
-                GlWindow.funny((IntPtr)Wn.HWND);
+                GlWindow.ChangeOwner((IntPtr)Wn.HWND);
                 GlWindow.SetPosition(x, y, WinLeft, WinTop);
                 GlWindow.SetSize(w, h);
                 WindowStateTimer.Start();
@@ -420,7 +421,7 @@ namespace Irit2Powerpoint
                 RenderSettings.BackgroundColour = new OpenTK.Vector3(Col.R / 255.0f,
                                                                      Col.G / 255.0f,
                                                                      Col.B / 255.0f);
-                GlWindow.funny2(Col);
+                GlWindow.MaskColour(Col);
                 ImportSettings = Wn.View.Slide.Tags[__IMPORT_SETTINGS_KEY__];
                 Key = ResourceManager.BuildResourceKey(Path, ImportSettings);
                 GlWindow.GetRenderer().SetActiveModel(Key, RenderSettings);
