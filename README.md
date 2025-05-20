@@ -24,7 +24,6 @@ An installer will be generated under Irit2PowerPointInstaller/(Debug|Release). F
 You may start a debug instance by hitting run which will launch PowerPoint with the Plugin preconfigured.
 
 # INSTRUCTIONS
-After installation, please see the example directory for a presentation that introduces the plugin and showcases it.
-the docs directory contains documentation for the supported import settings.
+The docs directory provides documentation for import settings. An example powerpoint presentation that demonstrates the plugin is also provided.
 
 **By Abed Naa'ran and Ismaeel Bder**
