@@ -1,0 +1,26 @@
+I2P [-n] [-N] [-I #IsoLines] [-F PlgnOpti PlgnFineNess] [-f PllnOpti PllnFineNess] [-L Normal Size] [-c Override? r,g,b (Polyline)] [-C Override? r,g,b (Polygon)] [-W Wiresetup] [-l x,y,z (Light)] [-p Point Size] [-M] [-V] [-P] [-t] [-o] [-w]
+
+-n: Display vertex normals.
+-N: Dlsplay surface normals.
+-I: Set the number iso-lines specefied in UxVxW.
+-F: Set the polygon fineness.
+;f: Set the polyline fineness.
+-L: Set the normals' length.
+-c: curve colours.
+-C: polygon colours.
+    Override? a value of 0 or 1 telling I2P whether to override colours with the new colour, or just set it when the curves have no speccfied colour.
+-W: the wire setup of FreeForms 
+    IritGrapGlblState.DrawSurfaceWire = Settings.SurfaceWireSetup & 0x01;
+    IritGrapGlblState.DrawSurfaceBndry = Settings.SurfaceWireSetup & 0x02;
+    IritGrapGlblState.DrawSurfaceSilh = Settings.SurfaceWireSetup & 0x04;
+    IritGrapGlblState.DrawSurfaceSketch = Settings.SurfaceWireSetup & 0x08;
+    IritGrapGlblState.DrawSurfaceRflctLns = Settings.SurfaceWireSetup & 0x10;
+    IritGrapGlblState.DrawSurfaceKnotLns = Settings.SurfaceWireSetup & 0x20;
+-l: The light's position.
+-p: Point size.
+-M: Draw the control mesh of freeforms.
+-V: Draw models monolothic.
+-P: Draw surface polygons.
+-t: Draw surface orient.
+-o: Flip normal orient.
+-w: Draw wireframe (must have -P too).
