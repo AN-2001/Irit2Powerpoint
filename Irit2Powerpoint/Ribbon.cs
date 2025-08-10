@@ -33,7 +33,13 @@ namespace Irit2Powerpoint
             this.ribbon = ribbonUI;
         }
 
-        public void OnImportButton(Office.IRibbonControl Control)
+
+        public Bitmap OnI2PButtonImage(Office.IRibbonControl Control)
+        {
+            return new Bitmap(Properties.Resources.button);
+        }
+
+        public void OnI2PButton(Office.IRibbonControl Control)
         {
             I2P AddIn = Globals.I2P;
             string InputPath;
@@ -54,16 +60,16 @@ namespace Irit2Powerpoint
             }
         }
 
-        public void OnSettingsButton(Office.IRibbonControl Control)
-        {
-            I2P AddIn = Globals.I2P;
-            string
-                Settings = AddIn.GetCurrentImportSettings();
-            Resources.ImportSettings
-                SettingsForm = new Resources.ImportSettings(Settings);
-            if (SettingsForm.ShowDialog() == DialogResult.OK)
-                AddIn.SetCurrentImportSettings(SettingsForm.PickedSettings);
-        }
+        // public void OnSettingsButton(Office.IRibbonControl Control)
+        // {
+        //     I2P AddIn = Globals.I2P;
+        //     string
+        //         Settings = AddIn.GetCurrentImportSettings();
+        //     Resources.ImportSettings
+        //         SettingsForm = new Resources.ImportSettings(Settings);
+        //     if (SettingsForm.ShowDialog() == DialogResult.OK)
+        //         AddIn.SetCurrentImportSettings(SettingsForm.PickedSettings);
+        // }
 
         #endregion
 

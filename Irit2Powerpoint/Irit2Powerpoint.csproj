@@ -239,6 +239,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="ITDParser.dll" />
+    <None Include="Resources\button.png" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
@@ -251,7 +252,7 @@
     <ManifestKeyFile>temp_cert.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>631D83CDA0EF38E8C17F87E6732514CE8AF595E7</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>1C5DC2AC67861887A2E454FD9C9021AA71CD7C3A</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -274,6 +275,24 @@
   <!-- Include the build rules for a C# project. -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- Include additional build rules for an Office application add-in. -->
+  <UsingTask TaskName="SetOffice2007AddInRegistration" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Url ParameterType="System.String" Required="false" />
+      <AddInName ParameterType="System.String" Required="false" />
+      <OfficeApplication ParameterType="System.String" Required="false" />
+      <FriendlyName ParameterType="System.String" Required="false" />
+      <Description ParameterType="System.String" Required="false" />
+      <LoadBehavior ParameterType="System.String" Required="false" />
+      <Unregister ParameterType="System.String" Required="false" />
+      <SolutionID ParameterType="System.String" Required="false" />
+      <IsDocument ParameterType="System.String" Required="false" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs"><![CDATA[
+Log.LogMessage(MessageImportance.High, "$(MSBuildProjectName) project - Overriding of SetOffice2007AddInRegistration to prevent the project's MS Office Add-in isntallation (registration)!");
+]]></Code>
+    </Task>
+  </UsingTask>
   <Import Project="$(VSToolsPath)\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets" Condition="'$(VSToolsPath)' != ''" />
   <!-- This section defines VSTO properties that describe the host-changeable project properties. -->
   <ProjectExtensions>

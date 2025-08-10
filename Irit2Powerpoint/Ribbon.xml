@@ -3,20 +3,14 @@
   <ribbon>
     <tabs>
       <tab idMso="TabHome" >
-        <group id="Content"
-               label="IRIT2POWERPOINT">
-          <button id="ImportButton"
-                  label="Import"
-                  screentip="Import Model"
+        <group id="Content">
+          <button id="I2PButton"
+                  label="Irit to Powerpoint"
                   supertip="Import a 3D model and insert it into the slide"    
-                  onAction="OnImportButton"/>
-
-          <button id="ImportSettingsButton"
-                  label="Import Settings"
-                  screentip="Import Settings"
-                  supertip="Specify the import settings."           
-                  onAction="OnSettingsButton"/>
-
+                  showImage="true"
+                  size="large"
+                  getImage="OnI2PButtonImage"
+                  onAction="OnI2PButton"/>
         </group>
       </tab>
     </tabs>
