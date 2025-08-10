@@ -15,8 +15,8 @@ Dependancies are:
 * Visual Studio Tools for Office (VSTO).
 * ClickOnce Publishing.
 * Microsoft Visual Studio Installer Projects Extension:
-- Can be found at https://marketplace.visualstudio.com/items?itemName=VisualStudioClient.MicrosoftVisualStudio2017InstallerProjects
-- Click Download then follow the instructions, this will modify visual studio to include the installer project preset.
+  - Can be found at https://marketplace.visualstudio.com/items?itemName=VisualStudioClient.MicrosoftVisualStudio2017InstallerProjects
+  - Click Download then follow the instructions, this will modify visual studio to include the installer project preset.
 
 Both Debug and Release builds are provided and have been tested under x86/x64.
 Preferred compilation is for 64 bits.
