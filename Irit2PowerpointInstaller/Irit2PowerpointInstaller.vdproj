@@ -21,12 +21,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_24DEBEDDE3DC4BCC929EBA555C563BC2"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_280EB31BB75653E843540D25F5482727"
         "OwnerKey" = "8:_4011BE4B01514F4B929A14CF75944202"
         "MsmSig" = "8:_UNDEFINED"
@@ -81,8 +75,8 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_9A8089A1BECB77B8B5B5FB8875DE7926"
-        "OwnerKey" = "8:_4011BE4B01514F4B929A14CF75944202"
+        "MsmKey" = "8:_A185ECECFC22485795638A8A730A1D64"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -106,13 +100,13 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_4011BE4B01514F4B929A14CF75944202"
+        "OwnerKey" = "8:_BA1D89049159F98618BFB85D54E14DE7"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_9A8089A1BECB77B8B5B5FB8875DE7926"
+        "OwnerKey" = "8:_4011BE4B01514F4B929A14CF75944202"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -149,12 +143,6 @@
         {
         "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_CF265E8F31CBC999F0BFF9B86E9C1031"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_BA1D89049159F98618BFB85D54E14DE7"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -261,26 +249,6 @@
             {
             "SourcePath" = "8:..\\x64\\Release\\Irit2Powerpoint.vsto"
             "TargetName" = "8:Irit2Powerpoint.vsto"
-            "Tag" = "8:"
-            "Folder" = "8:_2C4C2305721D47CB89E2DF9124508356"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_24DEBEDDE3DC4BCC929EBA555C563BC2"
-            {
-            "SourcePath" = "8:C:\\Users\\abdna\\Desktop\\i2p.ico"
-            "TargetName" = "8:i2p.ico"
             "Tag" = "8:"
             "Folder" = "8:_2C4C2305721D47CB89E2DF9124508356"
             "Condition" = "8:"
@@ -441,21 +409,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_9A8089A1BECB77B8B5B5FB8875DE7926"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A185ECECFC22485795638A8A730A1D64"
             {
-            "AssemblyRegister" = "3:1"
-            "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:DocumentFormat.OpenXml, Version=2.5.5631.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL"
-                "ScatterAssemblies"
-                {
-                    "_9A8089A1BECB77B8B5B5FB8875DE7926"
-                    {
-                    "Name" = "8:DocumentFormat.OpenXml.dll"
-                    "Attributes" = "3:512"
-                    }
-                }
-            "SourcePath" = "8:DocumentFormat.OpenXml.dll"
-            "TargetName" = "8:"
+            "SourcePath" = "8:I2P.ico"
+            "TargetName" = "8:I2P.ico"
             "Tag" = "8:"
             "Folder" = "8:_2C4C2305721D47CB89E2DF9124508356"
             "Condition" = "8:"
@@ -468,8 +425,8 @@
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
             "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_BA1D89049159F98618BFB85D54E14DE7"
@@ -644,15 +601,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Irit2Powerpoint"
-        "ProductCode" = "8:{EB5E167E-1410-45AF-86E2-6F2F36CC922A}"
-        "PackageCode" = "8:{6BB5EFE7-818F-469E-BF67-17A01BBE703E}"
+        "ProductCode" = "8:{502299D7-F596-440D-866C-25F2A7D382F6}"
+        "PackageCode" = "8:{88F39C54-39BB-4E32-89A8-AA2B67F70ECC}"
         "UpgradeCode" = "8:{A9C16EDC-ACFF-4FB2-9427-F6D1CEF0CA9B}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.0"
+        "ProductVersion" = "8:1.0.1"
         "Manufacturer" = "8:CGGC"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
@@ -662,7 +619,7 @@
         "Keywords" = "8:"
         "ARPCOMMENTS" = "8:Interactive 3D rendering from within powerpoint"
         "ARPURLINFOABOUT" = "8:"
-        "ARPPRODUCTICON" = "8:_24DEBEDDE3DC4BCC929EBA555C563BC2"
+        "ARPPRODUCTICON" = "8:_A185ECECFC22485795638A8A730A1D64"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
@@ -1282,7 +1239,7 @@
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
-            "Exclude" = "11:FALSE"
+            "Exclude" = "11:TRUE"
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             "ProjectOutputGroupRegister" = "3:1"
@@ -1310,7 +1267,7 @@
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
-            "Exclude" = "11:FALSE"
+            "Exclude" = "11:TRUE"
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             "ProjectOutputGroupRegister" = "3:1"
@@ -1366,7 +1323,7 @@
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
-            "Exclude" = "11:FALSE"
+            "Exclude" = "11:TRUE"
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             "ProjectOutputGroupRegister" = "3:1"
@@ -1394,7 +1351,7 @@
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
-            "Exclude" = "11:FALSE"
+            "Exclude" = "11:TRUE"
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             "ProjectOutputGroupRegister" = "3:1"
@@ -1478,7 +1435,7 @@
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
-            "Exclude" = "11:FALSE"
+            "Exclude" = "11:TRUE"
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             "ProjectOutputGroupRegister" = "3:1"
