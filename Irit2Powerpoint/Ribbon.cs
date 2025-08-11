@@ -39,37 +39,43 @@ namespace Irit2Powerpoint
             return new Bitmap(Properties.Resources.button);
         }
 
+
+        /* Extract the path from the import string. */
+        private string ExtractPath(string ImportSettings)
+        {
+            string NoWhiteSpaces = ImportSettings.TrimEnd();
+            int Index;
+            if (NoWhiteSpaces.EndsWith("\""))
+            {
+                Index = NoWhiteSpaces.LastIndexOf('\"', NoWhiteSpaces.Length - 2);
+                return NoWhiteSpaces.Substring(Index + 1, NoWhiteSpaces.Length - Index - 2);
+            } else if (NoWhiteSpaces.EndsWith("\'"))
+            {
+                Index = NoWhiteSpaces.LastIndexOf('\'', NoWhiteSpaces.Length - 2);
+                return NoWhiteSpaces.Substring(Index + 1, NoWhiteSpaces.Length - Index - 2);
+            }
+
+            /* Space seperated. */
+            Index = NoWhiteSpaces.LastIndexOf(' ', NoWhiteSpaces.Length - 2);
+            return NoWhiteSpaces.Substring(Index + 1, NoWhiteSpaces.Length - Index - 1);
+        }
+
         public void OnI2PButton(Office.IRibbonControl Control)
         {
             I2P AddIn = Globals.I2P;
-            string InputPath;
-
-            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            string
+                Settings = AddIn.GetCurrentImportSettings();
+            string InputPath, InputSettings;
+            Resources.ImportSettings
+                SettingsForm = new Resources.ImportSettings(Settings);
+            if (SettingsForm.ShowDialog() == DialogResult.OK)
             {
-                openFileDialog.Filter = "itd file (*.itd)|*.itd|obj file (*.obj)|*.obj|stl file (*.stl)|*.stl|All files|*.obj;*.itd;*.stl";
-                openFileDialog.FilterIndex = 0;
-                openFileDialog.RestoreDirectory = true;
-
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    InputPath = openFileDialog.FileName;
-                    if (!Path.IsPathRooted(InputPath))
-                        InputPath = Path.GetFullPath(InputPath);
-                    AddIn.InitDummyRect(InputPath);
-                }
+                InputPath = ExtractPath(SettingsForm.PickedSettings);
+                AddIn.SetCurrentImportSettings(SettingsForm.PickedSettings);
+                AddIn.InitDummyRect(InputPath);
             }
         }
 
-        // public void OnSettingsButton(Office.IRibbonControl Control)
-        // {
-        //     I2P AddIn = Globals.I2P;
-        //     string
-        //         Settings = AddIn.GetCurrentImportSettings();
-        //     Resources.ImportSettings
-        //         SettingsForm = new Resources.ImportSettings(Settings);
-        //     if (SettingsForm.ShowDialog() == DialogResult.OK)
-        //         AddIn.SetCurrentImportSettings(SettingsForm.PickedSettings);
-        // }
 
         #endregion
 

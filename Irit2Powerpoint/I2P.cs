@@ -13,7 +13,6 @@ namespace Irit2Powerpoint
     public partial class I2P
     {
         private const string __PATH_KEY__ = "_I2P_PATH_";
-        private const string __PATH_RELATIVE_KEY__ = "_I2P_PATH_RELATIVE_";
         private const string __IMPORT_SETTINGS_KEY__ = "_I2P_IMPORT_SETTINGS_";
         private const string __DUMMY_KEY__ = "_I2P_DUMMY_";
         private const string __DUMMY_NAME__ = "__IRIT2POWERPOINT_CONTAINER__";
@@ -35,7 +34,6 @@ namespace Irit2Powerpoint
             this.Application.SlideShowEnd += EndSlideShow;
             this.Application.SlideSelectionChanged += SlideChanged;
             this.Application.AfterPresentationOpen += OnPresentation;
-            this.Application.PresentationSave += OnSave;
 
             this.ActiveSlideShowWin = null;
 
@@ -54,55 +52,6 @@ namespace Irit2Powerpoint
             };
 
             SlideAverageColours = new List<Color>();
-        }
-
-        private bool IsSubPath(string Parent, string Child)
-        {
-            string
-                NormalizedParent = Path.GetFullPath(Parent)
-                                       .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                                       .ToUpperInvariant(),
-                NormalizedChild = Path.GetFullPath(Child)
-                                       .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                                       .ToUpperInvariant();
-            return NormalizedChild.StartsWith(NormalizedParent + Path.DirectorySeparatorChar) ||
-                   NormalizedChild.StartsWith(NormalizedParent + Path.AltDirectorySeparatorChar);
-        }
-
-        public static string GetRelativePath(string basePath, string targetPath)
-        {
-            basePath = Path.GetFullPath(basePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar);
-            targetPath = Path.GetFullPath(targetPath);
-            Uri baseUri = new Uri(basePath);
-            Uri targetUri = new Uri(targetPath);
-            Uri relativeUri = baseUri.MakeRelativeUri(targetUri);
-            string relativePath = Uri.UnescapeDataString(relativeUri.ToString());
-            relativePath = relativePath.Replace('/', Path.DirectorySeparatorChar);
-            return relativePath;
-        }
-
-        private void OnSave(PowerPoint.Presentation Pres)
-        {
-            PowerPoint.Slide Slide;
-            int i;
-            string SaveDirectory = Path.GetDirectoryName( Pres.FullName );
-            string FilePath;
-
-            for (i = 1; i <= Pres.Slides.Count; i++)
-            {
-                Slide = Pres.Slides[i];
-                if (!SlideContainsDummy(Slide))
-                    continue;
-                FilePath = Slide.Tags[__PATH_KEY__];
-                if (IsSubPath(SaveDirectory, FilePath))
-                {
-                    FilePath = GetRelativePath(SaveDirectory, FilePath);
-                    Slide.Tags.Add(__PATH_RELATIVE_KEY__, "true");
-                }
-                Slide.Tags.Add(__PATH_KEY__, FilePath);
-            }
-            Pres.Save();
-            
         }
 
         private bool SlideContainsDummy(PowerPoint.Slide Slide)
@@ -138,21 +87,6 @@ namespace Irit2Powerpoint
             int i;
             PowerPoint.Slide Slide;
             string SaveDirectory = Path.GetDirectoryName( Presentation.FullName );
-            string FilePath;
-
-            for (i = 1; i <= Presentation.Slides.Count; i++)
-            {
-                Slide = Presentation.Slides[i];
-                if (!SlideContainsDummy(Slide))
-                    continue;
-                FilePath = Slide.Tags[__PATH_KEY__];
-                if (Slide.Tags[__PATH_RELATIVE_KEY__] == "true")
-                {
-                    FilePath = Path.Combine(SaveDirectory, FilePath);
-                    Slide.Tags.Add(__PATH_KEY__, FilePath);
-                }
-            }
-
             List<LoadRequest> RequestsInUse = GetLoadRequestsInUse();
             foreach (LoadRequest Request in RequestsInUse)
                 ResourceManager.QueueLoadFromDisk(Request);
@@ -180,9 +114,17 @@ namespace Irit2Powerpoint
                 Slide = Application.ActivePresentation.Slides[i];
                 if (!SlideContainsDummy(Slide))
                     continue;
-                Request = new LoadRequest();
-                Request.Path = Slide.Tags[__PATH_KEY__];
-                Request.ImportSettings = Slide.Tags[__IMPORT_SETTINGS_KEY__];
+
+                try
+                {
+                    Request = new LoadRequest(Application.ActivePresentation.Path,
+                                              Slide.Tags[__PATH_KEY__],
+                                              Slide.Tags[__IMPORT_SETTINGS_KEY__]);
+                } catch(IOException Ex)
+                {
+                    MessageBox.Show("Error: " + Ex.Message, "I2P Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    continue;
+                }
                 Requests.Add(Request);
             }
             return Requests;
@@ -248,18 +190,26 @@ namespace Irit2Powerpoint
             PowerPoint.Shape Dummy;
             PowerPoint.Slide
                 Slide = Application.ActiveWindow.View.Slide;
-
             string ImportSettings = Slide.Tags[__IMPORT_SETTINGS_KEY__];
-           
-            if (!GetDummyFromSlide(Slide, out Dummy))
-                AddDummyShape(Slide);
+
+            try
+            {
+                Request = new LoadRequest(Application.ActivePresentation.Path,
+                                          Path,
+                                          ImportSettings);
+            } catch(IOException Ex)
+            {
+                MessageBox.Show("Error: " + Ex.Message, "I2P Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             Slide.Tags.Add(__DUMMY_KEY__ , "true");
             Slide.Tags.Add(__PATH_KEY__, Path);
-            Request = new LoadRequest();
-            Request.Path = Path;
-            Request.ImportSettings = ImportSettings;
             ResourceManager.QueueLoadFromDisk(Request);
             ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
+
+            if (!GetDummyFromSlide(Slide, out Dummy))
+                AddDummyShape(Slide);
         }
 
         /* Extracts the Irit2Powerpoint dummy from a slide. */
