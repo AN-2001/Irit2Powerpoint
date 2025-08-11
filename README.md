@@ -18,8 +18,7 @@ Dependancies are:
   - Can be found at https://marketplace.visualstudio.com/items?itemName=VisualStudioClient.MicrosoftVisualStudio2017InstallerProjects
   - Click Download then follow the instructions, this will modify visual studio to include the installer project preset.
 
-Both Debug and Release builds are provided and have been tested under x86/x64.
-Preferred compilation is for 64 bits.
+Preferred compilation is for x64 Release, debug wont create the installer.
 
 To compile, open the top level solution and compile all the projects, compilation may take a few minutes.
 Once compiled, an installer will be created in the root directory of the projet with the name I2P.exe.

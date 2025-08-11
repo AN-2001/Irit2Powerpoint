@@ -47,10 +47,6 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>cd  $(SolutionDir)/Irit2PowerpointInstaller
-if /I $(ConfigurationName) == "Release" (
-iexpress /n I2P.SED
-) else (
-iexpress /n I2P_debug.SED
-)</PostBuildEvent>
+iexpress /n I2P.SED</PostBuildEvent>
   </PropertyGroup>
 </Project>
