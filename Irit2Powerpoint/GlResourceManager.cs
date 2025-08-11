@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+using System.IO;
 using System.Windows.Forms;
 
 namespace Irit2Powerpoint
@@ -11,7 +12,24 @@ namespace Irit2Powerpoint
     public struct LoadRequest
     {
         public string Path;
+        public string GivenPath;
         public string ImportSettings;
+        public LoadRequest(string BasePath, string FilePath, string ImportSettings)
+        {
+            this.GivenPath = FilePath;
+            /* If we're given an absolute path send the request as is. */
+            /* If it's not an absolute path concat with BasePath then send the request. */
+            if (System.IO.Path.IsPathRooted(FilePath))
+                Path = System.IO.Path.GetFullPath(FilePath);
+            else { 
+                if (BasePath == "")
+                    throw new IOException("Cannot use relative paths unless the presentation is saved.");
+                Path = System.IO.Path.GetFullPath(System.IO.Path.Combine(BasePath, FilePath));
+            }
+            if (!System.IO.File.Exists(Path))
+                throw new IOException(Path + " does not exist.");
+            this.ImportSettings = ImportSettings;
+        }
     };
 
     public class GlResourceManager
@@ -42,7 +60,7 @@ namespace Irit2Powerpoint
             int i;
             string Key;
 
-            Key = BuildResourceKey(Request.Path, Request.ImportSettings);
+            Key = BuildResourceKey(Request.GivenPath, Request.ImportSettings);
 
             /* Exit if we already loaded this key. */
             if (ResourceMap.ContainsKey(Key) || ResultMap.ContainsKey(Key))

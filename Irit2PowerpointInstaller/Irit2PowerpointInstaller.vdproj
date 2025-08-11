@@ -81,13 +81,13 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_BA1D89049159F98618BFB85D54E14DE7"
+        "MsmKey" = "8:_CF265E8F31CBC999F0BFF9B86E9C1031"
         "OwnerKey" = "8:_4011BE4B01514F4B929A14CF75944202"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_CF265E8F31CBC999F0BFF9B86E9C1031"
+        "MsmKey" = "8:_D727F9967FC4EB00D2781D3ABD6FA83C"
         "OwnerKey" = "8:_4011BE4B01514F4B929A14CF75944202"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -95,12 +95,6 @@
         {
         "MsmKey" = "8:_E1917943DED45AF10ED349D7CCDA5CF1"
         "OwnerKey" = "8:_4011BE4B01514F4B929A14CF75944202"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_BA1D89049159F98618BFB85D54E14DE7"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -143,6 +137,12 @@
         {
         "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_CF265E8F31CBC999F0BFF9B86E9C1031"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_D727F9967FC4EB00D2781D3ABD6FA83C"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -429,20 +429,20 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_BA1D89049159F98618BFB85D54E14DE7"
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_CF265E8F31CBC999F0BFF9B86E9C1031"
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:OpenTK, Version=3.3.3.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:stdole, Version=7.0.3300.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
                 "ScatterAssemblies"
                 {
-                    "_BA1D89049159F98618BFB85D54E14DE7"
+                    "_CF265E8F31CBC999F0BFF9B86E9C1031"
                     {
-                    "Name" = "8:OpenTK.dll"
+                    "Name" = "8:stdole.dll"
                     "Attributes" = "3:512"
                     }
                 }
-            "SourcePath" = "8:OpenTK.dll"
+            "SourcePath" = "8:stdole.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_2C4C2305721D47CB89E2DF9124508356"
@@ -460,20 +460,20 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_CF265E8F31CBC999F0BFF9B86E9C1031"
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_D727F9967FC4EB00D2781D3ABD6FA83C"
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:stdole, Version=7.0.3300.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+            "AssemblyAsmDisplayName" = "8:OpenTK, Version=3.3.3.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
-                    "_CF265E8F31CBC999F0BFF9B86E9C1031"
+                    "_D727F9967FC4EB00D2781D3ABD6FA83C"
                     {
-                    "Name" = "8:stdole.dll"
+                    "Name" = "8:OpenTK.dll"
                     "Attributes" = "3:512"
                     }
                 }
-            "SourcePath" = "8:stdole.dll"
+            "SourcePath" = "8:OpenTK.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_2C4C2305721D47CB89E2DF9124508356"
@@ -601,19 +601,19 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Irit2Powerpoint"
-        "ProductCode" = "8:{502299D7-F596-440D-866C-25F2A7D382F6}"
-        "PackageCode" = "8:{88F39C54-39BB-4E32-89A8-AA2B67F70ECC}"
-        "UpgradeCode" = "8:{A9C16EDC-ACFF-4FB2-9427-F6D1CEF0CA9B}"
+        "ProductCode" = "8:{3498C33A-D467-425C-B44C-74D841E7CDBC}"
+        "PackageCode" = "8:{BA46D3E2-4740-496D-B823-75659E596151}"
+        "UpgradeCode" = "8:{19E8E0D1-0A33-4CBB-9102-8197B9B3420E}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.1"
+        "ProductVersion" = "8:1.0.2"
         "Manufacturer" = "8:CGGC"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
-        "Title" = "8:Irit2Powerpoint"
+        "Title" = "8:I2P"
         "Subject" = "8:"
         "ARPCONTACT" = "8:CGGC"
         "Keywords" = "8:"
@@ -1281,7 +1281,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_4011BE4B01514F4B929A14CF75944202"
             {
-            "SourcePath" = "8:..\\Irit2Powerpoint\\obj\\x64\\Release\\Irit2Powerpoint.dll"
+            "SourcePath" = "8:..\\Irit2Powerpoint\\obj\\x64\\Debug\\Irit2Powerpoint.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_2C4C2305721D47CB89E2DF9124508356"
@@ -1365,7 +1365,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_5D35D8C1BA4B4E7FAA98AA0DA374881E"
             {
-            "SourcePath" = "8:..\\x64\\Release\\ITDParser.dll"
+            "SourcePath" = "8:..\\x64\\Debug\\ITDParser.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_2C4C2305721D47CB89E2DF9124508356"

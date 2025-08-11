@@ -1,4 +1,4 @@
-I2P [-n] [-N] [-I #IsoLines] [-F PlgnOpti PlgnFineNess] [-f PllnOpti PllnFineNess] [-L Normal Size] [-c Override? r,g,b (Polyline)] [-C Override? r,g,b (Polygon)] [-W Wiresetup] [-l x,y,z (Light)] [-p Point Size] [-M] [-V] [-P] [-t] [-o] [-w]
+I2P [-n] [-N] [-I #IsoLines] [-F PlgnOpti PlgnFineNess] [-f PllnOpti PllnFineNess] [-L Normal Size] [-c Override? r,g,b (Polyline)] [-C Override? r,g,b (Polygon)] [-W Wiresetup] [-l x,y,z (Light)] [-p Point Size] [-M] [-V] [-P] [-t] [-o] [-w] ModelFile
 
 -n: Display vertex normals.
 -N: Dlsplay surface normals.
@@ -24,3 +24,5 @@ I2P [-n] [-N] [-I #IsoLines] [-F PlgnOpti PlgnFineNess] [-f PllnOpti PllnFineNes
 -t: Draw surface orient.
 -o: Flip normal orient.
 -w: Draw wireframe (must have -P too).
+ModelFile: Can be a relative or absolute path (surrounded by quotes if it contains spaces).
+           Relative paths are meant to be used when the presentation is saved and is associated with a path on the filesystem.
