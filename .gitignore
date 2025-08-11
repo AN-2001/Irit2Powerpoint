@@ -1,12 +1,9 @@
-/.vs/*
-/*/bin/*
-/*/obj/*
-/x64/*
+/.vs
+/*/bin
+/*/obj
 /*/.vs
 /*/x64
 /*/debug
-/TestResults/*
-TODO
-I2P.exe
 /*/Release
 /*/Debug
+I2P.exe
