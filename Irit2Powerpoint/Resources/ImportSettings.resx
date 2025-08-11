@@ -117,9 +117,4 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="label1.Text" xml:space="preserve">
-    <value>I2P [-n] [-N] [-I #IsoLines] [-F PlgnOpti PlgnFineNess] [-f PllnOpti PllnFineNess] [-L Normal Size] [-c Override? r,g,b (Polyline)] [-C Override? r,g,b (Polygon)] [-W Wiresetup] [-l x,y,z (Light)] [-p Point Size] [-M] [-V] [-P] [-t] [-o] [-w] ModelFile
-
-</value>
-  </data>
 </root>

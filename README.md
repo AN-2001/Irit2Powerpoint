@@ -27,7 +27,7 @@ If desired, the plugin can be uninstalled from Window's control panel normally.
 
 
 # AFTER COMPILATION
-navigate to the docs directory, it provides documentation for import settings. An example powerpoint presentation that demonstrates the plugin is also provided.
+navigate to the docs directory, it provides documentation for the command syntax. An example powerpoint presentation that demonstrates the plugin is also provided.
 
 **By Abed Naa'ran and Ismaeel Bder**
 

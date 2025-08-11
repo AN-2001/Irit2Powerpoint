@@ -26,3 +26,7 @@ I2P [-n] [-N] [-I #IsoLines] [-F PlgnOpti PlgnFineNess] [-f PllnOpti PllnFineNes
 -w: Draw wireframe (must have -P too).
 ModelFile: Can be a relative or absolute path (surrounded by quotes if it contains spaces).
            Relative paths are meant to be used when the presentation is saved and is associated with a path on the filesystem.
+
+For example:
+"-P teapot.itd": Import teapot.itd from the presentation's path and render polygons.
+"-M -P -w 1 C:/bone.itd": Import bone.itd from the given absolute path and render its control mesh and wireframe.
