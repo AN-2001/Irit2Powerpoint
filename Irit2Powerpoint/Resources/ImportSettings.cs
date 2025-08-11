@@ -35,5 +35,10 @@ namespace Irit2Powerpoint.Resources
         {
 
         }
+
+        private void ImportSettings_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }
