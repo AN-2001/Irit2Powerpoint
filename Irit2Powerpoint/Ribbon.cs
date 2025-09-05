@@ -65,14 +65,19 @@ namespace Irit2Powerpoint
             I2P AddIn = Globals.I2P;
             string
                 Settings = AddIn.GetCurrentImportSettings();
-            string InputPath, InputSettings;
+            string InputPath;
             Resources.ImportSettings
                 SettingsForm = new Resources.ImportSettings(Settings);
+
+            Logger.GetInstance().Trace("Detected I2P button click.");
             if (SettingsForm.ShowDialog() == DialogResult.OK)
             {
                 InputPath = ExtractPath(SettingsForm.PickedSettings);
+
+
                 AddIn.SetCurrentImportSettings(SettingsForm.PickedSettings);
                 AddIn.InitDummyRect(InputPath);
+                Logger.GetInstance().Trace($"Detected user selection for settings and path: Path = {InputPath}, Settings = {SettingsForm.PickedSettings}");
             }
         }
 

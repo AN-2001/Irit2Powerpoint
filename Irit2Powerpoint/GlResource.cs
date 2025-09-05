@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using OpenTK.Graphics.OpenGL4;
-using OpenTK.Graphics;
-using System.Runtime.InteropServices;
-using System.Windows.Forms;
+﻿using OpenTK.Graphics.OpenGL4;
 
 namespace Irit2Powerpoint
 {
@@ -38,11 +30,6 @@ namespace Irit2Powerpoint
         public GlMeshRecord PolygonRecord, PolylineRecord;
 
         public GlResource(ITDParser.ITDMesh Mesh)
-        {
-            InitFromMesh(Mesh);
-        }
-
-        private void InitFromMesh(ITDParser.ITDMesh Mesh)
         {
             int 
                 NumVertices = Mesh.Vertecies.Length;
@@ -99,7 +86,58 @@ namespace Irit2Powerpoint
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
             GL.BindVertexArray(0);
+
+            Logger.GetInstance().Trace($"Uploaded mesh to GPU: numVertecies = {NumVertices}, VAO = {VAO}, VBO = {VBO}");
+            GlRenderer.DoGlErrorCheck();
         }
+
+        public GlResource(OpenTK.Vector4d[] Vertices)
+        {
+            int i;
+            double[] Arr = new double[Vertices.Length * 4];
+
+            for (i = 0; i < Vertices.Length; i++) {
+                Arr[i * 4 + 0] = Vertices[i].X;
+                Arr[i * 4 + 1] = Vertices[i].Y;
+                Arr[i * 4 + 2] = Vertices[i].Z;
+                Arr[i * 4 + 3] = Vertices[i].W;
+            }
+
+            GL.GenVertexArrays(1, out this.VAO);
+            GL.GenBuffers(1, out this.VBO);
+
+            GL.BindVertexArray(this.VAO);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, this.VBO);
+
+            GL.BufferData(BufferTarget.ArrayBuffer,
+                    Arr.Length * sizeof(double),
+                    Arr,
+                    BufferUsageHint.StaticDraw);
+
+            GL.VertexAttribPointer(0,
+                2,
+                VertexAttribPointerType.Double,
+                false,
+                sizeof(double) * 4,
+                0);
+
+            GL.VertexAttribPointer(1,
+                2,
+                VertexAttribPointerType.Double,
+                false,
+                sizeof(double) * 4,
+                sizeof(double) * 2);
+
+            GL.EnableVertexArrayAttrib(this.VAO, 0);
+            GL.EnableVertexArrayAttrib(this.VAO, 1);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+            GL.BindVertexArray(0);
+
+            Logger.GetInstance().Trace($"Uploaded mesh to GPU: numVertecies = {Vertices.Length}, VAO = {VAO}, VBO = {VBO}");
+            GlRenderer.DoGlErrorCheck();
+        }
+
 
         private void GenMateices(double[] View, double[] Proj)
         {
@@ -112,6 +150,7 @@ namespace Irit2Powerpoint
                                              (float)View[ 4], (float)View[ 5], (float)View[ 6], (float)View[ 7],
                                              (float)View[ 8], (float)View[ 9], (float)View[10], (float)View[11],
                                              (float)View[12], (float)View[13], (float)View[14], (float)View[15]);
+                Logger.GetInstance().Trace($"Mesh contains view matrix.");
                 ContainsView = true;
             }
 
@@ -121,6 +160,7 @@ namespace Irit2Powerpoint
                                              (float)Proj[ 4], (float)Proj[ 5], (float)Proj[ 6], (float)Proj[ 7],
                                              (float)Proj[ 8], (float)Proj[ 9], (float)Proj[10], (float)Proj[11],
                                              (float)Proj[12], (float)Proj[13], (float)Proj[14], (float)Proj[15]);
+                Logger.GetInstance().Trace($"Mesh contains projection matrix.");
                 ContainsProj = true;
             }
 
@@ -134,15 +174,20 @@ namespace Irit2Powerpoint
             TotalSize = Mesh.VertexCutoffOffset;
             this.PolygonRecord = new GlMeshRecord(Offset, TotalSize);
 
+            Logger.GetInstance().Trace($"Created polygonal mesh recrods: PolygonRecord=[{Offset}, {TotalSize}]");
+
             Offset = TotalSize;
             TotalSize = Mesh.Vertecies.Length - Offset;
             this.PolylineRecord = new GlMeshRecord(Offset, TotalSize);
+            Logger.GetInstance().Trace($"Created curve mesh recrods: PolylineRecord=[{Offset}, {TotalSize}]");
         }
 
         public void Destroy()
         {
             GL.DeleteVertexArray(VAO);
             GL.DeleteBuffer(VBO);
+            Logger.GetInstance().Trace($"Destroyed render resrouce.");
+            GlRenderer.DoGlErrorCheck();
         }
     }
 }

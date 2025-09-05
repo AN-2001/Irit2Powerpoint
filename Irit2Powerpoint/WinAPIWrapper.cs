@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
-using System.Drawing;
-using System.Diagnostics;
 using OpenTK;
 using OpenTK.Graphics;
-using OpenTK.Graphics.OpenGL4;
 
 
 namespace Irit2Powerpoint
@@ -19,33 +15,27 @@ namespace Irit2Powerpoint
         #region InnerDefs
         private WinProc Proc, PrevProc;
         private GlRenderer Renderer;
-        private IntPtr hWnd;
-        private Timer RenderTimer;
+        private IntPtr hWnd, OwnerhWnd;
 
         public WindowWrapper(IntPtr PowerPoint) : base(1, 1, new GraphicsMode(new ColorFormat(32), 24, 0, 16), "I2P")
         {
             this.WindowBorder = WindowBorder.Hidden;
 
             hWnd = this.WindowInfo.Handle;
+
             IntPtr PrevProcPtr = GetWindowLongPtr(hWnd, GWL_WNDPROC);
             PrevProc = (WinProc)Marshal.GetDelegateForFunctionPointer(PrevProcPtr, typeof(WinProc));
             Proc = new WinProc(WindowProc);
             // Swap out the winproc function.
             SetWindowLongPtr(hWnd, GWL_WNDPROC, Proc);
 
-            int prevStyle = GetWindowLong(hWnd, GWL_EXSTYLE);
-            SetWindowLong(hWnd, GWL_EXSTYLE, prevStyle | WS_EX_LAYERED);
-            SetLayeredWindowAttributes(hWnd, (uint)(255 | (255 << 8) | (255 << 16)), 0, 0x1);
-            RenderTimer = new Timer();
-            RenderTimer.Interval = 16;
-            RenderTimer.Tick += (e, v) =>
-            {
-                InvalidateRect(this.hWnd, IntPtr.Zero, true);
-            };
+            Logger.GetInstance().Trace($"Overwrote OpenTK winProc");
 
+            Renderer = new GlRenderer(this.Context);
 
             SetVisibility(false);
-            Renderer = new GlRenderer(this.Context);
+
+            Logger.GetInstance().Trace("I2P window setup done.");
         }
         #endregion
 
@@ -53,20 +43,13 @@ namespace Irit2Powerpoint
         int dx, dy;
         bool IsMoving, IsRotating;
 
-
-        public void MaskColour(Color Col)
-        {
-            uint
-                r = Col.R,
-                g = Col.G,
-                b = Col.B;
-
-            SetLayeredWindowAttributes(hWnd, (uint)(r | (g << 8) | (b << 16)), 0, 0x1);
-        }
         public void ChangeOwner(IntPtr Owner)
         {
+            this.OwnerhWnd = Owner;
             SetWindowLongPtr(hWnd, -8, Owner);
-            SetWindowPos(hWnd, Owner, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW );
+            SetWindowPos(hWnd, Owner, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE );
+
+            Logger.GetInstance().Trace("Changed GlWindow Owner.");
         }
 
         /* Called when the window detects mouse movement. */
@@ -75,6 +58,7 @@ namespace Irit2Powerpoint
             OpenTK.Matrix4 Trans, Tmp, Proj;
             OpenTK.Vector4 v;
             float Zoom, Width, Height;
+
 
             /* Handle the mouse moving */
             dx = x - LastMouseX;
@@ -104,6 +88,7 @@ namespace Irit2Powerpoint
                 Tmp = OpenTK.Matrix4.CreateRotationY(dx * Zoom) * OpenTK.Matrix4.CreateRotationX(dy * Zoom);
                 Renderer.TransCtx.SetActiveModelView(Trans * Tmp);
             }
+
         }
 
         /* Called when the window detects a mouse press. */
@@ -118,7 +103,6 @@ namespace Irit2Powerpoint
                 return;
             }
 
-
             if (Button == MouseButton.MOUSE_BUTTON_RIGHT)
                 IsMoving = true;
             if (Button == MouseButton.MOUSE_BUTTON_LEFT)
@@ -132,20 +116,11 @@ namespace Irit2Powerpoint
             Renderer.TransCtx.SetZoom(Direction);
         }
 
-        /* Called when the window detects a key press. */
-
-        public void OnKey(char Key, KeyState State)
-        {
-            /* Handle a key press. */
-            if (Key == 'R' && State == KeyState.KEY_DOWN)
-                Renderer.TransCtx.Reset();
-        }
-
         /* Clean up function. */
         public void Destroy()
         {
-            RenderTimer.Dispose();
             Renderer.Destroy();
+            Logger.GetInstance().Trace("Destroyed GlWindow");
         }
 
         #region InnerFunctions
@@ -155,6 +130,7 @@ namespace Irit2Powerpoint
             Y = WinTop + y;
 
             InvalidateRect(this.hWnd, IntPtr.Zero, false);
+            Logger.GetInstance().Trace($"Changed GlWindow position to ({X}, {Y})");
         }
 
         public void SetSize(int w, int h)
@@ -163,30 +139,31 @@ namespace Irit2Powerpoint
             Height = h;
             Renderer.UpdateViewport(w, h);
 
+            Logger.GetInstance().Trace($"Changed GlWindow size to ({Width}, {Height})");
             InvalidateRect(this.hWnd, IntPtr.Zero, false);
         }
 
         public void SetVisibility(bool Visib)
         {
-            Visible = Visib;
-            
-            if (Visib)
-                RenderTimer.Start();
-             else
-                RenderTimer.Stop();
 
-            InvalidateRect(this.hWnd, IntPtr.Zero, false);
+            /* A bit janky but should hopefully eliminate flicker. */
+            if (Visib)
+                Renderer.ForceFetchAndRender();
+            Visible = Visib;
+            Logger.GetInstance().Trace($"Changed GlWindow visibility to {Visib}");
         }
+
         private IntPtr WindowProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam)
         {
             MouseButton MouseButton;
             MouseState MouseState;
-            KeyState KeyState;
-            char Key;
             int mouseWheel;
 
             switch (uMsg)
             {
+                /* Tell Windows we already handled background clear, so it doesn't turn the screen black. */
+                case WM_ERASEBKGND:
+                    return (IntPtr)1;
                 case WM_MOUSEMOVE:
                     OnMouseMove(LOWORD(lParam), HiWORD(lParam));
                     InvalidateRect(this.hWnd, IntPtr.Zero, true);
@@ -219,49 +196,18 @@ namespace Irit2Powerpoint
                     InvalidateRect(this.hWnd, IntPtr.Zero, true);
                     break;
                 case WM_KEYDOWN:
-                    KeyState = KeyState.KEY_DOWN;
-                    goto KEY_EVENT;
                 case WM_KEYUP:
-                    KeyState = KeyState.KEY_UP;
-                    goto KEY_EVENT;
-                KEY_EVENT:
-                    Key = (char)wParam;
-                    OnKey(Key, KeyState);
-                    InvalidateRect(this.hWnd, IntPtr.Zero, true);
-                    break;
+                case WM_CHAR:
+                case WM_SYSKEYDOWN:
+                case WM_SYSKEYUP:
+                case WM_SYSCHAR:
+                    SetFocus(this.OwnerhWnd);
+                    PostMessage(this.OwnerhWnd, uMsg, wParam, lParam);
+                    return IntPtr.Zero;
                 case WM_PAINT:
-                    {
-                        this.Renderer.Render();
-
-                        IntPtr HDC = GetDC(this.hWnd);
-                        POINT p;
-                        byte r, g, b;
-                        GetCursorPos(out p);
-                        ScreenToClient(this.hWnd, ref p);
-
-                        byte[] Pixels = new byte[9 * 9 * 4];
-                        GL.ReadPixels(p.X - 4, (Height - p.Y) - 4, 9, 9, PixelFormat.Bgra, PixelType.UnsignedByte, Pixels);
-
-                        for (int i = -4; i <= 4; i++)
-                        {
-                            for (int j = -4; j <= 4; j++)
-                            {
-                                b = Pixels[((i + 4) + (j + 4) * 9) * 4 + 0];
-                                g = Pixels[((i + 4) + (j + 4) * 9) * 4 + 1];
-                                r = Pixels[((i + 4) + (j + 4) * 9) * 4 + 2];
-
-                                r = (byte)(0.95 * r);
-                                g = (byte)(0.95 * g);
-                                b = (byte)(0.95 * b);
-
-                                SetPixel(HDC, p.X + i, p.Y - j, (uint)(r + (g << 8) + (b << 16)));
-                            }
-                        }
-                        ReleaseDC(this.hWnd, HDC);
-
-                        ValidateRect(this.hWnd, IntPtr.Zero);
-                        break;
-                    }
+                    this.Renderer.Render();
+                    ValidateRect(this.hWnd, IntPtr.Zero);
+                    break;
                 case WM_MOUSEWHEEL:
                     mouseWheel = (short)( ((long)wParam >> 16) & 0xFFFF);
                     OnMouseWheel(mouseWheel);
@@ -289,12 +235,6 @@ namespace Irit2Powerpoint
             MOUSE_DOWN
         }
         
-        public enum KeyState
-        {
-            KEY_UP,
-            KEY_DOWN
-        }
-
         #endregion
     }
 }

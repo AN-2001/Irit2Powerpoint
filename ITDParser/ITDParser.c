@@ -12,6 +12,7 @@
 #include "inc_irit/ip_cnvrt.h"
 #include "objectProcessor.h"
 #include <ctype.h>
+#include <stdarg.h>
 
 #define ITD_PRSR_SUCCESS (1)
 #define ITD_PRSR_FAILURE (0)
@@ -33,6 +34,10 @@ static void BuildArgv(char* String, int* Argc, char **Argv);
 
 IRIT_STATIC_DATA const char
 * ConfigStr = "I2P n%- N%- I%-#IsoLines!s F%-PlgnOpti|PlgnFineNess!d!F f%-PllnOpti|PllnFineNess!d!F L%-Normal|Size!F c%-Override?|r,g,b|(Polyline)!d!s C%-Override?|r,g,b|(Polygon)!d!s W%-Wiresetup!d l%-x,y,z|(Light)!s p%-Point|Size!F M%- V%- P%- t%- o%- w%-";
+
+LoggerFunc GlobalLogger = NULL;
+
+
 IRIT_STATIC_DATA const ParserSettingsStruct
     DefaultSettings = {
 	0, 0, /* VNormal, PNormal */
@@ -55,20 +60,40 @@ IRIT_STATIC_DATA const ParserSettingsStruct
 	0.05 /* PointSize */
     };
 
+ITDPARSER_API void ITDParserSetLogger(LoggerFunc Logger)
+{
+    GlobalLogger = Logger;
+}
+
 ITDPARSER_API MeshStruct* ITDParserParse(const char* Path, const char* Settings)
 {
     ParserStruct Parser;
     char *SettingsCpy;
+
+    
+    I2P_LOG_TRACE( "Handling parse request for Path = %s, Settings = %s", Path, Settings);
 
     memset(&Parser, 0, sizeof(Parser));
     SettingsCpy = _strdup(Settings);
     ParserHandleArgs(&Parser, SettingsCpy);
     free(SettingsCpy);
 
-    LoadFromFile(&Parser, Path);
+    I2P_LOG_TRACE( "Handled parsser args for Path = %s, Settings = %s", Path, Settings);
 
+    I2P_LOG_TRACE( "Loading file at Path = %s", Path );
+    LoadFromFile(&Parser, Path);
+    if (!Parser.PObj) {
+	I2P_LOG_ERROR( "Loading object at Path = %s failed.", Path );
+	return NULL;
+    }
+
+    I2P_LOG_TRACE( "Traversing object and aggregating mesh info at Path = %s", Path );
     ParserTraverseObjects(&Parser);
+
+    I2P_LOG_TRACE( "Post processing mesh at Path = %s", Path );
     ParserPostProcess(&Parser);
+
+    I2P_LOG_TRACE( "Finalizing mesh at Path = %s and emitting back to I2P", Path );
     return ParserFinalize(&Parser);
 }
 
@@ -92,6 +117,7 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
     ParserSettingsStruct* PSettings = &(Parser->Settings);
     int Err;
     char *Argv[1024];
+    char ErrorMessage[4096];
     int Argc;
 
     Argc = 0;
@@ -116,6 +142,8 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
 	&PSettings -> DrawSurfaceOrient,
 	&PSettings -> FlipNormalOrient,
 	&PSettings -> Wireframe, NULL))) {
+	IritMiscStringErrMsg(Err, ErrorMessage);
+	I2P_LOG_ERROR( "Invalid args provided to parser: error = %s, Params = %s", ErrorMessage, Settings );
 	return;
     }
 
@@ -125,6 +153,7 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
     if (PolylineColourFlag) {
 	int r, g, b;
 	if (PolylineString && (sscanf(PolylineString, "%d,%d,%d", &r, &g, &b) != 3)) {
+	    I2P_LOG_ERROR( "Could not parse PolylineString: got = %s, expected = %s, Params = %s", PolylineString, "%d,%d,%d", Settings);
 	    return;
 	}
 	PSettings -> PolylineCol[0] = r / 255.0;
@@ -135,6 +164,7 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
     if (PolygonColourFlag) {
 	int r, g, b;
 	if (PolygonString && (sscanf(PolygonString, "%d,%d,%d", &r, &g, &b) != 3)) {
+	    I2P_LOG_ERROR( "Could not parse PolygonString: got = %s, expected = %s, Params = %s", PolygonString, "%d,%d,%d", Settings);
 	    return;
 	}
 	PSettings -> PolygonCol[0] = r / 255.0;
@@ -156,6 +186,7 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
 	    (sscanf(IsolineString, "%d %d", &PSettings -> Isolines[0],
 		&PSettings -> Isolines[1]) != 2) &&
 	    (sscanf(IsolineString, "%d", &PSettings -> Isolines[0]) != 1)) {
+	    I2P_LOG_ERROR( "Could not parse IsolineString: got = %s, expected = %s, Params = %s", IsolineString, "%d,%d,%d OR %d %d %d OR %d %d OR %d,%d OR %d", Settings);
 	    return;
 	}
     }
@@ -168,9 +199,11 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
 	    (sscanf(LightPosString, "%lf %lf %lf", &PSettings -> LightPos[0],
 		&PSettings -> LightPos[1],
 		&PSettings -> LightPos[2]) != 3)) {
+	    I2P_LOG_ERROR( "Could not parse LightPosString: got = %s, expected = %s, Params = %s", LightPosString, "%lf,%lf,%lf OR %lf %lf %lf", Settings);
 	    return;
 	}
     }
+    I2P_LOG_TRACE( "Processed all command line args from Settings = %s", Settings );
 }
 
 static void ParserTraverseObjects(ParserStruct* Parser)
@@ -186,12 +219,16 @@ static void ParserTraverseObjects(ParserStruct* Parser)
 	    Name = IP_GET_OBJ_NAME(Iter);
 	    if (strcmp(Name, "VIEW_MAT") == 0) {
 		Parser->ViewMatrix = malloc(sizeof(double) * 16);
+		if (!Parser -> ViewMatrix)
+		    I2P_LOG_ERROR( "Could not allocate view matrix.");
 		assert(Parser->ViewMatrix);
 		memcpy(Parser->ViewMatrix, Mat, sizeof(Mat));
 	    }
 	    else if (strcmp(Name, "PROJ_MAT") == 0 ||
 		     strcmp(Name, "PRSP_MAT") == 0) {
 		Parser->ProjMatrix = malloc(sizeof(double) * 16);
+		if (!Parser -> ProjMatrix)
+		    I2P_LOG_ERROR( "Could not allocate projection matrix.");
 		assert(Parser->ProjMatrix);
 		memcpy(Parser->ProjMatrix, Mat, sizeof(Mat));
 	    }
@@ -458,8 +495,10 @@ static MeshStruct* ParserFinalize(ParserStruct* Parser)
     int nv;
 
     Ret = malloc(sizeof(*Ret));
-    if (!Ret)
+    if (!Ret) {
+	I2P_LOG_ERROR( "Could not allocate finalized object. ");
 	return NULL;
+    }
     memset(Ret, 0, sizeof(*Ret));
 
     Ret->TotalVertices = Parser->NumLines * 2 +
@@ -467,6 +506,7 @@ static MeshStruct* ParserFinalize(ParserStruct* Parser)
 
     Ret->Vertices = malloc(sizeof(VertexStruct) * Ret->TotalVertices);
     if (!Ret->Vertices) {
+	I2P_LOG_ERROR( "Could not allocate finalized object vertices. ");
 	free(Ret);
 	return NULL;
     }
@@ -596,5 +636,37 @@ ITDPARSER_API void ITDParserFree(MeshStruct* Mesh)
     free(Mesh->ViewMatrix);
     free(Mesh->ProjMatrix);
     free(Mesh);
+    I2P_LOG_TRACE( "Freed ITD Parser reousrces.");
 }
 
+void ITDParserLog(int Level, const char *File, const char *Function, int Line, const char *Format, ...)
+{
+    va_list Args;
+
+    if (!GlobalLogger)
+	return;
+
+    va_start(Args, Format);
+
+    va_list ArgsCopy;
+    va_copy(ArgsCopy, Args);
+    size_t Len = vsnprintf(NULL, 0, Format, ArgsCopy);
+    va_end(ArgsCopy);
+
+    if (Len < 0) {
+	va_end(Args);
+	return; 
+    }
+
+    char* Buffer = (char*)malloc(Len + 1);
+    if (!Buffer) {
+	va_end(Args);
+	return; 
+    }
+
+    vsnprintf(Buffer, Len + 1, Format, Args);
+    va_end(Args);
+
+    GlobalLogger(Level, File, Function, Line, Buffer);
+    free(Buffer);
+}

@@ -10,6 +10,21 @@ using System.Collections.Generic;
 
 namespace Irit2Powerpoint
 {
+    public class I2PSlideshowWindowInfo
+    {
+        public int x, y, w, h, WinLeft, WinTop, WinWidth, WinHeight;
+        public float SlideWidth, SlideHeight,
+              LetterBoxOffsetX, LetterBoxOffsetY,
+              AspectScale, ZoomFactor;
+    }
+
+    public struct I2PSlideshowCache
+    {
+        public bool HasBeenBuilt;
+        public List<Bitmap> ScreenCropCache;
+        public List<I2PSlideshowWindowInfo> InfoCache;
+    }
+
     public partial class I2P
     {
         private const string __PATH_KEY__ = "_I2P_PATH_";
@@ -22,7 +37,7 @@ namespace Irit2Powerpoint
         private Ribbon RibbonControl;
         private PowerPoint.SlideShowWindow ActiveSlideShowWin;
         private Timer WindowStateTimer;
-        private List<Color> SlideAverageColours;
+        private I2PSlideshowCache SlideshowCache;
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
@@ -34,6 +49,7 @@ namespace Irit2Powerpoint
             this.Application.SlideShowEnd += EndSlideShow;
             this.Application.SlideSelectionChanged += SlideChanged;
             this.Application.AfterPresentationOpen += OnPresentation;
+            this.Application.PresentationSave += OnSave;
 
             this.ActiveSlideShowWin = null;
 
@@ -48,10 +64,17 @@ namespace Irit2Powerpoint
             {
                 if (ActiveSlideShowWin != null &&
                     ActiveSlideShowWin.View.State == PowerPoint.PpSlideShowState.ppSlideShowDone)
+                {
+                    Logger.GetInstance().Trace("Detected end of slideshow black screen, hiding GlWindow");
                     GlWindow.SetVisibility(false);
+                }
             };
 
-            SlideAverageColours = new List<Color>();
+            SlideshowCache.ScreenCropCache = null;
+            SlideshowCache.InfoCache = null;
+            SlideshowCache.HasBeenBuilt = false;
+
+            Logger.GetInstance().Trace("I2P setup done.");
         }
 
         private bool SlideContainsDummy(PowerPoint.Slide Slide)
@@ -82,14 +105,39 @@ namespace Irit2Powerpoint
                 InitDummyRect(CurrentSlide.Tags[__PATH_KEY__]);
         }
 
+        public void OnSave(PowerPoint.Presentation Presentation)
+        {
+            try
+            {
+                string SaveDirectory = Path.GetDirectoryName(Presentation.FullName);
+                Logger.GetInstance().MoveToDirectory(SaveDirectory);
+
+                Logger.GetInstance().Trace($"Saved presentation at {Presentation.FullName}, moving log file to {SaveDirectory}.");
+            } catch(Exception ex)
+            {
+                Logger.GetInstance().Error($"Caught exception: {ex}");
+            }
+        }
+
         public void OnPresentation(PowerPoint.Presentation Presentation)
         {
-            int i;
-            PowerPoint.Slide Slide;
-            string SaveDirectory = Path.GetDirectoryName( Presentation.FullName );
-            List<LoadRequest> RequestsInUse = GetLoadRequestsInUse();
-            foreach (LoadRequest Request in RequestsInUse)
-                ResourceManager.QueueLoadFromDisk(Request);
+            try
+            {
+                string SaveDirectory = Path.GetDirectoryName(Presentation.FullName);
+
+
+                Logger.GetInstance().MoveToDirectory(SaveDirectory);
+
+                Logger.GetInstance().Trace($"Opened new presentation at {Presentation.FullName}");
+
+                List<LoadRequest> RequestsInUse = GetLoadRequestsInUse();
+                foreach (LoadRequest Request in RequestsInUse)
+                    ResourceManager.QueueLoadFromDisk(Request);
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error($"Caught exception: {e}");
+            }
         }
 
         public static GlResourceManager GetResourceManager()
@@ -122,7 +170,7 @@ namespace Irit2Powerpoint
                                               Slide.Tags[__IMPORT_SETTINGS_KEY__]);
                 } catch(IOException Ex)
                 {
-                    MessageBox.Show("Error: " + Ex.Message, "I2P Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Logger.GetInstance().Error($"Encoutered an error while handling load request {Slide.Tags[__IMPORT_SETTINGS_KEY__]}: {Ex})");
                     continue;
                 }
                 Requests.Add(Request);
@@ -152,18 +200,24 @@ namespace Irit2Powerpoint
 
         public void SlideChanged(PowerPoint.SlideRange SldRange)
         {
+            try { 
             int i;
             PowerPoint.Shape Dummy;
 
-            /* Make sure everything is visible as we hide them after a slideshow. */
-            for (i = 1; i <= Application.ActivePresentation.Slides.Count; i++) { 
-                if (GetDummyFromSlide(Application.ActivePresentation.Slides[i],
-                                out Dummy))
-                    Dummy.Visible = MsoTriState.msoTrue;
-            }
-            ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
-        }
+                /* Make sure everything is visible as we hide them after a slideshow. */
+                for (i = 1; i <= Application.ActivePresentation.Slides.Count; i++)
+                {
+                    if (GetDummyFromSlide(Application.ActivePresentation.Slides[i],
+                                    out Dummy))
+                        Dummy.Visible = MsoTriState.msoTrue;
+                    ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
+                }
 
+            } catch(Exception ex)
+            {
+                Logger.GetInstance().Error($"Caught exception: {ex}");
+            }
+        }
 
         public void AddDummyShape(PowerPoint.Slide Slide)
         {
@@ -173,15 +227,11 @@ namespace Irit2Powerpoint
             Dummy.Fill.Visible = MsoTriState.msoFalse;
             Dummy.Name = __DUMMY_NAME__;
 
-            Dummy.TextFrame.TextRange.Text = "IRIT2POWERPOINT";
-            Dummy.TextFrame.TextRange.Font.Bold = MsoTriState.msoTrue;
-            Dummy.TextFrame.TextRange.Font.Color.RGB = Color.Black.ToArgb();
-
             Dummy.Line.Visible = MsoTriState.msoTrue;
             Dummy.Line.ForeColor.RGB = Color.Black.ToArgb();
-            Dummy.Line.Weight = 5f;
+            Dummy.Line.Weight = 1f;
 
-            Dummy.Line.DashStyle = MsoLineDashStyle.msoLineDash;
+            Dummy.Line.DashStyle = MsoLineDashStyle.msoLineSolid;
         }
 
         public void InitDummyRect(string Path)
@@ -199,7 +249,7 @@ namespace Irit2Powerpoint
                                           ImportSettings);
             } catch(IOException Ex)
             {
-                MessageBox.Show("Error: " + Ex.Message, "I2P Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Logger.GetInstance().Error($"Encoutered an error while handling load request {Slide.Tags[__IMPORT_SETTINGS_KEY__]}: {Ex})");
                 return;
             }
 
@@ -207,9 +257,10 @@ namespace Irit2Powerpoint
             Slide.Tags.Add(__PATH_KEY__, Path);
             ResourceManager.QueueLoadFromDisk(Request);
             ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
-
             if (!GetDummyFromSlide(Slide, out Dummy))
                 AddDummyShape(Slide);
+
+            Logger.GetInstance().Trace($"Updated I2P structure in slide at index = {Slide.SlideIndex}.");
         }
 
         /* Extracts the Irit2Powerpoint dummy from a slide. */
@@ -227,22 +278,37 @@ namespace Irit2Powerpoint
 
         void NewSlideShow(PowerPoint.SlideShowWindow Wn)
         {
-            ActiveSlideShowWin = Wn;
-            SlideAverageColours.Clear();
-            ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
+            try
+            {
+                ActiveSlideShowWin = Wn;
+                ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
+                SlideshowCache.HasBeenBuilt = false;
+                Logger.GetInstance().Trace($"Starting new slideshow, hiding all I2P shapes and fetching screenshots.");
+            } catch (Exception ex)
+            {
+                Logger.GetInstance().Error($"Caught exception: {ex}");
+            }
         }
 
         void EndSlideShow(PowerPoint.Presentation Pres)
         {
-            WindowStateTimer.Stop();
-            ActiveSlideShowWin = null;
+            try
+            {
+                WindowStateTimer.Stop();
+                ActiveSlideShowWin = null;
 
-            GlWindow.ChangeOwner(IntPtr.Zero);
-            /* Once a slide show ends hide the GL window. */
-            GlWindow.SetVisibility(false);
-            SlideAverageColours.Clear();
+                GlWindow.ChangeOwner(IntPtr.Zero);
+                /* Once a slide show ends hide the GL window. */
+                GlWindow.SetVisibility(false);
 
-            ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
+                SlideshowCache.HasBeenBuilt = false;
+
+                Logger.GetInstance().Trace("Ended slideshow.");
+                ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
+            } catch(Exception ex)
+            {
+                Logger.GetInstance().Error($"Caught exception: {ex}");
+            }
         }
 
         /* Helpers to use to position the window. */
@@ -264,130 +330,200 @@ namespace Irit2Powerpoint
             }
         }
 
-        Color CalculateAverageColour(PowerPoint.Slide Slide)
+        Bitmap GetScreenCrop(PowerPoint.Slide Slide,
+                             Rectangle SlideRect,
+                             Rectangle CropRect)
         {
+            Rectangle Intersection, SrcRect, DestRect;
+            Bitmap Cropped, Orig;
             string
                 TempDir = Path.GetTempPath(),
-                ImagePath = Path.Combine(TempDir, "slide.bmp");
-            int r, g, b;
+                ImagePath = Path.Combine(TempDir, "slide.png");
 
-            Slide.Export(ImagePath, "BMP", 64, 64);
-            using (Bitmap bmp = new Bitmap(ImagePath))
-            {
-                int i, j;
-                int Total = bmp.Width * bmp.Height;
+            Logger.GetInstance().Trace($"Getting screenshot for slide={Slide.SlideIndex} at Rect={CropRect}");
 
-                r = g = b = 0;
+            Slide.Export(ImagePath, "png",
+                         SlideRect.Width,
+                         SlideRect.Height);
 
-                for (i = 0; i < bmp.Width; i++)
-                {
-                    for (j = 0; j < bmp.Height; j++)
-                    {
-                        Color c = bmp.GetPixel(j, i);
-                        r += c.R;
-                        g += c.G;
-                        b += c.B;
-                    }
-                }
+            Orig = new Bitmap(ImagePath);
+            Cropped = new Bitmap(CropRect.Width, CropRect.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            Intersection = Rectangle.Intersect(SlideRect, CropRect);
+            if (Intersection.IsEmpty)
+                return Cropped;
+            SrcRect = new Rectangle(Intersection.X - SlideRect.X,
+                                    Intersection.Y - SlideRect.Y,
+                                    Intersection.Width,
+                                    Intersection.Height);
+            DestRect = new Rectangle(Intersection.X - CropRect.X,
+                                     Intersection.Y - CropRect.Y,
+                                     Intersection.Width,
+                                     Intersection.Height);
+            using (Graphics g = Graphics.FromImage(Cropped))
+                g.DrawImage(Orig, DestRect, SrcRect, GraphicsUnit.Pixel);
+            Orig.Dispose();
 
-                r = r / Total;
-                g = g / Total;
-                b = b / Total;
-            }
+            /* Flip since we pass to the gpu, must be compatible with opengl convention. */
+            Cropped.RotateFlip(RotateFlipType.RotateNoneFlipY);
 
-            return Color.FromArgb(r, g, b);
+            return Cropped;
+        }
+
+        I2PSlideshowWindowInfo CalculateWindowInfo(PowerPoint.SlideShowWindow Wn, PowerPoint.Shape Dummy)
+        {
+            I2PSlideshowWindowInfo Info;
+            WinAPIDef.RECT Rect;
+
+            Info = new I2PSlideshowWindowInfo();
+
+            Info.SlideWidth = PointToPixelX(Wn.Presentation.PageSetup.SlideWidth, (IntPtr)Wn.HWND);
+            Info.SlideHeight = PointToPixelY(Wn.Presentation.PageSetup.SlideHeight, (IntPtr)Wn.HWND);
+
+            WinAPIDclr.GetWindowRect((IntPtr)Wn.HWND, out Rect);
+
+            Info.WinLeft = Rect.Left;
+            Info.WinTop = Rect.Top;
+            Info.WinWidth = Rect.Right - Rect.Left;
+            Info.WinHeight = Rect.Bottom - Rect.Top;
+
+            Info.AspectScale = Math.Min(Info.WinWidth / Info.SlideWidth, Info.WinHeight / Info.SlideHeight);
+
+            /* Calculate the letter box size using the aspect ratios. */
+
+            Info.LetterBoxOffsetX = (Info.WinWidth - Info.SlideWidth * Info.AspectScale) / 2.0f;
+            Info.LetterBoxOffsetY = (Info.WinHeight - Info.SlideHeight * Info.AspectScale) / 2.0f;
+
+            /* Include the zoom factor when calculating positions. */
+            Info.ZoomFactor = Wn.View.Zoom / 100f;
+
+            /* Calculate the window's shape and send it to the renderer. */
+
+            Info.x = PointToPixelX(Dummy.Left * Info.ZoomFactor, (IntPtr)Wn.HWND);
+            Info.y = PointToPixelY(Dummy.Top * Info.ZoomFactor, (IntPtr)Wn.HWND);
+            Info.w = PointToPixelX(Dummy.Width * Info.ZoomFactor, (IntPtr)Wn.HWND);
+            Info.h = PointToPixelY(Dummy.Height * Info.ZoomFactor, (IntPtr)Wn.HWND);
+
+            /* Account for black boxes when the aspect ratio isn't hte same. */
+            Info.x = (int)(Info.x + Info.LetterBoxOffsetX);
+            Info.y = (int)(Info.y + Info.LetterBoxOffsetY);
+
+            return Info;
+        }
+
+        void InitSlideshowCache()
+        {
+            if (SlideshowCache.ScreenCropCache != null)
+                foreach (Bitmap img in SlideshowCache.ScreenCropCache)
+                    img?.Dispose();
+            SlideshowCache.InfoCache = new List<I2PSlideshowWindowInfo>();
+            SlideshowCache.ScreenCropCache = new List<Bitmap>();
         }
 
         /* Called when we go to a new slide in a slideshow. */
         void SlideShowOnSlide(PowerPoint.SlideShowWindow Wn)
         {
             PowerPoint.Shape Dummy;
-            int x, y, w, h, WinLeft, WinTop, WinWidth, WinHeight;
-            float SlideWidth, SlideHeight,
-                  LetterBoxOffsetX, LetterBoxOffsetY,
-                  AspectScale;
+            I2PSlideshowWindowInfo SlideInfo;
+            Bitmap ScreenCrop; 
             string Path, Key;
             GlRenderer.RenderSettings RenderSettings;
             string ImportSettings;
-            float ZoomFactor;
-            WinAPIDef.RECT Rect;
-
-            if (SlideAverageColours.Count == 0)
+            Rectangle CropRect, SlideRect;
+            /* VERY UGLY BUT POWERPOINT SILENTLY IGNORES EXCEPTIONS.... */
+            try
             {
-                foreach (PowerPoint.Slide Slide in Application.ActivePresentation.Slides)
-                    SlideAverageColours.Add(SlideContainsDummy(Slide) ? CalculateAverageColour(Slide) : Color.Empty);
-            }
 
-            WindowStateTimer.Stop();
-            GlWindow.SetVisibility(false);
-
-            /* Check for the dummy and if it exists determine the size/position of the  */
-            /* GLWindow from it. */
-            if (GetDummyFromSlide(Wn.View.Slide, out Dummy))
-            {
-                Dummy.Visible = MsoTriState.msoFalse;
-
-                SlideWidth = PointToPixelX(Wn.Presentation.PageSetup.SlideWidth, (IntPtr)Wn.HWND);
-                SlideHeight = PointToPixelY(Wn.Presentation.PageSetup.SlideHeight, (IntPtr)Wn.HWND);
-
-                WinAPIDclr.GetWindowRect((IntPtr)Wn.HWND, out Rect);
-
-                WinLeft = Rect.Left;// PointToPixelX(Wn.Left, (IntPtr)Wn.HWND);
-                WinTop = Rect.Top;// PointToPixelY(Wn.Top, (IntPtr)Wn.HWND);
-                WinWidth = Rect.Right - Rect.Left;// PointToPixelX(Wn.Width, (IntPtr)Wn.HWND);
-                WinHeight = Rect.Bottom - Rect.Top;//PointToPixelY(Wn.Height, (IntPtr)Wn.HWND);
-
-                AspectScale = Math.Min(WinWidth / SlideWidth, WinHeight / SlideHeight);
-
-                /* Calculate the letter box size using the aspect ratios. */
-
-                LetterBoxOffsetX = (WinWidth - SlideWidth * AspectScale) / 2.0f;
-                LetterBoxOffsetY = (WinHeight - SlideHeight * AspectScale) / 2.0f;
-
-                /* Include the zoom factor when calculating positions. */
-                ZoomFactor = Wn.View.Zoom / 100f;
-
-                /* Calculate the window's shape and send it to the renderer. */
-
-                x = PointToPixelX((Dummy.Left) * ZoomFactor, (IntPtr)Wn.HWND);
-                y = PointToPixelY((Dummy.Top) * ZoomFactor, (IntPtr)Wn.HWND);
-                w = PointToPixelX((Dummy.Width) * ZoomFactor, (IntPtr)Wn.HWND);
-                h = PointToPixelY((Dummy.Height) * ZoomFactor, (IntPtr)Wn.HWND);
+                /* If we're the first slide in the slideshow perform our pre-processing. */
+                if (!SlideshowCache.HasBeenBuilt)
+                {
 
 
-                /* Account for black boxes when the aspect ratio isn't hte same. */
-                x = (int)(x + LetterBoxOffsetX);
-                y = (int)(y + LetterBoxOffsetY);
+                    Logger.GetInstance().Trace("Detected first slide in slideshow, prepearing slideshow cache.");
+                    InitSlideshowCache();
 
-                GlWindow.ChangeOwner((IntPtr)Wn.HWND);
-                GlWindow.SetPosition(x, y, WinLeft, WinTop);
-                GlWindow.SetSize(w, h);
-                WindowStateTimer.Start();
+                    foreach (PowerPoint.Slide Slide in this.Application.ActivePresentation.Slides)
+                    {
+                        /* Hide the shape and grab screen crops. */
+                        if (GetDummyFromSlide(Slide, out Dummy))
+                        {
+                            Dummy.Visible = MsoTriState.msoFalse;
+                            SlideInfo = CalculateWindowInfo(Wn, Dummy);
 
-                Path = Wn.View.Slide.Tags[__PATH_KEY__];
-                RenderSettings = GlRenderer.DefaultRenderSettings;
-                Color Col = SlideAverageColours[Wn.View.Slide.SlideIndex - 1];
+                            CropRect = new Rectangle(SlideInfo.x, SlideInfo.y, SlideInfo.w, SlideInfo.h);
+                            SlideRect = new Rectangle((int)SlideInfo.LetterBoxOffsetX,
+                                                      (int)SlideInfo.LetterBoxOffsetY,
+                                                      (int)SlideInfo.SlideWidth,
+                                                      (int)SlideInfo.SlideHeight);
+                            SlideshowCache.InfoCache.Add(CalculateWindowInfo(Wn, Dummy));
+                            SlideshowCache.ScreenCropCache.Add(GetScreenCrop(Slide, SlideRect, CropRect));
+                        }
+                        else
+                        {
+                            SlideshowCache.InfoCache.Add(null);
+                            SlideshowCache.ScreenCropCache.Add(null);
+                        }
+                    }
 
-                RenderSettings.BackgroundColour = new OpenTK.Vector3(Col.R / 255.0f,
-                                                                     Col.G / 255.0f,
-                                                                     Col.B / 255.0f);
-                GlWindow.MaskColour(Col);
-                ImportSettings = Wn.View.Slide.Tags[__IMPORT_SETTINGS_KEY__];
-                Key = ResourceManager.BuildResourceKey(Path, ImportSettings);
-                GlWindow.GetRenderer().SetActiveModel(Key, RenderSettings);
-                GlWindow.SetVisibility(true);
-            }
-            else
+                    SlideshowCache.HasBeenBuilt = true;
+                    Logger.GetInstance().Trace("Done populating slideshow cache.");
+
+                    /* Force slide rerender. */
+                    Wn.View.GotoSlide(Wn.View.Slide.SlideIndex, MsoTriState.msoTrue);
+                }
+
+
+                WindowStateTimer.Stop();
                 GlWindow.SetVisibility(false);
 
-            ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
+                /* Check for the dummy and if it exists determine the size/position of the  */
+                /* GLWindow from it. */
+                if (GetDummyFromSlide(Wn.View.Slide, out Dummy))
+                {
+
+                    Logger.GetInstance().Trace("Detected I2P shape in slide, setting up GlWindow.");
+
+                    SlideInfo = SlideshowCache.InfoCache[Wn.View.Slide.SlideIndex - 1];
+                    ScreenCrop = SlideshowCache.ScreenCropCache[Wn.View.Slide.SlideIndex - 1];
+
+
+                    GlWindow.GetRenderer().UpdateBackground(ScreenCrop);
+
+                    GlWindow.ChangeOwner((IntPtr)Wn.HWND);
+                    GlWindow.SetPosition(SlideInfo.x, SlideInfo.y, SlideInfo.WinLeft, SlideInfo.WinTop);
+                    GlWindow.SetSize(SlideInfo.w, SlideInfo.h);
+                    WindowStateTimer.Start();
+
+                    Path = Wn.View.Slide.Tags[__PATH_KEY__];
+                    RenderSettings = GlRenderer.DefaultRenderSettings;
+                    ImportSettings = Wn.View.Slide.Tags[__IMPORT_SETTINGS_KEY__];
+                    Key = ResourceManager.BuildResourceKey(Path, ImportSettings);
+                    GlWindow.GetRenderer().SetActiveModel(Key, RenderSettings);
+
+                    GlWindow.SetVisibility(true);
+                    Logger.GetInstance().Trace($"Sat window to location=({SlideInfo.x},{SlideInfo.y}) with size=({SlideInfo.w},{SlideInfo.h}), using resource key={Key}");
+                }
+
+                ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
+            } catch (Exception ex)
+            {
+                Logger.GetInstance().Error($"Caught exception: {ex}");
+            }
         }
 
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
-            WindowStateTimer.Dispose();
-            GlWindow.Destroy();
-            ResourceManager.Destroy();
+            try
+            {
+                WindowStateTimer.Dispose();
+                GlWindow.Destroy();
+                ResourceManager.Destroy();
+                Logger.GetInstance().Trace($"Destroyed I2P.");
+
+                Logger.GetInstance().Destroy();
+            } catch (Exception ex)
+            {
+                Logger.GetInstance().Error($"Caught exception: {ex}");
+            }
         }
 
         protected override Microsoft.Office.Core.IRibbonExtensibility CreateRibbonExtensibilityObject()

@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
 
 namespace Irit2Powerpoint
 {
@@ -49,6 +44,9 @@ namespace Irit2Powerpoint
         [DllImport("ITDParser.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr ITDParserFree(IntPtr Struct);
 
+        [DllImport("ITDParser.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr ITDParserSetLogger(LoggerDelegate Logger);
+
         public static ITDMesh Parse(string Path, string Settings)
         {
             ITDMesh Mesh;
@@ -56,7 +54,10 @@ namespace Irit2Powerpoint
             IntPtr /* Call C API to parse ITD file. */
                 Ret = ITDParserParse(Path, Settings);
             if (Ret == IntPtr.Zero)
+            {
+                Logger.GetInstance().Error($"Error parsing ITD file at {Path}");
                 throw new ParseException($"Error parsing ITD file at {Path}");
+            }
 
             /* Turn pointer into C# struct. */
             Struct = Marshal.PtrToStructure<MeshStruct>(Ret);

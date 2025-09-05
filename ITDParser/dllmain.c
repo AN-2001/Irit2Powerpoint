@@ -18,7 +18,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     case DLL_PROCESS_ATTACH:
         TLSIndex = TlsAlloc();
         gMutex = CreateMutex(NULL, FALSE, NULL);
-
+	I2P_LOG_TRACE( "Initialized ITD Parser." );
         break;
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
@@ -28,6 +28,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
         CloseHandle(gMutex);
         break;
     }
+
     return TRUE;
 }
 

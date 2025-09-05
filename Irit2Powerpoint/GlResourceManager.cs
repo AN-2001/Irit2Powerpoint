@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 using System.IO;
-using System.Windows.Forms;
 
 namespace Irit2Powerpoint
 {
@@ -17,18 +15,25 @@ namespace Irit2Powerpoint
         public LoadRequest(string BasePath, string FilePath, string ImportSettings)
         {
             this.GivenPath = FilePath;
+
             /* If we're given an absolute path send the request as is. */
             /* If it's not an absolute path concat with BasePath then send the request. */
             if (System.IO.Path.IsPathRooted(FilePath))
                 Path = System.IO.Path.GetFullPath(FilePath);
-            else { 
+            else {
                 if (BasePath == "")
-                    throw new IOException("Cannot use relative paths unless the presentation is saved.");
+                {
+                    Logger.GetInstance().Warn($"Cannot use relative path {GivenPath} unless the presentation is saved.");
+                    throw new IOException($"Cannot use relative path {GivenPath} unless the presentation is saved.");
+                }
                 Path = System.IO.Path.GetFullPath(System.IO.Path.Combine(BasePath, FilePath));
             }
-            if (!System.IO.File.Exists(Path))
-                throw new IOException(Path + " does not exist.");
+            if (!System.IO.File.Exists(Path)) {
+                Logger.GetInstance().Warn($"{Path} does not exist.");
+                throw new IOException($"{Path} does not exist.");
+            }
             this.ImportSettings = ImportSettings;
+            Logger.GetInstance().Trace($"Created LoadRequest for BasePath = {BasePath} FilePath = {FilePath} Settings = {ImportSettings}");
         }
     };
 
@@ -48,6 +53,8 @@ namespace Irit2Powerpoint
             ResultMap = new Dictionary<string, ITDParser.ITDMesh>();
             Tasks = new Task[TASK_COUNT];
             LoadQueue = new Queue<LoadRequest>();
+
+            Logger.GetInstance().Trace("Resource manager setup done.");
         }
 
         public string BuildResourceKey(string Path, string ImportSettings)
@@ -73,17 +80,22 @@ namespace Irit2Powerpoint
                         () =>
                         {
                             ITDParser.ITDMesh Mesh;
+
+                            Logger.GetInstance().Trace($"Queued LoadRequest for Path = {Request.Path}, Settings = {Request.ImportSettings}");
                             try
                             {
                                 Mesh = ITDParser.Parse(Request.Path, Request.ImportSettings);
                             } catch (ParseException)
                             {
+                                Logger.GetInstance().Error($"Encountered parsing error while handling request: [{Request.Path}, {Request.ImportSettings}]");
                                 return;
                             }
 
                             Mutex.WaitOne();
                             ResultMap[Key] = Mesh;
                             Mutex.ReleaseMutex();
+
+                            Logger.GetInstance().Trace($"Completed LoadRequest for Path = {Request.Path}, Settings = {Request.ImportSettings}");
                         });
                     return true;
                 }
@@ -142,7 +154,10 @@ namespace Irit2Powerpoint
 
             TryLoadFromQueue();
             if (ResourceMap.ContainsKey(Key))
+            {
+                Logger.GetInstance().Trace($"Fetched already loaded resource at key = {Key}");
                 return ResourceMap[Key];
+            }
 
             /* If it doesn't exist then we're either stil loading or we 
              * need to finalize. */
@@ -157,6 +172,8 @@ namespace Irit2Powerpoint
             ResultMap.Remove(Key);
             Mutex.ReleaseMutex();
 
+            Logger.GetInstance().Trace($"Fetched resource at key = {Key}");
+
             Ret = new GlResource(Mesh);
             ResourceMap[Key] = Ret;
             return Ret;
@@ -169,6 +186,7 @@ namespace Irit2Powerpoint
             Task.WaitAll(Filtered);
             foreach (KeyValuePair<string, GlResource> Pair in ResourceMap)
                 Pair.Value.Destroy();
+            Logger.GetInstance().Trace($"Destroyed GlResourceManager");
         }
     }
 }
