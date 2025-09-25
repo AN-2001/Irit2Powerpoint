@@ -2,6 +2,7 @@
 #include "inc_irit/irit_sm.h"
 #include "inc_irit/allocate.h"
 #include "inc_irit/iritprsr.h"
+#include "inc_irit/grap_lib.h"
 #include "ITDParser.h"
 #include "objectProcessor.h"
 
@@ -18,6 +19,16 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     case DLL_PROCESS_ATTACH:
         TLSIndex = TlsAlloc();
         gMutex = CreateMutex(NULL, FALSE, NULL);
+        IritGrapGraphicsStateResetDefault();
+	IritCagdIgnoreNonPosWeightBBox(TRUE);
+	IritPrsrSetPolyListCirc(TRUE);
+	IritPrsrSetFlattenObjects(FALSE);
+	IritPrsrSetPropagateAttrs(FALSE);
+	IritPrsrFlattenInvisibleObjects(FALSE);
+	IritGrapDSetDrawPolyFunc( ProcessPolygon );
+
+	IritGrapGlblState.CacheGeom = FALSE;
+
 	I2P_LOG_TRACE( "Initialized ITD Parser." );
         break;
     case DLL_THREAD_ATTACH:

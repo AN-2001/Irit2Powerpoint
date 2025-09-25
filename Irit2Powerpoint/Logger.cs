@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace Irit2Powerpoint
 {
@@ -28,18 +29,20 @@ namespace Irit2Powerpoint
         private static readonly string LOG_NAME = "I2P_log.txt";
         private static Logger Instance = new Logger();
         private readonly object WriterLog = new object();
-        private LogLevel MinLevel = LogLevel.TRACE;
+        private LogLevel MinLevel = LogLevel.INFO;
         private string Filepath = null;
         private StreamWriter LogWriter = null;
         private bool IsLoggingDisabled = false;
+        private string CurrentDir;
         private static LoggerDelegate Delegate;
 
         private Logger()
         {
             FileStream Stream;
+            this.CurrentDir = Path.GetTempPath();
 
             /* Open the log file at the temp directory first and acquire the handle.     */
-            Filepath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName() + ".txt");
+            Filepath = Path.Combine(CurrentDir, Path.GetTempFileName() + ".txt");
             try
             {
                 Stream = new FileStream(
@@ -92,13 +95,18 @@ namespace Irit2Powerpoint
             FileStream Stream;
             StreamWriter NewWriter;
             StreamWriter OldWriter;
+            int pid = Process.GetCurrentProcess().Id;
+            string Timestamp = DateTime.Now.ToString("yyyy-MM-dd--HH-mm");
+
+            if (CurrentDir == NewDir)
+                return;
 
 
             /* If at some point we're provided with a new directory                      */
             /* Copy the already used log file to it and acquire a new file handle.       */
 
 
-            NewPath = Path.Combine(NewDir, LOG_NAME);
+            NewPath = Path.Combine(NewDir, $"{Timestamp}_{pid}_{LOG_NAME}");
 
             /* Locking is required so we only move after all writing is done.            */
             lock(WriterLog)
@@ -143,6 +151,8 @@ namespace Irit2Powerpoint
 
                 OldWriter?.Dispose();
             }
+
+            CurrentDir = NewDir;
         }
 
         private void LogAux(LogLevel Level, string File, string Function, int Line, string Message)

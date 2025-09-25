@@ -73,10 +73,7 @@ namespace Irit2Powerpoint
             if (SettingsForm.ShowDialog() == DialogResult.OK)
             {
                 InputPath = ExtractPath(SettingsForm.PickedSettings);
-
-
-                AddIn.SetCurrentImportSettings(SettingsForm.PickedSettings);
-                AddIn.InitDummyRect(InputPath);
+                AddIn.InitDummyRect(InputPath, SettingsForm.PickedSettings);
                 Logger.GetInstance().Trace($"Detected user selection for settings and path: Path = {InputPath}, Settings = {SettingsForm.PickedSettings}");
             }
         }

@@ -5,6 +5,16 @@ namespace Irit2Powerpoint
 {
     public static class ITDParser
     {
+        [StructLayout(LayoutKind.Sequential)]
+        public struct LightStruct
+        {
+            public int IsEnabled;
+            public double x, y, z;
+            public double ar, ag, ab,
+                          dr, dg, db,
+                          sr, sg, sb;
+        }
+        public static int LIGHT_STRUCT_SIZE = Marshal.SizeOf(typeof(LightStruct));
 
         [StructLayout(LayoutKind.Sequential)]
         public struct VertexStruct
@@ -16,25 +26,24 @@ namespace Irit2Powerpoint
         }
 
         public static int VERTEX_STRUCT_SIZE = Marshal.SizeOf(typeof(VertexStruct));
+        public static int I2P_NUM_LIGHTS = 32;
 
         [StructLayout(LayoutKind.Sequential)]
         public struct ITDMesh
         {
             public VertexStruct[] Vertecies; /* All the vertecies that this ITD file uses. */
             public int VertexCutoffOffset;
+            public LightStruct[] Lights;
             public double[] ViewMat, ProjMat; /* 4x4 matrices in row major form. */
-            public double[] Min, Max;
-            public double[] LightPos;
+            public double ZOffset;
         }
 
         [StructLayout(LayoutKind.Sequential)]
         private struct MeshStruct
         {
             public IntPtr Vertices;
-            public IntPtr ViewMatrix, ProjMatrix;
-            public double MinX, MinY, MinZ,
-                          MaxX, MaxY, MaxZ,
-                          lx, ly, lz;
+            public IntPtr Lights, ViewMatrix, ProjMatrix;
+            public double ZOffset;
             public int TotalVertices, VertexCutoffOffset;
         }
 
@@ -55,8 +64,8 @@ namespace Irit2Powerpoint
                 Ret = ITDParserParse(Path, Settings);
             if (Ret == IntPtr.Zero)
             {
-                Logger.GetInstance().Error($"Error parsing ITD file at {Path}");
-                throw new ParseException($"Error parsing ITD file at {Path}");
+                Logger.GetInstance().Error($"Error parsing ITD file at {Path} with commands {Settings}");
+                throw new ParseException($"Error parsing ITD file at {Path} with commands {Settings}");
             }
 
             /* Turn pointer into C# struct. */
@@ -74,37 +83,29 @@ namespace Irit2Powerpoint
             ITDMesh Ret;
             int i;
 
-            Ret.ViewMat = null;
-            Ret.ProjMat = null;
-            Ret.Min = new double[3];
-            Ret.Max = new double[3];
-            Ret.LightPos = new double[3];
+            Ret.ZOffset = Mesh.ZOffset;
 
             Ret.VertexCutoffOffset = Mesh.VertexCutoffOffset;
-            Ret.Min[0] = Mesh.MinX; Ret.Min[1] = Mesh.MinY; Ret.Min[2] = Mesh.MinZ;
-            Ret.Max[0] = Mesh.MaxX; Ret.Max[1] = Mesh.MaxY; Ret.Max[2] = Mesh.MaxZ;
-
-            Ret.LightPos[0] = Mesh.lx; Ret.LightPos[1] = Mesh.ly; Ret.LightPos[2] = Mesh.lz;
 
             Ret.Vertecies = new VertexStruct[Mesh.TotalVertices];
+            Ret.Lights = new LightStruct[I2P_NUM_LIGHTS];
 
-            if (Mesh.ViewMatrix != IntPtr.Zero)
-            {
-                Ret.ViewMat = new double[16];
-                Marshal.Copy(Mesh.ViewMatrix, Ret.ViewMat, 0, 16);
-            }
+            Ret.ViewMat = new double[16];
+            Marshal.Copy(Mesh.ViewMatrix, Ret.ViewMat, 0, 16);
 
-            if (Mesh.ProjMatrix != IntPtr.Zero)
-            {
-                Ret.ProjMat = new double[16];
-                Marshal.Copy(Mesh.ProjMatrix, Ret.ProjMat, 0, 16);
-            }
+            Ret.ProjMat = new double[16];
+            Marshal.Copy(Mesh.ProjMatrix, Ret.ProjMat, 0, 16);
+
 
             /* Structs have to copied like this sadly... */
             for (i = 0; i < Mesh.TotalVertices; i++)
                 Ret.Vertecies[i] =
                     Marshal.PtrToStructure<VertexStruct>(Mesh.Vertices +
                                                          i * VERTEX_STRUCT_SIZE);
+            for (i = 0; i < 32; i++)
+                Ret.Lights[i] =
+                    Marshal.PtrToStructure<LightStruct>(Mesh.Lights + i * LIGHT_STRUCT_SIZE);
+
             return Ret;
         }
 

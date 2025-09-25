@@ -16,4 +16,10 @@ namespace Irit2Powerpoint
         public StillLoadingException() : base("Geometry is still loading") { }
     }
 
+    class UnknownKeyException : Exception
+    {
+        public UnknownKeyException() : base("Attempting to fetch an unknown key") { }
+    }
+
+
 }

@@ -46,13 +46,13 @@ namespace Irit2Powerpoint
 
         public delegate IntPtr WinProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam); 
 
-        public static int LOWORD(IntPtr Num)
+        public static short LOWORD(IntPtr Num)
         {
-            return (int)Num & 0xffff;
+            return (short)((int)Num & 0xffff);
         }
-        public static int HiWORD(IntPtr Num)
+        public static short HiWORD(IntPtr Num)
         {
-            return ((int)Num >> 16) & 0xffff;
+            return (short)(((int)Num >> 16) & 0xffff);
         }
     }
 }

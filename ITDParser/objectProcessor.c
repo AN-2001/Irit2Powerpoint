@@ -9,9 +9,17 @@
 #include "ITDParser.h"
 #include <Windows.h>
 
-
 extern DWORD TLSIndex;
 extern HANDLE gMutex;
+
+typedef struct ProcessingStruct {
+    char *Name;
+    IPObjectStruct *PObj;
+    LightStruct Lights[I2P_NUM_LIGHTS];
+    /* Used for computing the light colours. */
+    double Ambient, Diffuse, Specular; /* Since we can't pass the parser directly. */
+    int CurrentLight;
+} ProcessingStruct;
 
 static void ProcessObjectList(IPObjectStruct *PObj);
 static void ApplyGrapSettings(ParserSettingsStruct Settings);
@@ -24,47 +32,49 @@ static IPObjectStruct *PolyStripToPolyObj(IPObjectStruct *PolyStripObj);
 
 void LoadFromFile(ParserStruct *Parser, const char *FileName)
 {
-    IPObjectStruct *Loaded, *Processed;
+    IPObjectStruct *Loaded;
+    ProcessingStruct Processed;
     
     WaitForSingleObject(gMutex, INFINITE); 
-    IritPrsrSetPolyListCirc(TRUE);
-    IritPrsrSetFlattenObjects(FALSE);
-    IritPrsrSetPropagateAttrs(FALSE);
-    IritPrsrFlattenInvisibleObjects(FALSE);
-    IritGrapDSetDrawPolyFunc( ProcessPolygon );
-    ReleaseMutex(gMutex);
 
     Loaded = IritPrsrGetObjects2(FileName);
     if (!Loaded) {
-	I2P_LOG_TRACE( "Could not load file at Path = %s", FileName);    
+	I2P_LOG_ERROR( "%s: Could not load file at Path = %s", Parser -> SettingsString, FileName);    
 	return;
     }
-    Loaded = IritPrsrResolveInstances(Loaded);
+    // Loaded = IritPrsrResolveInstances(Loaded);
 
     if (!Loaded) {
-	I2P_LOG_TRACE( "Could not resolve instances for file at Path = %s", FileName);    
+	I2P_LOG_ERROR( "%s: Could not resolve instances for file at Path = %s", Parser -> SettingsString, FileName);    
 	return;
     }
-
-    TlsSetValue(TLSIndex, NULL);
-    
-    WaitForSingleObject(gMutex, INFINITE); 
 
     ApplyGrapSettings(Parser -> Settings);
 
-    I2P_LOG_TRACE( "Processing object list for object at path = %s", FileName );      
+    I2P_LOG_TRACE( "%s: Processing object list", Parser -> SettingsString );      
+
+    Processed.Name = Parser -> SettingsString;
+    Processed.PObj = NULL;
+    Processed.Ambient = Parser -> Settings.Ambient;
+    Processed.Diffuse = Parser -> Settings.Diffuse;
+    Processed.Specular = Parser -> Settings.Specular;
+
+    Processed.CurrentLight = 0;
+    memset(Processed.Lights, 0, sizeof(Processed.Lights));
+
+    TlsSetValue(TLSIndex, &Processed);
     ProcessObjectList(Loaded);
     ReleaseMutex(gMutex);
 
-    Processed = (IPObjectStruct*)TlsGetValue(TLSIndex);
+    I2P_LOG_TRACE( "%s: Triangulating object", Parser -> SettingsString);
 
-    I2P_LOG_TRACE( "Triangulating ITD object at Path = %s", FileName);
-    Parser -> PObj = TriangulateObject(Processed);
+    Parser -> PObj = TriangulateObject(Processed.PObj);
+    memcpy(Parser -> Lights, Processed.Lights, sizeof(Processed.Lights));
 
     IritPrsrFreeObjectList(Loaded);
-    IritPrsrFreeObjectList(Processed);
+    IritPrsrFreeObjectList(Processed.PObj);
 
-    I2P_LOG_TRACE( "Loaded and processed file at Path = %s", FileName);
+    I2P_LOG_TRACE( "%s: Loaded and processed file", Parser -> SettingsString);
 }
 
 static IPObjectStruct *TriangulateObject(IPObjectStruct *PObj)
@@ -119,20 +129,22 @@ static void ProcessObjectList(IPObjectStruct *PObj)
     const CagdRType *R;
     IrtPtType Pt;
     IPObjectStruct *PTmp;
+    ProcessingStruct *Processed;
     int i;
 
+    Processed = (ProcessingStruct*)TlsGetValue(TLSIndex);
     for (; PObj; PObj = PObj -> Pnext) {
 	switch (PObj -> ObjType) {
 	    case IP_OBJ_MATRIX:
-		I2P_LOG_TRACE( "Detected MATRIX in object." );
+		I2P_LOG_TRACE( "%s: Detected MATRIX", Processed -> Name );
 		ProcessMatrix(PObj);
 		break;
 	    case IP_OBJ_POLY:
-		I2P_LOG_TRACE( "Detected POLY in object." );
+		I2P_LOG_TRACE( "%s: Detected POLY", Processed -> Name );
 		ProcessPolygon(PObj);
 		break;
 	    case IP_OBJ_CTLPT:
-		I2P_LOG_TRACE( "Detected CTLPT in object." );
+		I2P_LOG_TRACE( "%s: Detected CTLPT", Processed -> Name );
 		/* Coerce, in place, a control points to a regular point. */
 		R = PObj->U.CtlPt.Coords;
 		IritCagdCoercePointTo(Pt, CAGD_PT_E3_TYPE,
@@ -141,7 +153,7 @@ static void ProcessObjectList(IPObjectStruct *PObj)
 		IRIT_PT_COPY(PObj->U.Pt, Pt);
 		PObj->ObjType = IP_OBJ_POINT;
 	    case IP_OBJ_POINT:
-		I2P_LOG_TRACE( "Detected POINT in object." );
+		I2P_LOG_TRACE( "%s: Detected POINT", Processed -> Name );
 		if (!IP_ATTR_IS_BAD_INT(IritMiscAttrIDGetObjectIntAttrib(PObj,
 		    IRIT_ATTR_CREATE_ID(light_source)))) {
 		    if (IP_ATTR_IS_BAD_INT(IritMiscAttrIDGetObjectIntAttrib(PObj,
@@ -175,14 +187,14 @@ static void ProcessObjectList(IPObjectStruct *PObj)
 		    }
 		}
 		else
-		    ProcessPoint(PObj);
+		    ProcessPoint(PObj, FALSE);
 		break;
 	    case IP_OBJ_VECTOR:
-		I2P_LOG_TRACE( "Detected VECTOR in object." );
-		ProcessPoint(PObj);
+		I2P_LOG_TRACE( "%s: Detected VECTOR", Processed -> Name );
+		ProcessPoint(PObj, TRUE);
 		break;
 	    case IP_OBJ_CURVE:
-		I2P_LOG_TRACE( "Detected CURVE in object." );
+		I2P_LOG_TRACE( "%s: Detected CURVE", Processed -> Name );
 		if (PObj->U.Crvs == NULL)    /* Can occur in the curve editor. */
 		    break;
 		if (CAGD_IS_POWER_CRV(PObj->U.Crvs)) {
@@ -206,7 +218,7 @@ static void ProcessObjectList(IPObjectStruct *PObj)
 		IritGrapDrawCurve(PObj);
 		break;
 	    case IP_OBJ_TRIMSRF:
-		I2P_LOG_TRACE( "Detected TRIMSRF in object." );
+		I2P_LOG_TRACE( "%s: Detected TRIMSRF", Processed -> Name );
 		if (CAGD_IS_POWER_SRF(PObj->U.TrimSrfs->Srf)) {
 		    CagdSrfStruct
 			* Srf = IritCagdCnvrtPwr2BzrSrf(PObj->U.TrimSrfs->Srf);
@@ -233,7 +245,7 @@ static void ProcessObjectList(IPObjectStruct *PObj)
 		    break;
 		}
 	    case IP_OBJ_SURFACE:
-		I2P_LOG_TRACE( "Detected SURFACE in object." );
+		I2P_LOG_TRACE( "%s: Detected SURFACE", Processed -> Name );
 		if (PObj->U.Srfs == NULL)  /* Can occur in the surface editor. */
 		    break;
 		if (CAGD_IS_POWER_SRF(PObj->U.Srfs)) {
@@ -257,15 +269,15 @@ static void ProcessObjectList(IPObjectStruct *PObj)
 		IritGrapDrawSurface(PObj);
 		break;
 	    case IP_OBJ_TRIVAR:
-		I2P_LOG_TRACE( "Detected TRIVAR in object." );
+		I2P_LOG_TRACE( "%s: Detected TRIVAR", Processed -> Name );
 		IritGrapDrawTrivar(PObj);
 		break;
 	    case IP_OBJ_STRING:
-		I2P_LOG_TRACE( "Detected STRING in object." );
-		// IritGrapDrawString(PObj); /* Crashes for some reason? */
+		I2P_LOG_TRACE( "%s: Detected STRING", Processed -> Name );
+		IritGrapDrawString(PObj); 
 		break;
 	    case IP_OBJ_MULTIVAR:
-		I2P_LOG_TRACE( "Detected MULTIVAR in object." );
+		I2P_LOG_TRACE( "%s: Detected MULTIVAR", Processed -> Name );
 		if (PObj->U.MultiVars->Dim < 4) { /* Curve, Surface, Trivar. */
 		    if ((PTmp = IritMiscAttrIDGetObjectObjAttrib(PObj,
 			IRIT_ATTR_CREATE_ID(_coerced))) == NULL) {
@@ -325,15 +337,15 @@ static void ProcessObjectList(IPObjectStruct *PObj)
 		}
 		break;
 	    case IP_OBJ_MODEL:
-		I2P_LOG_TRACE( "Detected MODEL in object." );
+		I2P_LOG_TRACE( "%s: Detected MODEL", Processed -> Name );
 		IritGrapDrawModel(PObj, ProcessObjectList);
 		break;
 	    case IP_OBJ_VMODEL:
-		I2P_LOG_TRACE( "Detected VMODEL in object." );
+		I2P_LOG_TRACE( "%s: Detected VMODEL", Processed -> Name );
 		IritGrapDrawVModel(PObj, ProcessObjectList);
 		break;
 	    case IP_OBJ_TRISRF:
-		I2P_LOG_TRACE( "Detected TRISRF in object." );
+		I2P_LOG_TRACE( "%s: Detected TRISRF", Processed -> Name );
 		if (TRNG_IS_GREGORY_TRISRF(PObj->U.TriSrfs)) {
 		    TrngTriangSrfStruct
 			* TriSrf = IritTrngCnvrtGregory2BzrTriSrf(
@@ -345,7 +357,7 @@ static void ProcessObjectList(IPObjectStruct *PObj)
 		IritGrapDrawTriangSrf(PObj);
 		break;
 	    case IP_OBJ_LIST_OBJ:
-		I2P_LOG_TRACE( "Detected LIST in object." );
+		I2P_LOG_TRACE( "%s: Detected LIST", Processed -> Name );
 		for (i = 0; i < IritPrsrListObjectLength(PObj); i++) {
 		    Tmp = IritPrsrListObjectGet(PObj, i);
 		    ProcessObjectList(Tmp);
@@ -353,7 +365,7 @@ static void ProcessObjectList(IPObjectStruct *PObj)
 
 		break;
 	    default:
-		I2P_LOG_TRACE( "Detected UNSUPPORTED in object." );
+		I2P_LOG_TRACE( "%s: Detected UNSUPPORTED = %d", Processed -> Name,  PObj -> ObjType );
 		break;
 	}
 
@@ -362,7 +374,7 @@ static void ProcessObjectList(IPObjectStruct *PObj)
 
 void ProcessPolygon(IPObjectStruct *PObj)
 {
-    IPObjectStruct *Processed;
+    ProcessingStruct *Processed;
     IPObjectStruct *Cpy;
 
     if (IP_IS_POLYSTRIP_OBJ(PObj))
@@ -372,32 +384,31 @@ void ProcessPolygon(IPObjectStruct *PObj)
 	Cpy -> Tags = PObj -> Tags;
     }
 
-    Processed = (IPObjectStruct*)TlsGetValue(TLSIndex);
+    Processed = (ProcessingStruct*)TlsGetValue(TLSIndex);
+    IRIT_LIST_PUSH(Cpy, Processed -> PObj );
 
-    IRIT_LIST_PUSH(Cpy, Processed);
-    TlsSetValue(TLSIndex, Processed);
-    I2P_LOG_TRACE( "Processed POLYGON in object." );
+    I2P_LOG_TRACE( "%s: Processed POLYGON", Processed -> Name );
 }
 
 static void ProcessMatrix(IPObjectStruct *PObj)
 {
-    IPObjectStruct *Processed;
+    ProcessingStruct *Processed;
     IPObjectStruct *Cpy;
 
-    Processed = (IPObjectStruct*)TlsGetValue(TLSIndex);
     Cpy = IritPrsrCopyObject2(NULL, PObj, FALSE, TRUE);
-    IRIT_LIST_PUSH(Cpy, Processed);
-    TlsSetValue(TLSIndex, Processed);
-    I2P_LOG_TRACE( "Processed MATRIX in object." );
+
+    Processed = (ProcessingStruct*)TlsGetValue(TLSIndex);
+    IRIT_LIST_PUSH(Cpy, Processed -> PObj );
+
+    I2P_LOG_TRACE( "%s: Processed MATRIX", Processed -> Name );
 }
 
-static void ProcessPoint(IPObjectStruct *PObj)
+static void ProcessPoint(IPObjectStruct *PObj, int IsVector)
 {
-    IPObjectStruct *Processed;
+    ProcessingStruct *Processed;
     IPObjectStruct *Cpy;
     IPPolygonStruct *Poly;
     IPVertexStruct *Vert;
-
 
     Vert = IritPrsrAllocVertex2(NULL);
     Vert -> Coord[0] = PObj -> U.Pt[0];
@@ -412,12 +423,17 @@ static void ProcessPoint(IPObjectStruct *PObj)
     Cpy = IritPrsrGenPOINTLISTObject(Poly);
     IritPrsrCopyObjectAuxInfo(Cpy, PObj);
     IP_SET_POINTLIST_OBJ(Cpy);
+    if (IsVector) {
+	IP_SET_OBJ_NAME( Cpy, "%s", "VECTOR" );
+    } else {
+	IP_SET_OBJ_NAME( Cpy, "%s", "POINT" );
+    }
 
-    Processed = (IPObjectStruct*)TlsGetValue(TLSIndex);
-    IRIT_LIST_PUSH(Cpy, Processed);
-    TlsSetValue(TLSIndex, Processed);
+    Processed = (ProcessingStruct*)TlsGetValue(TLSIndex);
 
-    I2P_LOG_TRACE( "Processed POINT in object." );
+    IRIT_LIST_PUSH(Cpy, Processed -> PObj );
+
+    I2P_LOG_TRACE( "%s: Processed POINT", Processed -> Name );
 }
 
 static IPPolygonStruct *PolyStripToTriangles(IPPolygonStruct *Strip)
@@ -489,11 +505,34 @@ static IPObjectStruct *PolyStripToPolyObj(IPObjectStruct *PolyStripObj)
     Ret = IritPrsrGenPOLYObject(Polys);
     IritPrsrCopyObjectAuxInfo(Ret, PolyStripObj);
     IP_SET_POLYGON_OBJ(Ret);
-    I2P_LOG_TRACE( "Converted polygon strips to polygons." );
     return Ret;
 }
 
 static void ProcessLightSource(IritGrapLightType Pos, IrtVecType Colour)
 {
+    ProcessingStruct *Processed;
 
+    Processed = (ProcessingStruct*)TlsGetValue(TLSIndex);
+
+    
+    Processed -> Lights[ Processed -> CurrentLight ].IsEnabled = TRUE;
+
+    Processed -> Lights[ Processed -> CurrentLight ].x = Pos[0];
+    Processed -> Lights[ Processed -> CurrentLight ].y = Pos[1];
+    Processed -> Lights[ Processed -> CurrentLight ].z = Pos[2];
+
+    Processed -> Lights[ Processed -> CurrentLight ].ar = Colour[0] * Processed -> Ambient;
+    Processed -> Lights[ Processed -> CurrentLight ].ag = Colour[1] * Processed -> Ambient;
+    Processed -> Lights[ Processed -> CurrentLight ].ab = Colour[2] * Processed -> Ambient;
+
+    Processed -> Lights[ Processed -> CurrentLight ].dr = Colour[0] * Processed -> Diffuse;
+    Processed -> Lights[ Processed -> CurrentLight ].dg = Colour[1] * Processed -> Diffuse;
+    Processed -> Lights[ Processed -> CurrentLight ].db = Colour[2] * Processed -> Diffuse;
+
+    Processed -> Lights[ Processed -> CurrentLight ].sr = Colour[0] * Processed -> Specular;
+    Processed -> Lights[ Processed -> CurrentLight ].sg = Colour[1] * Processed -> Specular;
+    Processed -> Lights[ Processed -> CurrentLight ].sb = Colour[2] * Processed -> Specular;
+
+    Processed -> CurrentLight++;
+    I2P_LOG_TRACE( "%s: Processed LIGHT", Processed -> Name );
 }

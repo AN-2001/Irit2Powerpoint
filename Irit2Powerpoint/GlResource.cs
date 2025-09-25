@@ -12,34 +12,49 @@ namespace Irit2Powerpoint
             this.NumElements = NumElements;
         }
     }
-
+    
     public class GlResource
     {
         public OpenTK.Matrix4 ViewMat;
         public OpenTK.Matrix4 ProjMat;
-        public OpenTK.Vector3 BBoxMin;
-        public OpenTK.Vector3 BBoxMax;
-        public OpenTK.Vector3 LightPos;
-        public bool PerVertexColour;
-        public bool ContainsView;
-        public bool ContainsProj;
+        public LightBlock[] Lights;
+        public float ZOffset;
         public int VAO, VBO;
-        public GlRenderer.RenderSettings RenderSettings;
 
         /* Mesh records, stores offsets + vertex count. */
         public GlMeshRecord PolygonRecord, PolylineRecord;
 
         public GlResource(ITDParser.ITDMesh Mesh)
         {
-            int 
+            int i,
                 NumVertices = Mesh.Vertecies.Length;
 
             GenMateices(Mesh.ViewMat, Mesh.ProjMat);
             GenRecords(Mesh);
 
-            BBoxMin = new OpenTK.Vector3((float)Mesh.Min[0], (float)Mesh.Min[1], (float)Mesh.Min[2]);
-            BBoxMax = new OpenTK.Vector3((float)Mesh.Max[0], (float)Mesh.Max[1], (float)Mesh.Max[2]);
-            LightPos = new OpenTK.Vector3((float)Mesh.LightPos[0], (float)Mesh.LightPos[1], (float)Mesh.LightPos[2]);
+            ZOffset = (float)Mesh.ZOffset;
+
+            Lights = new LightBlock[ITDParser.I2P_NUM_LIGHTS];
+            for (i = 0; i < ITDParser.I2P_NUM_LIGHTS; i++)
+            {
+                Lights[i].IsEnabled = Mesh.Lights[i].IsEnabled;
+                Lights[i].Position = new OpenTK.Vector3((float)Mesh.Lights[i].x,
+                                                        (float)Mesh.Lights[i].y,
+                                                        (float)Mesh.Lights[i].z);
+                Lights[i].Ambient = new OpenTK.Vector3((float)Mesh.Lights[i].ar,
+                                                       (float)Mesh.Lights[i].ag,
+                                                       (float)Mesh.Lights[i].ab);
+
+                Lights[i].Diffuse = new OpenTK.Vector3((float)Mesh.Lights[i].dr,
+                                                       (float)Mesh.Lights[i].dg,
+                                                       (float)Mesh.Lights[i].db);
+
+                Lights[i].Specular = new OpenTK.Vector3((float)Mesh.Lights[i].sr,
+                                                        (float)Mesh.Lights[i].sg,
+                                                        (float)Mesh.Lights[i].sb);
+
+            }
+
             GL.GenVertexArrays(1, out this.VAO);
             GL.GenBuffers(1, out this.VBO);
 
@@ -141,29 +156,15 @@ namespace Irit2Powerpoint
 
         private void GenMateices(double[] View, double[] Proj)
         {
-            ProjMat = ViewMat = OpenTK.Matrix4.Zero;
-            ContainsProj = ContainsView = false;
+            ViewMat = new OpenTK.Matrix4((float)View[ 0], (float)View[ 1], (float)View[ 2], (float)View[ 3],
+                                         (float)View[ 4], (float)View[ 5], (float)View[ 6], (float)View[ 7],
+                                         (float)View[ 8], (float)View[ 9], (float)View[10], (float)View[11],
+                                         (float)View[12], (float)View[13], (float)View[14], (float)View[15]);
 
-            if (View != null)
-            {
-                ViewMat = new OpenTK.Matrix4((float)View[ 0], (float)View[ 1], (float)View[ 2], (float)View[ 3],
-                                             (float)View[ 4], (float)View[ 5], (float)View[ 6], (float)View[ 7],
-                                             (float)View[ 8], (float)View[ 9], (float)View[10], (float)View[11],
-                                             (float)View[12], (float)View[13], (float)View[14], (float)View[15]);
-                Logger.GetInstance().Trace($"Mesh contains view matrix.");
-                ContainsView = true;
-            }
-
-            if (Proj != null)
-            {
-                ProjMat = new OpenTK.Matrix4((float)Proj[ 0], (float)Proj[ 1], (float)Proj[ 2], (float)Proj[ 3],
-                                             (float)Proj[ 4], (float)Proj[ 5], (float)Proj[ 6], (float)Proj[ 7],
-                                             (float)Proj[ 8], (float)Proj[ 9], (float)Proj[10], (float)Proj[11],
-                                             (float)Proj[12], (float)Proj[13], (float)Proj[14], (float)Proj[15]);
-                Logger.GetInstance().Trace($"Mesh contains projection matrix.");
-                ContainsProj = true;
-            }
-
+            ProjMat = new OpenTK.Matrix4((float)Proj[ 0], (float)Proj[ 1], (float)Proj[ 2], (float)Proj[ 3],
+                                         (float)Proj[ 4], (float)Proj[ 5], (float)Proj[ 6], (float)Proj[ 7],
+                                         (float)Proj[ 8], (float)Proj[ 9], (float)Proj[10], (float)Proj[11],
+                                         (float)Proj[12], (float)Proj[13], (float)Proj[14], (float)Proj[15]);
         }
 
         private void GenRecords(ITDParser.ITDMesh Mesh)
