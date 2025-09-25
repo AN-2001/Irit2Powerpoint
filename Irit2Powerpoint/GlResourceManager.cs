@@ -41,7 +41,9 @@ namespace Irit2Powerpoint
     {
         private const int TASK_COUNT = 64;
         private Dictionary<string, GlResource> ResourceMap;
-        private Dictionary<string, ITDParser.ITDMesh> ResultMap;
+        private HashSet<string> IsLoadingSet;
+        private Dictionary<string, ITDParser.ITDMesh?> ResultMap;
+        private int NumActiveRequests;
         private Task[] Tasks;
         private Queue<LoadRequest> LoadQueue;
         private Mutex Mutex;
@@ -50,9 +52,11 @@ namespace Irit2Powerpoint
         {
             Mutex = new Mutex();
             ResourceMap = new Dictionary<string, GlResource>();
-            ResultMap = new Dictionary<string, ITDParser.ITDMesh>();
+            ResultMap = new Dictionary<string, ITDParser.ITDMesh?>();
             Tasks = new Task[TASK_COUNT];
             LoadQueue = new Queue<LoadRequest>();
+            IsLoadingSet = new HashSet<string>();
+            NumActiveRequests = 0;
 
             Logger.GetInstance().Trace("Resource manager setup done.");
         }
@@ -70,32 +74,44 @@ namespace Irit2Powerpoint
             Key = BuildResourceKey(Request.GivenPath, Request.ImportSettings);
 
             /* Exit if we already loaded this key. */
-            if (ResourceMap.ContainsKey(Key) || ResultMap.ContainsKey(Key))
+            if (ResourceMap.ContainsKey(Key) || IsLoadingSet.Contains(Key))
                 return true;
 
             for (i = 0; i < TASK_COUNT; i++) {
                 if (Tasks[i] == null || Tasks[i].IsCompleted)
                 {
+                    IsLoadingSet.Add(Key);
                     Tasks[i] = Task.Factory.StartNew(
                         () =>
                         {
-                            ITDParser.ITDMesh Mesh;
+                            ITDParser.ITDMesh? Mesh;
 
                             Logger.GetInstance().Trace($"Queued LoadRequest for Path = {Request.Path}, Settings = {Request.ImportSettings}");
+
+                            Mutex.WaitOne();
+                            NumActiveRequests++;
+                            Mutex.ReleaseMutex();
+                            
+
                             try
                             {
                                 Mesh = ITDParser.Parse(Request.Path, Request.ImportSettings);
                             } catch (ParseException)
                             {
-                                Logger.GetInstance().Error($"Encountered parsing error while handling request: [{Request.Path}, {Request.ImportSettings}]");
-                                return;
+                                Mesh = null;
                             }
+
+                            Logger.GetInstance().Trace($"Completed LoadRequest for Path = {Request.Path}, Settings = {Request.ImportSettings}");
 
                             Mutex.WaitOne();
                             ResultMap[Key] = Mesh;
+                            NumActiveRequests--;
+                            if (NumActiveRequests > 0)
+                                Logger.GetInstance().Info($"Loaded object, there are {NumActiveRequests} objects remaining.");
+                            else
+                                Logger.GetInstance().Info($"Loaded all objects.");
                             Mutex.ReleaseMutex();
 
-                            Logger.GetInstance().Trace($"Completed LoadRequest for Path = {Request.Path}, Settings = {Request.ImportSettings}");
                         });
                     return true;
                 }
@@ -139,7 +155,7 @@ namespace Irit2Powerpoint
             {
                 if (!InUse.Contains(Pair.Key))
                 {
-                    Pair.Value.Destroy();
+                    Pair.Value?.Destroy();
                     ToDelete.Add(Pair.Key);
                 }
             }
@@ -150,7 +166,7 @@ namespace Irit2Powerpoint
         public GlResource GetResource(string Key)
         {
             GlResource Ret;
-            ITDParser.ITDMesh Mesh;
+            ITDParser.ITDMesh? Mesh;
 
             TryLoadFromQueue();
             if (ResourceMap.ContainsKey(Key))
@@ -162,10 +178,14 @@ namespace Irit2Powerpoint
             /* If it doesn't exist then we're either stil loading or we 
              * need to finalize. */
             Mutex.WaitOne();
-            if (!ResultMap.ContainsKey(Key))
+            if (!ResultMap.ContainsKey(Key) && IsLoadingSet.Contains(Key))
             {
                 Mutex.ReleaseMutex();
                 throw new StillLoadingException();
+            } else if (!ResultMap.ContainsKey(Key) && !IsLoadingSet.Contains(Key)) { 
+                Mutex.ReleaseMutex();
+                Logger.GetInstance().Error($"Attempting to fetch unknown key = {Key}");
+                throw new UnknownKeyException();
             }
 
             Mesh = ResultMap[Key];
@@ -174,8 +194,13 @@ namespace Irit2Powerpoint
 
             Logger.GetInstance().Trace($"Fetched resource at key = {Key}");
 
-            Ret = new GlResource(Mesh);
+            if (Mesh != null)
+                Ret = new GlResource((ITDParser.ITDMesh)Mesh);
+            else
+                Ret = null;
+
             ResourceMap[Key] = Ret;
+            IsLoadingSet.Remove(Key);
             return Ret;
         }
 
@@ -185,7 +210,7 @@ namespace Irit2Powerpoint
             Task[] Filtered = Tasks.Where(t=>t != null).ToArray();
             Task.WaitAll(Filtered);
             foreach (KeyValuePair<string, GlResource> Pair in ResourceMap)
-                Pair.Value.Destroy();
+                Pair.Value?.Destroy();
             Logger.GetInstance().Trace($"Destroyed GlResourceManager");
         }
     }

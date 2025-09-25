@@ -12,10 +12,9 @@ namespace Irit2Powerpoint
 {
     public class I2PSlideshowWindowInfo
     {
-        public int x, y, w, h, WinLeft, WinTop, WinWidth, WinHeight;
-        public float SlideWidth, SlideHeight,
-              LetterBoxOffsetX, LetterBoxOffsetY,
-              AspectScale, ZoomFactor;
+        public int x, y, w, h, WinLeft, WinTop, WinWidth, WinHeight,
+                   LetterBoxOffsetX, LetterBoxOffsetY, EffectiveWidth, EffectiveHeight;
+        public int AspectScale,  SlideWidth, SlideHeight;
     }
 
     public struct I2PSlideshowCache
@@ -38,6 +37,7 @@ namespace Irit2Powerpoint
         private PowerPoint.SlideShowWindow ActiveSlideShowWin;
         private Timer WindowStateTimer;
         private I2PSlideshowCache SlideshowCache;
+        private bool HasHiddenShapes;
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
@@ -73,6 +73,7 @@ namespace Irit2Powerpoint
             SlideshowCache.ScreenCropCache = null;
             SlideshowCache.InfoCache = null;
             SlideshowCache.HasBeenBuilt = false;
+            HasHiddenShapes = false;
 
             Logger.GetInstance().Trace("I2P setup done.");
         }
@@ -94,15 +95,6 @@ namespace Irit2Powerpoint
             if (SlideContainsSettings(Slide))
                 return Slide.Tags[__IMPORT_SETTINGS_KEY__];
             return "";
-        }
-
-        public void SetCurrentImportSettings(string ImportSettings)
-        {
-            PowerPoint.Slide CurrentSlide = Application.ActiveWindow.View.Slide;
-
-            CurrentSlide.Tags.Add(__IMPORT_SETTINGS_KEY__, ImportSettings);
-            if (SlideContainsDummy(CurrentSlide))
-                InitDummyRect(CurrentSlide.Tags[__PATH_KEY__]);
         }
 
         public void OnSave(PowerPoint.Presentation Presentation)
@@ -143,11 +135,6 @@ namespace Irit2Powerpoint
         public static GlResourceManager GetResourceManager()
         {
             return Globals.I2P.ResourceManager;
-        }
-
-        public GlRenderer.RenderSettings GetRenderSettingsFromActiveSlide()
-        {
-            return GlRenderer.DefaultRenderSettings;
         }
 
         private List<LoadRequest> GetLoadRequestsInUse()
@@ -200,9 +187,10 @@ namespace Irit2Powerpoint
 
         public void SlideChanged(PowerPoint.SlideRange SldRange)
         {
-            try { 
-            int i;
-            PowerPoint.Shape Dummy;
+            try
+            {
+                int i;
+                PowerPoint.Shape Dummy;
 
                 /* Make sure everything is visible as we hide them after a slideshow. */
                 for (i = 1; i <= Application.ActivePresentation.Slides.Count; i++)
@@ -213,7 +201,9 @@ namespace Irit2Powerpoint
                     ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
                 }
 
-            } catch(Exception ex)
+                HasHiddenShapes = false;
+            }
+            catch (Exception ex)
             {
                 Logger.GetInstance().Error($"Caught exception: {ex}");
             }
@@ -234,19 +224,18 @@ namespace Irit2Powerpoint
             Dummy.Line.DashStyle = MsoLineDashStyle.msoLineSolid;
         }
 
-        public void InitDummyRect(string Path)
+        public void InitDummyRect(string Path, string Settings)
         {
             LoadRequest Request;
             PowerPoint.Shape Dummy;
             PowerPoint.Slide
                 Slide = Application.ActiveWindow.View.Slide;
-            string ImportSettings = Slide.Tags[__IMPORT_SETTINGS_KEY__];
 
             try
             {
                 Request = new LoadRequest(Application.ActivePresentation.Path,
                                           Path,
-                                          ImportSettings);
+                                          Settings);
             } catch(IOException Ex)
             {
                 Logger.GetInstance().Error($"Encoutered an error while handling load request {Slide.Tags[__IMPORT_SETTINGS_KEY__]}: {Ex})");
@@ -255,6 +244,8 @@ namespace Irit2Powerpoint
 
             Slide.Tags.Add(__DUMMY_KEY__ , "true");
             Slide.Tags.Add(__PATH_KEY__, Path);
+            Slide.Tags.Add(__IMPORT_SETTINGS_KEY__, Settings);
+
             ResourceManager.QueueLoadFromDisk(Request);
             ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
             if (!GetDummyFromSlide(Slide, out Dummy))
@@ -302,31 +293,13 @@ namespace Irit2Powerpoint
                 GlWindow.SetVisibility(false);
 
                 SlideshowCache.HasBeenBuilt = false;
+                HasHiddenShapes = false;
 
                 Logger.GetInstance().Trace("Ended slideshow.");
                 ResourceManager.ConsistencyCleanup(GetKeysInUse().ToArray());
             } catch(Exception ex)
             {
                 Logger.GetInstance().Error($"Caught exception: {ex}");
-            }
-        }
-
-        /* Helpers to use to position the window. */
-        int PointToPixelX(float Point, IntPtr HWnd)
-        {
-            using (Graphics g = Graphics.FromHwnd(HWnd))
-            {
-                return (int)((Point * g.DpiX) / 72.0f);
-            }
-
-        }
-
-        /* Helpers to use to position the window. */
-        int PointToPixelY(float Point, IntPtr HWnd)
-        {
-            using (Graphics g = Graphics.FromHwnd(HWnd))
-            {
-                return (int)((Point * g.DpiY) / 72.0f);
             }
         }
 
@@ -340,7 +313,7 @@ namespace Irit2Powerpoint
                 TempDir = Path.GetTempPath(),
                 ImagePath = Path.Combine(TempDir, "slide.png");
 
-            Logger.GetInstance().Trace($"Getting screenshot for slide={Slide.SlideIndex} at Rect={CropRect}");
+            Logger.GetInstance().Trace($"Getting screenshot for slide={Slide.SlideIndex} at CropRect = {CropRect} from SlideRect = {SlideRect}");
 
             Slide.Export(ImagePath, "png",
                          SlideRect.Width,
@@ -373,11 +346,15 @@ namespace Irit2Powerpoint
         {
             I2PSlideshowWindowInfo Info;
             WinAPIDef.RECT Rect;
+            int LetterBoxX, LetterBoxY, EffectiveWidth, EffectiveHeight;
+            int TotalHeight, TotalWidth;
+            int F = 1000;
+            int FF = 1000000;
 
             Info = new I2PSlideshowWindowInfo();
 
-            Info.SlideWidth = PointToPixelX(Wn.Presentation.PageSetup.SlideWidth, (IntPtr)Wn.HWND);
-            Info.SlideHeight = PointToPixelY(Wn.Presentation.PageSetup.SlideHeight, (IntPtr)Wn.HWND);
+            Info.SlideWidth = (int)(Wn.Presentation.PageSetup.SlideWidth * F);
+            Info.SlideHeight = (int)(Wn.Presentation.PageSetup.SlideHeight * F);
 
             WinAPIDclr.GetWindowRect((IntPtr)Wn.HWND, out Rect);
 
@@ -386,37 +363,99 @@ namespace Irit2Powerpoint
             Info.WinWidth = Rect.Right - Rect.Left;
             Info.WinHeight = Rect.Bottom - Rect.Top;
 
-            Info.AspectScale = Math.Min(Info.WinWidth / Info.SlideWidth, Info.WinHeight / Info.SlideHeight);
+            Info.AspectScale = Math.Min((Info.WinWidth * FF) / Info.SlideWidth,
+                                        (Info.WinHeight * FF) / Info.SlideHeight);
+
+            EffectiveWidth = (Info.SlideWidth * Info.AspectScale) / FF;
+            EffectiveHeight = (Info.SlideHeight * Info.AspectScale) / FF;
 
             /* Calculate the letter box size using the aspect ratios. */
 
-            Info.LetterBoxOffsetX = (Info.WinWidth - Info.SlideWidth * Info.AspectScale) / 2.0f;
-            Info.LetterBoxOffsetY = (Info.WinHeight - Info.SlideHeight * Info.AspectScale) / 2.0f;
-
-            /* Include the zoom factor when calculating positions. */
-            Info.ZoomFactor = Wn.View.Zoom / 100f;
+            LetterBoxX = (Info.WinWidth - EffectiveWidth) / 2;
+            LetterBoxY = (Info.WinHeight - EffectiveHeight) / 2;
 
             /* Calculate the window's shape and send it to the renderer. */
 
-            Info.x = PointToPixelX(Dummy.Left * Info.ZoomFactor, (IntPtr)Wn.HWND);
-            Info.y = PointToPixelY(Dummy.Top * Info.ZoomFactor, (IntPtr)Wn.HWND);
-            Info.w = PointToPixelX(Dummy.Width * Info.ZoomFactor, (IntPtr)Wn.HWND);
-            Info.h = PointToPixelY(Dummy.Height * Info.ZoomFactor, (IntPtr)Wn.HWND);
+            Info.x = ((int)(Dummy.Left * F) * Info.AspectScale) / FF + LetterBoxX;
+            Info.y = ((int)(Dummy.Top * F) * Info.AspectScale) / FF + LetterBoxY;
+            Info.w = ((int)(Dummy.Width * F) * Info.AspectScale) / FF;
+            Info.h = ((int)(Dummy.Height * F) * Info.AspectScale) / FF;
 
-            /* Account for black boxes when the aspect ratio isn't hte same. */
-            Info.x = (int)(Info.x + Info.LetterBoxOffsetX);
-            Info.y = (int)(Info.y + Info.LetterBoxOffsetY);
+            Info.LetterBoxOffsetX = LetterBoxX;
+            Info.LetterBoxOffsetY = LetterBoxY;
+            Info.EffectiveWidth = EffectiveWidth;
+            Info.EffectiveHeight = EffectiveHeight;
+
+            TotalWidth = Info.EffectiveWidth + Info.LetterBoxOffsetX * 2;
+            Info.LetterBoxOffsetX += (Info.WinWidth - TotalWidth) / 2 + (Info.WinWidth - TotalWidth) % 2;
+
+
+            TotalHeight = Info.EffectiveHeight + Info.LetterBoxOffsetY * 2;
+            Info.LetterBoxOffsetY += (Info.WinHeight - TotalHeight) / 2 + (Info.WinHeight - TotalHeight) % 2;
 
             return Info;
         }
 
-        void InitSlideshowCache()
+        void InitSlideshowCache(PowerPoint.SlideShowWindow Wn)
         {
+            PowerPoint.Shape Dummy;
+            I2PSlideshowWindowInfo SlideInfo;
+            Rectangle CropRect, SlideRect;
+
+            Logger.GetInstance().Trace("Building slideshow cahce.");
+
             if (SlideshowCache.ScreenCropCache != null)
                 foreach (Bitmap img in SlideshowCache.ScreenCropCache)
                     img?.Dispose();
             SlideshowCache.InfoCache = new List<I2PSlideshowWindowInfo>();
             SlideshowCache.ScreenCropCache = new List<Bitmap>();
+
+
+            foreach (PowerPoint.Slide Slide in this.Application.ActivePresentation.Slides)
+            {
+                /* grab screen crops and window positions. */
+                if (GetDummyFromSlide(Slide, out Dummy))
+                {
+                    SlideInfo = CalculateWindowInfo(Wn, Dummy);
+
+                    CropRect = new Rectangle(SlideInfo.x, SlideInfo.y, SlideInfo.w, SlideInfo.h);
+                    SlideRect = new Rectangle(SlideInfo.LetterBoxOffsetX,
+                                              SlideInfo.LetterBoxOffsetY,
+                                              SlideInfo.EffectiveWidth,
+                                              SlideInfo.EffectiveHeight);
+                    SlideshowCache.InfoCache.Add(CalculateWindowInfo(Wn, Dummy));
+                    /* Possibly multi-thread this? could mess with powerpoint COM setup as it might not be friendly to multi-threading. */
+                    SlideshowCache.ScreenCropCache.Add(GetScreenCrop(Slide, SlideRect, CropRect));
+                }
+                else
+                {
+                    SlideshowCache.InfoCache.Add(null);
+                    SlideshowCache.ScreenCropCache.Add(null);
+                }
+            }
+
+            SlideshowCache.HasBeenBuilt = true;
+            Logger.GetInstance().Trace("Done populating slideshow cache.");
+        }
+
+        void HideI2PShapes(PowerPoint.SlideShowWindow Wn)
+        {
+
+            PowerPoint.Shape Dummy;
+            Logger.GetInstance().Trace("Hiding all I2P shapes." );          
+            foreach (PowerPoint.Slide Slide in this.Application.ActivePresentation.Slides)
+            {
+                /* Hide the shape and grab screen crops. */
+                if (GetDummyFromSlide(Slide, out Dummy))
+                    Dummy.Visible = MsoTriState.msoFalse;
+            }
+
+            HasHiddenShapes = true;
+
+            Logger.GetInstance().Trace( "Hid all I2P shapes, cancelling initial rendering event and triggerring another." );
+
+            /* Force slide rerender. */
+            Wn.View.GotoSlide(Wn.View.Slide.SlideIndex, MsoTriState.msoTrue);
         }
 
         /* Called when we go to a new slide in a slideshow. */
@@ -426,50 +465,21 @@ namespace Irit2Powerpoint
             I2PSlideshowWindowInfo SlideInfo;
             Bitmap ScreenCrop; 
             string Path, Key;
-            GlRenderer.RenderSettings RenderSettings;
             string ImportSettings;
-            Rectangle CropRect, SlideRect;
             /* VERY UGLY BUT POWERPOINT SILENTLY IGNORES EXCEPTIONS.... */
             try
             {
 
-                /* If we're the first slide in the slideshow perform our pre-processing. */
-                if (!SlideshowCache.HasBeenBuilt)
+                if (!HasHiddenShapes)
                 {
-
-
-                    Logger.GetInstance().Trace("Detected first slide in slideshow, prepearing slideshow cache.");
-                    InitSlideshowCache();
-
-                    foreach (PowerPoint.Slide Slide in this.Application.ActivePresentation.Slides)
-                    {
-                        /* Hide the shape and grab screen crops. */
-                        if (GetDummyFromSlide(Slide, out Dummy))
-                        {
-                            Dummy.Visible = MsoTriState.msoFalse;
-                            SlideInfo = CalculateWindowInfo(Wn, Dummy);
-
-                            CropRect = new Rectangle(SlideInfo.x, SlideInfo.y, SlideInfo.w, SlideInfo.h);
-                            SlideRect = new Rectangle((int)SlideInfo.LetterBoxOffsetX,
-                                                      (int)SlideInfo.LetterBoxOffsetY,
-                                                      (int)SlideInfo.SlideWidth,
-                                                      (int)SlideInfo.SlideHeight);
-                            SlideshowCache.InfoCache.Add(CalculateWindowInfo(Wn, Dummy));
-                            SlideshowCache.ScreenCropCache.Add(GetScreenCrop(Slide, SlideRect, CropRect));
-                        }
-                        else
-                        {
-                            SlideshowCache.InfoCache.Add(null);
-                            SlideshowCache.ScreenCropCache.Add(null);
-                        }
-                    }
-
-                    SlideshowCache.HasBeenBuilt = true;
-                    Logger.GetInstance().Trace("Done populating slideshow cache.");
-
-                    /* Force slide rerender. */
-                    Wn.View.GotoSlide(Wn.View.Slide.SlideIndex, MsoTriState.msoTrue);
+                    /* Hide all shapes, this will trigger this same event, but the boolean above will protect us. */
+                    HideI2PShapes(Wn);
+                    return; /* No point continuing with this event, the function above will retrigger it. */
                 }
+
+                /* Build the slideshow cache to speed up further accesses to screenshots + window positions. */
+                if (!SlideshowCache.HasBeenBuilt)
+                    InitSlideshowCache( Wn );
 
 
                 WindowStateTimer.Stop();
@@ -494,10 +504,9 @@ namespace Irit2Powerpoint
                     WindowStateTimer.Start();
 
                     Path = Wn.View.Slide.Tags[__PATH_KEY__];
-                    RenderSettings = GlRenderer.DefaultRenderSettings;
                     ImportSettings = Wn.View.Slide.Tags[__IMPORT_SETTINGS_KEY__];
                     Key = ResourceManager.BuildResourceKey(Path, ImportSettings);
-                    GlWindow.GetRenderer().SetActiveModel(Key, RenderSettings);
+                    GlWindow.GetRenderer().SetActiveModel(Key);
 
                     GlWindow.SetVisibility(true);
                     Logger.GetInstance().Trace($"Sat window to location=({SlideInfo.x},{SlideInfo.y}) with size=({SlideInfo.w},{SlideInfo.h}), using resource key={Key}");

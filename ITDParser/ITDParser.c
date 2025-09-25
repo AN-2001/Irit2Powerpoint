@@ -19,24 +19,36 @@
 #define ITD_PRSR_MALLOC(Size) ((Size) ? malloc(Size) : NULL)
 #define ITD_PRSR_ZAP(Ptr, Size) ((Ptr) && memset(Ptr, 0, sizeof(*(Ptr)) * Size))
 
-static void ParserHandleArgs(ParserStruct* Parser, char* Settings);
+IRIT_STATIC_DATA const IrtHmgnMatType
+    DefaultIsometricMat = {		     /* Isometric view, by default. */
+	{ -0.707107, -0.408248, 0.577350, 0.000000 },
+	{  0.707107, -0.408248, 0.577350, 0.000000 },
+	{  0.000000,  0.816496, 0.577350, 0.000000 },
+	{  0.000000,  0.000000, 0.000000, 1.000000 }
+    };
+
+
+void ApplyIsometricMatPreservingScaleAndTranslation(IrtHmgnMatType Mat);
+void CalculateObjectNormalizer(IPObjectStruct *PObj, IrtHmgnMatType Mat);
+
+static int ParserHandleArgs(ParserStruct* Parser, char* Settings);
 static void ParserTraverseObjects(ParserStruct* Parser);
 static void ParserHandlePoly(ParserStruct* Parser, IPObjectStruct* PObj);
 static void ParserPostProcess(ParserStruct* Parser);
 static void ParserSubmitNormal(ParserStruct* Parser, double nx, double ny, double nz);
 static void ParserSubmitLineVertex(ParserStruct* Parser, VertexStruct v);
 static void ParserSubmitTriangleVertex(ParserStruct* Parser, VertexStruct v);
-static void ParserSubmitPointVertex(ParserStruct* Parser, VertexStruct v);
+static void ParserSubmitPointVertex(ParserStruct* Parser, VertexStruct v, int IsVector);
 static MeshStruct* ParserFinalize(ParserStruct* Parser);
 static void GetUV(IPVertexStruct* Vert, double* u, double* v);
 static int GetColor(IPAttributeStruct* Attr, double* r, double* g, double* b);
 static void BuildArgv(char* String, int* Argc, char **Argv);
+static void SetClippingPlanes(ParserStruct *Parser, IrtHmgnMatType ProjectionMat, double ZMin, double ZMax);
 
 IRIT_STATIC_DATA const char
-* ConfigStr = "I2P n%- N%- I%-#IsoLines!s F%-PlgnOpti|PlgnFineNess!d!F f%-PllnOpti|PllnFineNess!d!F L%-Normal|Size!F c%-Override?|r,g,b|(Polyline)!d!s C%-Override?|r,g,b|(Polygon)!d!s W%-Wiresetup!d l%-x,y,z|(Light)!s p%-Point|Size!F M%- V%- P%- t%- o%- w%-";
+* ConfigStr = "I2P n%- N%- I%-#IsoLines!s F%-PlgnOpti|PlgnFineNess!d!F f%-PllnOpti|PllnFineNess!d!F L%-Normal|Size!F c%-Override?|r,g,b|(Polyline)!d!s C%-Override?|r,g,b|(Polygon)!d!s W%-Wiresetup!d S%-x,y,z{,a,d,s}|(Light)!s p%-Point|Size!F Z%-ZMin|ZMax!F!F z%-ZOffset!F M%- V%- P%- t%- o%- w%-";
 
 LoggerFunc GlobalLogger = NULL;
-
 
 IRIT_STATIC_DATA const ParserSettingsStruct
     DefaultSettings = {
@@ -46,18 +58,24 @@ IRIT_STATIC_DATA const ParserSettingsStruct
 	FALSE, {1, 0, 0}, /* OverridePolygonCol - Polygon Colour */
 	FALSE, /* PolygonOptiApprox */
 	SYMB_CRV_APPROX_CURVATURE, /* PolylineOptiApprox */
-	FALSE, /* DrawSurfacePoly */
+	TRUE, /* DrawSurfacePoly */
 	FALSE, /* DrawSurfaceMesh */
 	FALSE, /* DrawModelsMonolithic */
 	FALSE, /* DrawSurfaceOrient */
-	0, /* DrawWireSetup */
+	1, /* DrawWireSetup */
 	FALSE, /* FlipNormalOrient */
 	FALSE, /* Wireframe */
+	FALSE, /* ChangeClippingPlanes */
 	1, /* NormalSize */
 	40, /* PlgnFineness */
 	40, /* PllnFineness */
-	{-10, 10, -10}, /* LightPos */
-	0.05 /* PointSize */
+	{1, 2, 5}, /* LightPos */
+	0.05, /* PointSize */
+	-1, 1, /* ZMin, ZMax */
+	0.001, /* ZOffset */
+	0.3, /* Ambient */
+	1, /* Diffuse */
+	1, /* Specular */
     };
 
 ITDPARSER_API void ITDParserSetLogger(LoggerFunc Logger)
@@ -70,34 +88,49 @@ ITDPARSER_API MeshStruct* ITDParserParse(const char* Path, const char* Settings)
     ParserStruct Parser;
     char *SettingsCpy;
 
-    
     I2P_LOG_TRACE( "Handling parse request for Path = %s, Settings = %s", Path, Settings);
 
     memset(&Parser, 0, sizeof(Parser));
+
+    Parser.BBox[0][0] =  INFINITY; Parser.BBox[0][1] =  INFINITY; Parser.BBox[0][2] =  INFINITY;
+    Parser.BBox[1][0] = -INFINITY; Parser.BBox[1][1] = -INFINITY; Parser.BBox[1][2] = -INFINITY;
+
+    /* Initialize matrices. */
+    IritMiscMatGenUnitMat(Parser.InternalViewMat);
+
+    /* Orthographic Projection. */
+    IritMiscMatGenUnitMat(Parser.InternalProjMat);
+
+    /* Process command line arguemnts into the parser struct. */
     SettingsCpy = _strdup(Settings);
-    ParserHandleArgs(&Parser, SettingsCpy);
+    if (!ParserHandleArgs(&Parser, SettingsCpy)) {
+	free(SettingsCpy);
+	return NULL;
+    }
     free(SettingsCpy);
 
-    I2P_LOG_TRACE( "Handled parsser args for Path = %s, Settings = %s", Path, Settings);
-
-    I2P_LOG_TRACE( "Loading file at Path = %s", Path );
+    I2P_LOG_TRACE( "%s: Loading file at Path = %s", Parser.SettingsString);
+    /* Load the file and preprocess it into a consistent structure + triangulate it. */
     LoadFromFile(&Parser, Path);
     if (!Parser.PObj) {
-	I2P_LOG_ERROR( "Loading object at Path = %s failed.", Path );
+	I2P_LOG_ERROR( "%s: could not get the PObject from the provided path", Parser.SettingsString);
 	return NULL;
     }
 
-    I2P_LOG_TRACE( "Traversing object and aggregating mesh info at Path = %s", Path );
+    I2P_LOG_TRACE( "%s: Traversing object and aggregating mesh info", Parser.SettingsString);
+    /* Extract the mesh out of the PObj. */
     ParserTraverseObjects(&Parser);
 
-    I2P_LOG_TRACE( "Post processing mesh at Path = %s", Path );
+    I2P_LOG_TRACE( "%s: Post processing mesh", Parser.SettingsString );
+    /* Post process the mesh. */
     ParserPostProcess(&Parser);
 
-    I2P_LOG_TRACE( "Finalizing mesh at Path = %s and emitting back to I2P", Path );
+    I2P_LOG_TRACE( "%s: Finalizing mesh and emitting back to I2P", Parser.SettingsString );
+    /* Finalize the mesh for sending back into c# */
     return ParserFinalize(&Parser);
 }
 
-static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
+static int ParserHandleArgs(ParserStruct* Parser, char* Settings)
 {
     int 
 	IsolineFlag = FALSE,
@@ -107,18 +140,21 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
 	PolygonColourFlag = FALSE,
 	PolylineColourFlag = FALSE,
 	SurfaceWireSetupFlag = FALSE,
-	LightPosFlag = FALSE,
-	PointSizeFlag = FALSE;
+	LightFlag = FALSE,
+	PointSizeFlag = FALSE,
+	ZOffsetFlag = FALSE;
     char
 	*IsolineString = NULL,
 	*PolygonString = NULL,
 	*PolylineString = NULL,
-	*LightPosString = NULL;
+	*LightString = NULL;
     ParserSettingsStruct* PSettings = &(Parser->Settings);
     int Err;
     char *Argv[1024];
     char ErrorMessage[4096];
     int Argc;
+
+    Parser -> SettingsString = _strdup(Settings);
 
     Argc = 0;
     memset(Argv, 0, sizeof(Argv));
@@ -134,8 +170,10 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
 	&PolylineColourFlag, &PSettings -> OverridePolylineCol, &PolylineString,
 	&PolygonColourFlag, &PSettings -> OverridePolygonCol, &PolygonString,
 	&SurfaceWireSetupFlag, &PSettings->SurfaceWireSetup,
-	&LightPosFlag, &LightPosString,
+	&LightFlag, &LightString,
 	&PointSizeFlag, &PSettings->PointSize,
+	&PSettings -> ChangeClippingPlanes, &PSettings -> ZMin, &PSettings -> ZMax,
+	&ZOffsetFlag, &PSettings -> ZOffset,
 	&PSettings -> DrawSurfaceMesh,
 	&PSettings -> DrawModelsMonolithic,
 	&PSettings -> DrawSurfacePoly,
@@ -143,18 +181,21 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
 	&PSettings -> FlipNormalOrient,
 	&PSettings -> Wireframe, NULL))) {
 	IritMiscStringErrMsg(Err, ErrorMessage);
-	I2P_LOG_ERROR( "Invalid args provided to parser: error = %s, Params = %s", ErrorMessage, Settings );
-	return;
+	I2P_LOG_ERROR( "%s: Invalid args provided to parser error = %s", Parser -> SettingsString, ErrorMessage);
+	return FALSE;
     }
 
-    if (!SurfaceWireSetupFlag)
-	PSettings -> SurfaceWireSetup = 0;
+    if (PSettings -> ChangeClippingPlanes &&
+	PSettings -> ZMin >= PSettings -> ZMax) {
+	I2P_LOG_ERROR( "%s: Invalid Input ZMin must be strictly less than ZMax: ZMin = %f, ZMax = %f", Parser -> SettingsString,PSettings -> ZMin, PSettings -> ZMax);
+	return FALSE;
+    }
 
     if (PolylineColourFlag) {
 	int r, g, b;
-	if (PolylineString && (sscanf(PolylineString, "%d,%d,%d", &r, &g, &b) != 3)) {
-	    I2P_LOG_ERROR( "Could not parse PolylineString: got = %s, expected = %s, Params = %s", PolylineString, "%d,%d,%d", Settings);
-	    return;
+	if (sscanf(PolylineString, "%d,%d,%d", &r, &g, &b) != 3) {
+	    I2P_LOG_ERROR( "%sL Could not parse PolylineString got = %s, expected = %s", Parser -> SettingsString, PolylineString, "%d,%d,%d" );
+	    return FALSE;
 	}
 	PSettings -> PolylineCol[0] = r / 255.0;
 	PSettings -> PolylineCol[1] = g / 255.0;
@@ -163,9 +204,9 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
 
     if (PolygonColourFlag) {
 	int r, g, b;
-	if (PolygonString && (sscanf(PolygonString, "%d,%d,%d", &r, &g, &b) != 3)) {
-	    I2P_LOG_ERROR( "Could not parse PolygonString: got = %s, expected = %s, Params = %s", PolygonString, "%d,%d,%d", Settings);
-	    return;
+	if (sscanf(PolygonString, "%d,%d,%d", &r, &g, &b) != 3) {
+	    I2P_LOG_ERROR( "%s: Could not parse PolygonString got = %s, expected = %s", Parser -> SettingsString, PolygonString, "%d,%d,%d");
+	    return FALSE;
 	}
 	PSettings -> PolygonCol[0] = r / 255.0;
 	PSettings -> PolygonCol[1] = g / 255.0;
@@ -174,73 +215,69 @@ static void ParserHandleArgs(ParserStruct* Parser, char* Settings)
 
 
     if (IsolineFlag) {
-	if (IsolineString &&
-	    (sscanf(IsolineString, "%d,%d,%d", &PSettings->Isolines[0],
+	if ((sscanf(IsolineString, "%d,%d,%d", &PSettings->Isolines[0],
 	    &PSettings -> Isolines[1],
 	    &PSettings -> Isolines[2]) != 3) &&
-	    (sscanf(IsolineString, "%d %d %d", &PSettings -> Isolines[0],
-		&PSettings -> Isolines[1],
-		&PSettings -> Isolines[2]) != 3) &&
 	    (sscanf(IsolineString, "%d,%d", &PSettings -> Isolines[0],
 		&PSettings -> Isolines[1]) != 2) &&
-	    (sscanf(IsolineString, "%d %d", &PSettings -> Isolines[0],
-		&PSettings -> Isolines[1]) != 2) &&
 	    (sscanf(IsolineString, "%d", &PSettings -> Isolines[0]) != 1)) {
-	    I2P_LOG_ERROR( "Could not parse IsolineString: got = %s, expected = %s, Params = %s", IsolineString, "%d,%d,%d OR %d %d %d OR %d %d OR %d,%d OR %d", Settings);
-	    return;
+	    I2P_LOG_ERROR( "%s: Could not parse IsolineString got = %s, expected = %s", Parser -> SettingsString, IsolineString, "%d,%d,%d OR %d %d %d OR %d %d OR %d,%d OR %d");
+	    return FALSE;
 	}
     }
 
-    if (LightPosFlag) {
-	if (LightPosString &&
-	    (sscanf(LightPosString, "%lf,%lf,%lf", &PSettings -> LightPos[0],
-	     &PSettings -> LightPos[1],
-	     &PSettings -> LightPos[2]) != 3) &&
-	    (sscanf(LightPosString, "%lf %lf %lf", &PSettings -> LightPos[0],
-		&PSettings -> LightPos[1],
-		&PSettings -> LightPos[2]) != 3)) {
-	    I2P_LOG_ERROR( "Could not parse LightPosString: got = %s, expected = %s, Params = %s", LightPosString, "%lf,%lf,%lf OR %lf %lf %lf", Settings);
-	    return;
+    if (LightFlag) {
+	if (sscanf(LightString, "%lf,%lf,%lf,%lf,%lf,%lf",
+		   &PSettings -> LightPos[0],
+		   &PSettings -> LightPos[1],
+		   &PSettings -> LightPos[2],
+		   &PSettings -> Ambient,
+		   &PSettings -> Diffuse,
+		   &PSettings -> Specular) != 6 &&
+	    sscanf(LightString, "%lf,%lf,%lf",
+		   &PSettings -> LightPos[0],
+		   &PSettings -> LightPos[1],
+		   &PSettings -> LightPos[2]) != 3) {
+	    I2P_LOG_ERROR( "%s: Could not parse LightString got = %s, expected = %s", Parser -> SettingsString, LightString, "%f,%f,%f OR %f %f %f OR %f,%f,%f,%f,%f,%f OR %f %f %f %f %f %f");
+	    return FALSE;
 	}
     }
-    I2P_LOG_TRACE( "Processed all command line args from Settings = %s", Settings );
+
+    I2P_LOG_TRACE( "%s: Processed all command line args", Parser -> SettingsString );
+    return TRUE;
 }
 
 static void ParserTraverseObjects(ParserStruct* Parser)
 {
     IPObjectStruct* Iter;
-    IrtHmgnMatType Mat;
     const char* Name;
+    int
+	HasViewMat = FALSE;
 
     for (Iter = Parser->PObj; Iter; Iter = Iter->Pnext) {
 	switch (Iter->ObjType) {
 	case IP_OBJ_MATRIX:
-	    memcpy(Mat, Iter->U.Mat, sizeof(Mat));
 	    Name = IP_GET_OBJ_NAME(Iter);
 	    if (strcmp(Name, "VIEW_MAT") == 0) {
-		Parser->ViewMatrix = malloc(sizeof(double) * 16);
-		if (!Parser -> ViewMatrix)
-		    I2P_LOG_ERROR( "Could not allocate view matrix.");
-		assert(Parser->ViewMatrix);
-		memcpy(Parser->ViewMatrix, Mat, sizeof(Mat));
-	    }
-	    else if (strcmp(Name, "PROJ_MAT") == 0 ||
-		     strcmp(Name, "PRSP_MAT") == 0) {
-		Parser->ProjMatrix = malloc(sizeof(double) * 16);
-		if (!Parser -> ProjMatrix)
-		    I2P_LOG_ERROR( "Could not allocate projection matrix.");
-		assert(Parser->ProjMatrix);
-		memcpy(Parser->ProjMatrix, Mat, sizeof(Mat));
-	    }
+		IRIT_HMGN_MAT_COPY(Parser -> InternalViewMat, Iter -> U.Mat);
+		HasViewMat = TRUE;
+	    } else if (strcmp(Name, "PROJ_MAT") == 0)
+		IRIT_HMGN_MAT_COPY(Parser -> InternalProjMat, Iter -> U.Mat);
 	    continue;
 	case IP_OBJ_POLY:
-	    ParserHandlePoly(Parser, Iter);
+	    ParserHandlePoly(Parser, Iter); /* Process polygonal objects. */
 	    continue;
 	}
     }
+
+    if (!HasViewMat) {
+	ApplyIsometricMatPreservingScaleAndTranslation(Parser -> InternalViewMat);
+	CalculateObjectNormalizer(Parser -> PObj, Parser -> InternalViewMat);
+    }
+
 }
 
-static void ParserSubmitPointVertex(ParserStruct* Parser, VertexStruct Vert)
+static void ParserSubmitPointVertex(ParserStruct* Parser, VertexStruct Vert, int IsVector)
 {
     IrtRType x, y, z, tx, ty, tz;
     VertexStruct v;
@@ -253,8 +290,17 @@ static void ParserSubmitPointVertex(ParserStruct* Parser, VertexStruct Vert)
 	    { 1, -1, -1},
 	};
 
-    memcpy(&v, &Vert, sizeof(v));
-    x = Vert.x; y = Vert.y; z = Vert.z;
+    memcpy(&v, &Vert, sizeof(Vert));
+
+    x = v.x; y = v.y; z = v.z;
+    if (IsVector) {
+	v.x = 0; v.y = 0; v.z = 0;
+	ParserSubmitLineVertex(Parser, v);
+
+	v.x = x; v.y = y; v.z = z;
+	ParserSubmitLineVertex(Parser, v);
+    }
+
     for (i = 0; i < 4; i++) {
 	tx = Vectors[i][0] * IritGrapGlblState.PointSize;
 	ty = Vectors[i][1] * IritGrapGlblState.PointSize;
@@ -333,7 +379,7 @@ static void ParserHandlePoly(ParserStruct* Parser, IPObjectStruct* PObj)
 		if (VertIter != PolyIter->PVertex && VertIter->Pnext && VertIter->Pnext != PolyIter->PVertex)
 		    ParserSubmitLineVertex(Parser, Vert);
 	    } else if(IP_IS_POINTLIST_OBJ(PObj)) 
-		ParserSubmitPointVertex(Parser, Vert);
+		ParserSubmitPointVertex(Parser, Vert, strncmp(PObj -> ObjName, "VECTOR", 6) == 0);
 
 	    VertIter = VertIter->Pnext;
 	} while (VertIter && VertIter != PolyIter->PVertex);
@@ -368,6 +414,7 @@ static void ParserSubmitLineVertex(ParserStruct* Parser, VertexStruct v)
     (*Curr)->Vertices[(*Curr)->VertexCount++] = v;
     (*Curr)->Next = Last;
     Parser->LineCommands = *Curr;
+
 }
 
 static void ParserSubmitTriangleVertex(ParserStruct* Parser, VertexStruct v)
@@ -397,6 +444,14 @@ static void ParserSubmitTriangleVertex(ParserStruct* Parser, VertexStruct v)
     (*Curr)->Vertices[(*Curr)->VertexCount++] = v;
     (*Curr)->Next = Last;
     Parser->TriCommands = *Curr;
+
+    Parser -> BBox[0][0] = min(Parser -> BBox[0][0], v.x);
+    Parser -> BBox[0][1] = min(Parser -> BBox[0][1], v.y);
+    Parser -> BBox[0][2] = min(Parser -> BBox[0][2], v.z);
+
+    Parser -> BBox[1][0] = max(Parser -> BBox[1][0], v.x);
+    Parser -> BBox[1][1] = max(Parser -> BBox[1][1], v.y);
+    Parser -> BBox[1][2] = max(Parser -> BBox[1][2], v.z);
 }
 
 static void ParserSubmitNormal(ParserStruct* Parser, double nx, double ny, double nz)
@@ -487,16 +542,60 @@ static void ParserPostProcess(ParserStruct* Parser)
 
 }
 
+static void SetClippingPlanes(ParserStruct *Parser, IrtHmgnMatType ProjectionMat, double ZMin, double ZMax)
+{
+    IrtHmgnMatType
+	ProjInv, Remapper;
+    IrtRType
+	 MaxVec[] = {0, 0, 1, 1},
+	 MinVec[] = {0, 0, -1, 1};
+    IrtRType diff0, diff1, k;
+
+    I2P_LOG_TRACE( "%s: Swapping Zmin, Zmax values: zMin = %f, zMax = %f", Parser -> SettingsString, ZMin, ZMax);
+
+    if (!IritMiscMatInverseMatrix(ProjectionMat, ProjInv)) {
+	I2P_LOG_WARN( "%s: Projection matrix is not invertible, could not set new clipping values", Parser -> SettingsString);
+	return;
+    }
+
+    IritMiscMatMultVecby4by4(MaxVec, MaxVec, ProjInv);
+    IritMiscMatMultVecby4by4(MinVec, MinVec, ProjInv);
+
+    if (fabs(MaxVec[3]) < IRIT_EPS)
+	MaxVec[3] = IRIT_EPS * (MaxVec[3] < 0 ? -1 : 1);
+
+    if (fabs(MinVec[3]) < IRIT_EPS)
+	MinVec[3] = IRIT_EPS * (MinVec[3] < 0 ? -1 : 1);
+
+    IRIT_VEC_SCALE(MaxVec, 1.0 / MaxVec[3]);
+    IRIT_VEC_SCALE(MinVec, 1.0 / MinVec[3]);
+
+    I2P_LOG_TRACE( "%s: Computed original zMin zFar from provided projection matrix: zMin = %f, zMax = %f", Parser -> SettingsString, MinVec[2], MaxVec[2]);
+
+    diff0 = MaxVec[2] - MinVec[2];
+    diff1 = ZMax - ZMin;
+
+    if (fabs(diff1) < IRIT_EPS)
+	diff1 = IRIT_EPS;
+    k = diff0 / diff1;
+
+    IritMiscMatGenUnitMat(Remapper);
+    Remapper[2][2] = k;
+    Remapper[3][2] = MinVec[2] - ZMin * k;
+
+    IritMiscMatMultTwo4by4(ProjectionMat, Remapper, ProjectionMat);
+    I2P_LOG_TRACE( "%s: Swapped in the new zMin-zMax values", Parser -> SettingsString); 
+}
+
 static MeshStruct* ParserFinalize(ParserStruct* Parser)
 {
     MeshStruct* Ret;
-    GMBBBboxStruct BBox;
     ParserCommandsStruct* Iter, * Next;
     int nv;
 
     Ret = malloc(sizeof(*Ret));
     if (!Ret) {
-	I2P_LOG_ERROR( "Could not allocate finalized object. ");
+	I2P_LOG_ERROR( "%s: Could not allocate finalized object", Parser -> SettingsString);
 	return NULL;
     }
     memset(Ret, 0, sizeof(*Ret));
@@ -506,7 +605,7 @@ static MeshStruct* ParserFinalize(ParserStruct* Parser)
 
     Ret->Vertices = malloc(sizeof(VertexStruct) * Ret->TotalVertices);
     if (!Ret->Vertices) {
-	I2P_LOG_ERROR( "Could not allocate finalized object vertices. ");
+	I2P_LOG_ERROR( "%s: Could not allocate finalized object vertices", Parser -> SettingsString);
 	free(Ret);
 	return NULL;
     }
@@ -528,18 +627,45 @@ static MeshStruct* ParserFinalize(ParserStruct* Parser)
 	free(Iter);
     }
 
-    IritGeomBBComputeBboxObjectList(Parser->PObj, &BBox, 0);
-    Ret->MinX = BBox.Min[0]; Ret->MinY = BBox.Min[1]; Ret->MinZ = BBox.Min[2];
-    Ret->MaxX = BBox.Max[0]; Ret->MaxY = BBox.Max[1]; Ret->MaxZ = BBox.Max[2];
+    Ret -> Lights = malloc( sizeof(*Ret -> Lights) * I2P_NUM_LIGHTS );
 
-    Ret->lx = Parser -> Settings.LightPos[0];
-    Ret->ly = Parser -> Settings.LightPos[1];
-    Ret->lz = Parser -> Settings.LightPos[2];
+    memcpy(Ret -> Lights, Parser -> Lights, sizeof(Parser -> Lights));
 
-    Ret -> ViewMatrix = Parser -> ViewMatrix;
-    Ret -> ProjMatrix = Parser -> ProjMatrix;
+    if (!Ret -> Lights[0].IsEnabled) {
+	Ret -> Lights[0].IsEnabled = TRUE;
+	Ret -> Lights[0].x = Parser -> Settings.LightPos[0];
+	Ret -> Lights[0].y = Parser -> Settings.LightPos[1];
+	Ret -> Lights[0].z = Parser -> Settings.LightPos[2];
+	Ret -> Lights[0].ar = Parser -> Settings.Ambient;
+	Ret -> Lights[0].ag = Parser -> Settings.Ambient;
+	Ret -> Lights[0].ab = Parser -> Settings.Ambient;
+
+	Ret -> Lights[0].dr = Parser -> Settings.Diffuse;
+	Ret -> Lights[0].dg = Parser -> Settings.Diffuse;
+	Ret -> Lights[0].db = Parser -> Settings.Diffuse;
+
+	Ret -> Lights[0].sr = Parser -> Settings.Specular;
+	Ret -> Lights[0].sg = Parser -> Settings.Specular;
+	Ret -> Lights[0].sb = Parser -> Settings.Specular;
+
+	I2P_LOG_TRACE( "%s: No lights in file detected, using the light provided from the command line.", Parser -> SettingsString );
+    } else {
+	I2P_LOG_WARN( "%s: Detected lights in file, the light command line argument will be ignored and only the Ambient, Diffuse, Specular inteseties will be read.", Parser -> SettingsString );
+    }
+
+    if (Parser -> Settings.ChangeClippingPlanes)
+	SetClippingPlanes(Parser, Parser -> InternalProjMat, Parser -> Settings.ZMin, Parser -> Settings.ZMax);
+
+    Ret -> ViewMatrix = malloc(sizeof(double) * 16);
+    memcpy(Ret -> ViewMatrix, Parser -> InternalViewMat, sizeof(IrtHmgnMatType));
+
+    Ret -> ProjMatrix = malloc(sizeof(double) * 16);
+    memcpy(Ret -> ProjMatrix, Parser -> InternalProjMat, sizeof(IrtHmgnMatType));
+
+    Ret -> ZOffset = Parser -> Settings.ZOffset;
 
     IritPrsrFreeObjectList(Parser->PObj);
+    free(Parser -> SettingsString);
     return Ret;
 }
 
@@ -635,6 +761,7 @@ ITDPARSER_API void ITDParserFree(MeshStruct* Mesh)
     free(Mesh->Vertices);
     free(Mesh->ViewMatrix);
     free(Mesh->ProjMatrix);
+    free(Mesh->Lights);
     free(Mesh);
     I2P_LOG_TRACE( "Freed ITD Parser reousrces.");
 }
@@ -669,4 +796,49 @@ void ITDParserLog(int Level, const char *File, const char *Function, int Line, c
 
     GlobalLogger(Level, File, Function, Line, Buffer);
     free(Buffer);
+}
+
+void ApplyIsometricMatPreservingScaleAndTranslation(IrtHmgnMatType Mat)
+{
+    int i, j;
+    IrtHmgnMatType TmpMat, IsometricMat;
+    IRIT_HMGN_MAT_COPY(IsometricMat, DefaultIsometricMat);
+
+    IrtRType
+	Scale = IritMiscMatScaleFactorMatrix(Mat) /
+      					     IritMiscMatScaleFactorMatrix(IsometricMat);
+
+    IritMiscMatGenMatUnifScale(Scale, TmpMat);
+    IritMiscMatMultTwo4by4(IsometricMat, IsometricMat, TmpMat);
+
+    /* Copy the 3 by 3 block of rotation/scale, leaving translation intact. */
+    for (i = 0; i < 3; i++)
+	for (j = 0; j < 3; j++)
+	    Mat[i][j] = IsometricMat[i][j];
+}
+
+void CalculateObjectNormalizer(IPObjectStruct *PObj, IrtHmgnMatType Mat)
+{
+    int BBoxPosWeights;
+    IrtRType s;
+
+    /* Precompute proper bounding box to begin transformation with. */
+    GMBBBboxStruct BBox;
+    IrtVecType Center, Scaling;
+    IrtHmgnMatType Mat1, Mat2;
+
+    IritGeomBBComputeBboxObjectList(PObj, &BBox, FALSE);
+
+    IRIT_PT_ADD(Center, BBox.Max, BBox.Min);
+    IRIT_PT_SCALE(Center, 0.5);
+    IritMiscMatGenMatTrans(-Center[0], -Center[1], -Center[2], Mat1);
+
+    IRIT_PT_SUB(Scaling, BBox.Max, BBox.Min);
+    s = IRIT_MAX(Scaling[0], IRIT_MAX(Scaling[1], Scaling[2]));
+    if (s < IRIT_EPS)
+	s = IRIT_EPS;
+    IritMiscMatGenMatUnifScale(1.0 / s, Mat2);
+
+    IritMiscMatMultTwo4by4(Mat1, Mat1, Mat2);
+    IritMiscMatMultTwo4by4(Mat, Mat1, Mat);
 }
