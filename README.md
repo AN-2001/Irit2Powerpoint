@@ -26,7 +26,7 @@ Once compiled, the plugin may be installed by running the "install.bat" script w
 the script registers the DLL and create a Windows Registry entry for the plugin so that powerpoint can load it.
 the script can take arguments, either "Debug" or "Release" (case sensitive), this determines which version of the plugin gets installed.
 
-uninstall.bat:
+**uninstall.bat**:
 to uninstall the plugin simply run uninstall.bat with either "Release" or "Debug", this will deregister the DLL and remove the Windows Registry entry for the plugin.
 
 # AFTER COMPILATION
