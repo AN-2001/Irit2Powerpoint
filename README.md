@@ -27,7 +27,7 @@ the script registers the DLL and create a Windows Registry entry for the plugin 
 the script can take arguments, either "Debug" or "Release" (case sensitive), this determines which version of the plugin gets installed.
 
 **uninstall.bat**:
-to uninstall the plugin simply run uninstall.bat with either "Release" or "Debug", this will deregister the DLL and remove the Windows Registry entry for the plugin.
+to uninstall the plugin simply run "uninstall.bat" with either "Release" or "Debug", this will deregister the DLL and remove the Windows Registry entry for the plugin.
 
 # AFTER COMPILATION
 navigate to the docs directory, it provides documentation on how to use the plugin. An example powerpoint presentation that demonstrates the plugin is also provided.
