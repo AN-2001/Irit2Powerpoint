@@ -21,16 +21,13 @@ required DLLs and manifests to register the plugin.
 Installation can proceed manually, but for comfort we provide the following two scripts:
 
 
-Install.bat:
-Once compiled, the plugin may be installed my running the "install.bat" script with admin privelages.
+**Install.bat**:
+Once compiled, the plugin may be installed by running the "install.bat" script with admin privelages.
 the script registers the DLL and create a Windows Registry entry for the plugin so that powerpoint can load it.
-the script can take arguments, either "Debug" or "Release" (case sensitive), this determines which version of the plugin
-gets installed.
+the script can take arguments, either "Debug" or "Release" (case sensitive), this determines which version of the plugin gets installed.
 
 uninstall.bat:
-to uninstall the plugin simply run uninstall.bat with either "Release" or "Debug", this will deregister the DLL and 
-remove the Windows Registry entry for the plugin.
-
+to uninstall the plugin simply run uninstall.bat with either "Release" or "Debug", this will deregister the DLL and remove the Windows Registry entry for the plugin.
 
 # AFTER COMPILATION
 navigate to the docs directory, it provides documentation on how to use the plugin. An example powerpoint presentation that demonstrates the plugin is also provided.
