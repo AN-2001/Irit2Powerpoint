@@ -1,10 +1,10 @@
-I2P [-n] [-N] [-I #IsoLines] [-F PlgnOpti PlgnFineNess] [-f PllnOpti PllnFineNess] [-L Normal Size] [-c Override? r,g,b (Polyline)] [-C Override? r,g,b (Polygon)] [-W Wiresetup] [-l x,y,z (Light)] [-p Point Size] [-M] [-V] [-P] [-t] [-o] [-w] ModelFile
+I2P n%- N%- I%-#IsoLines!s F%-PlgnOpti|PlgnFineNess!d!F f%-PllnOpti|PllnFineNess!d!F L%-Normal|Size!F c%-Override?|r,g,b|(Polyline)!d!s C%-Override?|r,g,b|(Polygon)!d!s W%-Wiresetup!d S%-x,y,z{,a,d,s}|(Light)!s p%-Point|Size!F Z%-ZMin|ZMax!F!F z%-ZOffset!F M%- V%- P%- t%- o%- w%- ModelFile
 
 -n: Display vertex normals.
 -N: Dlsplay surface normals.
 -I: Set the number iso-lines specefied in UxVxW.
 -F: Set the polygon fineness.
-;f: Set the polyline fineness.
+-f: Set the polyline fineness.
 -L: Set the normals' length.
 -c: curve colours.
 -C: polygon colours.
@@ -16,7 +16,7 @@ I2P [-n] [-N] [-I #IsoLines] [-F PlgnOpti PlgnFineNess] [-f PllnOpti PllnFineNes
     IritGrapGlblState.DrawSurfaceSketch = Settings.SurfaceWireSetup & 0x08;
     IritGrapGlblState.DrawSurfaceRflctLns = Settings.SurfaceWireSetup & 0x10;
     IritGrapGlblState.DrawSurfaceKnotLns = Settings.SurfaceWireSetup & 0x20;
--l: The light's position.
+-S: The light's position and optionally its ambient, diffuse, and specular intenseties.
 -p: Point size.
 -M: Draw the control mesh of freeforms.
 -V: Draw models monolothic.
@@ -24,9 +24,13 @@ I2P [-n] [-N] [-I #IsoLines] [-F PlgnOpti PlgnFineNess] [-f PllnOpti PllnFineNes
 -t: Draw surface orient.
 -o: Flip normal orient.
 -w: Draw wireframe (must have -P too).
+-z: The Z offset of curves.
+-Z: The ZMin and ZMax clipping planes.
 ModelFile: Can be a relative or absolute path (surrounded by quotes if it contains spaces).
            Relative paths are meant to be used when the presentation is saved and is associated with a path on the filesystem.
 
 For example:
 "-P teapot.itd": Import teapot.itd from the presentation's path and render polygons.
 "-M -P -w 1 C:/bone.itd": Import bone.itd from the given absolute path and render its control mesh and wireframe.
+"-S 1,2,3,0.1,1,1 -Z -10 10 fltrtest.itd": Import flttrtest.itd, set the light position to (1,2,3) with
+					   ambient=0.1, diffuse=1, specular = 1, set ZMin to -10 and ZMax to 10
