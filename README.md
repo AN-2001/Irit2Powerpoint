@@ -13,21 +13,27 @@ Dependancies are:
 
 * .NET framework **4.8** SDK and targeting pack.
 * Visual Studio Tools for Office (VSTO).
-* ClickOnce Publishing.
-* Microsoft Visual Studio Installer Projects Extension:
-  - Can be found at https://marketplace.visualstudio.com/items?itemName=VisualStudioClient.MicrosoftVisualStudio2017InstallerProjects
-  - Click Download then follow the instructions, this will modify visual studio to include the installer project preset.
-
-Preferred compilation is for x64 Release, debug wont create the installer.
 
 To compile, open the top level solution and compile all the projects, compilation may take a few minutes.
-Once compiled, an installer will be created in the root directory of the projet with the name I2P.exe.
-Run I2P.exe then follow the instructions to register the plugin with powerpoint.
-If desired, the plugin can be uninstalled from Window's control panel normally.
+
+After Compilation the /bin directory will be created in the root of the project, this directory contains all the
+required DLLs and manifests to register the plugin.
+Installation can proceed manually, but for comfort we provide the following two scripts:
+
+
+Install.bat:
+Once compiled, the plugin may be installed my running the "install.bat" script with admin privelages.
+the script registers the DLL and create a Windows Registry entry for the plugin so that powerpoint can load it.
+the script can take arguments, either "Debug" or "Release" (case sensitive), this determines which version of the plugin
+gets installed.
+
+uninstall.bat:
+to uninstall the plugin simply run uninstall.bat with either "Release" or "Debug", this will deregister the DLL and 
+remove the Windows Registry entry for the plugin.
 
 
 # AFTER COMPILATION
-navigate to the docs directory, it provides documentation for the command syntax. An example powerpoint presentation that demonstrates the plugin is also provided.
+navigate to the docs directory, it provides documentation on how to use the plugin. An example powerpoint presentation that demonstrates the plugin is also provided.
 
 **By Abed Naa'ran and Ismaeel Bder**
 
