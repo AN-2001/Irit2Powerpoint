@@ -1,0 +1,12 @@
+C:\Users\abdna\Irit2Powerpoint (1)\Irit2Powerpoint\Irit2Powerpoint\bin64\Release\Irit2Powerpoint.dll
+C:\Users\abdna\Irit2Powerpoint (1)\Irit2Powerpoint\Irit2Powerpoint\bin64\Release\Irit2Powerpoint.pdb
+C:\Users\abdna\Irit2Powerpoint (1)\Irit2Powerpoint\Irit2Powerpoint\bin64\Release\Irit2Powerpoint.dll.manifest
+C:\Users\abdna\Irit2Powerpoint (1)\Irit2Powerpoint\Irit2Powerpoint\bin64\Release\Irit2Powerpoint.vsto
+C:\Users\abdna\Irit2Powerpoint (1)\Irit2Powerpoint\Irit2Powerpoint\Irit2Powerpoint\obj\x64\Release\Irit2Powerpoint.csproj.AssemblyReference.cache
+C:\Users\abdna\Irit2Powerpoint (1)\Irit2Powerpoint\Irit2Powerpoint\Irit2Powerpoint\obj\x64\Release\Irit2Powerpoint.Properties.Resources.resources
+C:\Users\abdna\Irit2Powerpoint (1)\Irit2Powerpoint\Irit2Powerpoint\Irit2Powerpoint\obj\x64\Release\Irit2Powerpoint.Resources.ImportSettings.resources
+C:\Users\abdna\Irit2Powerpoint (1)\Irit2Powerpoint\Irit2Powerpoint\Irit2Powerpoint\obj\x64\Release\Irit2Powerpoint.csproj.GenerateResource.cache
+C:\Users\abdna\Irit2Powerpoint (1)\Irit2Powerpoint\Irit2Powerpoint\Irit2Powerpoint\obj\x64\Release\Irit2Powerpoint.csproj.CoreCompileInputs.cache
+C:\Users\abdna\Irit2Powerpoint (1)\Irit2Powerpoint\Irit2Powerpoint\Irit2Powerpoint\obj\x64\Release\Irit2Powerpoint.csproj.CopyComplete
+C:\Users\abdna\Irit2Powerpoint (1)\Irit2Powerpoint\Irit2Powerpoint\Irit2Powerpoint\obj\x64\Release\Irit2Powerpoint.dll
+C:\Users\abdna\Irit2Powerpoint (1)\Irit2Powerpoint\Irit2Powerpoint\Irit2Powerpoint\obj\x64\Release\Irit2Powerpoint.pdb

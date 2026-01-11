@@ -1,0 +1,19 @@
+LIMITATIONS:
+* only one model file may be provided to the I2P command, if multiple models need to be shown then they must
+  all be provided in a single aggregated file.
+* Textures, animations are both not supported in the renderer.
+* Only one I2P window is supported per slide.
+
+LOGGING:
+I2P logs what it does to a log file under the name <date>--<time>_<PID>_I2P_log.txt, the file will be created under the same directory as the presentation.
+The file is presentation location aware, if a presentation is saved somewhere new, or moved somewhere new the log file will move along with it.
+
+the logs shows important events (such as how many models have been loaded so far) and also displays any errors/warnings that come up.
+
+Logging levels are supported and can be controlled by setting the I2P_LOG_LEVEL environment variable, DISABGLED, TRACE, INFO, WARN, ERROR are all supported. Once a value all values greater or equal to it will be shown in the log.
+The order is defined as such.
+DISABLED < TRACE < INFO < WARN < ERROR
+
+The default I2P_LOG_LEVEL is DISABLED
+
+About TRACE: Trace is intended for debugging purposes and will give the most talkative and verbose output, it's useful for tracking the exact actions the plugin is taking at any moment in time.
